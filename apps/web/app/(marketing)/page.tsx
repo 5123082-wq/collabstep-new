@@ -1,30 +1,19 @@
-'use client';
+import type { Metadata } from 'next';
+import MarketingHome from './_pages/Home';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Collabverse — платформа для запуска проектов',
+  description:
+    'AI-агенты, управление проектами и маркетплейс услуг в Collabverse помогают командам запускать продукты быстрее.',
+  openGraph: {
+    title: 'Collabverse — платформа для запуска проектов',
+    description:
+      'AI-агенты, управление проектами и маркетплейс услуг в Collabverse помогают командам запускать продукты быстрее.',
+    url: '/',
+    type: 'website'
+  }
+};
 
-export default function MarketingStub() {
-  return (
-    <main className="max-w-3xl mx-auto p-8 space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold mb-4">Collabverse — Stage 0</h1>
-        <p className="text-neutral-300">
-          Базовый каркас установлен. Включите маркетинговый слой на Этапе 1.
-        </p>
-      </header>
-      <section className="space-y-4 text-neutral-300">
-        <p>Маркетинговый сегмент пока в статусе заглушки.</p>
-        <ul className="list-disc pl-6 space-y-2">
-          <li>
-            Запуск: <code>pnpm install</code> → <code>pnpm dev</code>
-          </li>
-          <li>
-            Маркетинговый layout: <code>/app/(marketing)</code> (заглушка)
-          </li>
-          <li>
-            Флаг: <code>NAV_V1</code> в <code>.env</code> (по умолчанию off)
-          </li>
-        </ul>
-      </section>
-    </main>
-  );
+export default function Page() {
+  return <MarketingHome />;
 }

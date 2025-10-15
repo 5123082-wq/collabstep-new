@@ -1,0 +1,218 @@
+'use client';
+
+import clsx from 'clsx';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { marketingMenu, type NavItem } from '@/config/MarketingMenu.config';
+import MobileMenu from './MobileMenu';
+
+const childDescriptions: Record<string, string> = {
+  overview: 'Короткий обзор платформы и её ключевых возможностей.',
+  ai: 'Настраивайте AI-агентов, чтобы автоматизировать рутину.',
+  pm: 'Готовые шаблоны и сценарии управления проектами.',
+  market: 'Соберите команду из проверенных специалистов.',
+  founder: 'Инструменты для оценки гипотез и контроля бюджета.',
+  designers: 'Работайте с брифами и AI-ассистентами для креатива.',
+  developers: 'Планируйте релизы и интеграции без хаоса.',
+  marketers: 'Конструктор кампаний и помощь в создании контента.',
+  contractors: 'Управляйте командой подрядчиков и предложениями.',
+  feed: 'Просматривайте актуальные проекты и отправляйте отклики.',
+  cases: 'Изучайте истории успеха и готовые кейсы.',
+  catalog: 'Найдите специалистов по навыкам и опыту.',
+  rating: 'Узнайте, как формируются рейтинги и отзывы.',
+  pro: 'Профессиональные тарифы для специалистов.',
+  teams: 'Комплексные планы для команд и агентств.',
+  articles: 'Подборка статей и гайдбуков по запуску проектов.',
+  webinars: 'Расписание вебинаров и практических сессий.'
+};
+
+const focusableSelectors = 'a[href], button';
+
+export default function MarketingNavbar() {
+  const pathname = usePathname();
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    setOpenItemId(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!openItemId) {
+      return;
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) {
+        setOpenItemId(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenItemId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [openItemId]);
+
+  const handlePanelKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, itemId: string) => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const panel = panelRefs.current[itemId];
+    if (!panel) {
+      return;
+    }
+
+    const focusable = panel.querySelectorAll<HTMLElement>(focusableSelectors);
+    if (focusable.length === 0) {
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+
+    if (event.shiftKey) {
+      if (active === first) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const isItemActive = useMemo(() => {
+    const normalizedPath = pathname?.split('#')[0] ?? '/';
+    return (item: NavItem) => {
+      if (item.href) {
+        return normalizedPath === item.href;
+      }
+
+      if (!item.children) {
+        return false;
+      }
+
+      return item.children.some((child) => {
+        const [hrefPath] = child.href.split('#');
+        return normalizedPath === hrefPath;
+      });
+    };
+  }, [pathname]);
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-neutral-900 bg-neutral-950/80 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
+        <Link
+          href="/"
+          className="text-base font-semibold text-neutral-100 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+        >
+          Collabverse
+        </Link>
+        <nav
+          ref={navRef}
+          className="hidden items-center gap-6 md:flex"
+          aria-label="Основная навигация"
+        >
+          {marketingMenu.map((item) => {
+            const active = isItemActive(item);
+            if (!item.children?.length) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href ?? '#'}
+                  className={clsx(
+                    'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    active && 'text-white'
+                  )}
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+
+            const isOpen = openItemId === item.id;
+            return (
+              <div
+                key={item.id}
+                className="relative"
+                onMouseEnter={() => setOpenItemId(item.id)}
+                onMouseLeave={() => setOpenItemId((current) => (current === item.id ? null : current))}
+                onFocus={() => setOpenItemId(item.id)}
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                    setOpenItemId((current) => (current === item.id ? null : current));
+                  }
+                }}
+              >
+                <button
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={isOpen}
+                  aria-controls={`mega-${item.id}`}
+                  className={clsx(
+                    'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    active && 'text-white'
+                  )}
+                  onClick={() => setOpenItemId((current) => (current === item.id ? null : item.id))}
+                >
+                  {item.label}
+                </button>
+                <div
+                  id={`mega-${item.id}`}
+                  ref={(node) => {
+                    panelRefs.current[item.id] = node;
+                  }}
+                  onKeyDown={(event) => handlePanelKeyDown(event, item.id)}
+                  className={clsx(
+                    'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
+                    isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+                  )}
+                >
+                  <div className="space-y-4">
+                    {item.children.map((child) => (
+                      <div key={child.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+                        <Link
+                          href={child.href}
+                          onClick={() => setOpenItemId(null)}
+                          className="text-sm font-semibold text-neutral-100 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                        >
+                          {child.label}
+                        </Link>
+                        <p className="mt-2 text-xs text-neutral-400">
+                          {childDescriptions[child.id] ?? 'Узнать подробнее.'}
+                        </p>
+                        {child.cta && (
+                          <Link
+                            href={child.cta.href}
+                            onClick={() => setOpenItemId(null)}
+                            className="mt-3 inline-flex rounded-full border border-indigo-500 px-3 py-1 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                          >
+                            {child.cta.label}
+                          </Link>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </nav>
+        <MobileMenu menu={marketingMenu} />
+      </div>
+    </header>
+  );
+}
