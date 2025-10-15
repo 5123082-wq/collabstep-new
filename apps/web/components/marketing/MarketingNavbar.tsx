@@ -166,6 +166,7 @@ export default function MarketingNavbar() {
                     'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                     active && 'text-white'
                   )}
+                  onFocus={() => setOpenItemId(item.id)}
                   onClick={() => setOpenItemId((current) => (current === item.id ? null : item.id))}
                 >
                   {item.label}

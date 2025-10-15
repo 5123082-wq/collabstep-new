@@ -18,6 +18,7 @@ jobs:
       - run: pnpm install
       - run: cp .env.example .env
       - run: pnpm lint
+      - run: pnpm --filter @collabverse/web typecheck
       - run: pnpm build
       - name: Install Playwright browsers
         run: npx playwright install --with-deps

@@ -3,5 +3,31 @@
 @tailwind utilities;
 
 :root { color-scheme: dark; }
-body { @apply bg-neutral-950 text-neutral-100; }
+body {
+  @apply bg-neutral-950 text-neutral-100;
+  background-attachment: fixed;
+  transition: background 300ms ease;
+}
+
+body.app-bg-mesh {
+  background-image: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18), transparent 45%),
+    radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.15), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(45, 212, 191, 0.16), transparent 45%),
+    linear-gradient(120deg, #0b0f1a, #090b15 45%, #0f172a 100%);
+}
+
+body.app-bg-grid {
+  background-image: linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 55%);
+  background-size: 32px 32px, 32px 32px, auto;
+  background-color: #070b13;
+}
+
+body.app-bg-halo {
+  background-image: radial-gradient(circle at 50% 20%, rgba(59, 130, 246, 0.22), transparent 60%),
+    radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.18), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(20, 184, 166, 0.2), transparent 60%);
+  background-color: #05070d;
+}
 a { @apply underline-offset-2 hover:underline; }
