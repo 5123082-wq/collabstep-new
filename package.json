@@ -1,0 +1,27 @@
+{
+  "name": "collabverse-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "engines": { "node": ">=20 <21", "pnpm": ">=9" },
+  "scripts": {
+    "dev": "pnpm --filter @collabverse/web dev",
+    "build": "pnpm --filter @collabverse/web build",
+    "start": "pnpm --filter @collabverse/web start",
+    "lint": "eslint .",
+    "test": "jest -u",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.4",
+    "prettier": "^3.3.2",
+    "typescript": "^5.5.3",
+    "@types/node": "^20.12.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "@types/jest": "^29.5.12",
+    "@playwright/test": "^1.46.0"
+  },
+  "packageManager": "pnpm@9.12.2"
+}
