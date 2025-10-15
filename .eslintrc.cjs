@@ -8,5 +8,8 @@ module.exports = {
     next: {
       rootDir: ["apps/web"]
     }
+  },
+  rules: {
+    "@next/next/no-html-link-for-pages": "off"
   }
 };

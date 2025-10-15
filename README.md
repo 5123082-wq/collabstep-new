@@ -10,6 +10,8 @@
 3. Режим разработки: `pnpm dev` (откройте `http://localhost:3000/`)
 4. Продакшен-сборка: `pnpm build && pnpm start`
 
+> Preflight Stage 2 — пройден.
+
 ## Тесты
 - Юнит-тесты: `pnpm test`
 - E2E: `pnpm test:e2e`

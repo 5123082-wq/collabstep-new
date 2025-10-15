@@ -1,0 +1,178 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import invoicesData from '@/app/mock/invoices.json';
+import projectsData from '@/app/mock/projects.json';
+import tasksData from '@/app/mock/tasks.json';
+import { toast } from '@/lib/ui/toast';
+import { search, type SearchItem } from '@/lib/search/deepSearch';
+
+type CommandPaletteProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+type PaletteResult = ReturnType<typeof search>;
+
+export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
+  const [query, setQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const dataset = useMemo(() => {
+    const projectItems: SearchItem[] = (projectsData as typeof projectsData).map((project) => ({
+      type: 'project',
+      title: project.name,
+      subtitle: project.status,
+      tags: [project.code],
+      ref: project.id
+    }));
+
+    const taskItems: SearchItem[] = (tasksData as typeof tasksData).map((task) => ({
+      type: 'task',
+      title: `${task.title}`,
+      subtitle: task.status,
+      tags: [task.projectId, task.id],
+      ref: task.id
+    }));
+
+    const invoiceItems: SearchItem[] = (invoicesData as typeof invoicesData).map((invoice) => ({
+      type: 'invoice',
+      title: invoice.title,
+      subtitle: `${invoice.amount.toLocaleString('ru-RU')} ${invoice.currency}`,
+      tags: [invoice.projectId, invoice.id],
+      ref: invoice.id
+    }));
+
+    const userItems: SearchItem[] = (projectsData as typeof projectsData).map((project) => ({
+      type: 'user',
+      title: project.lead,
+      subtitle: `Лид проекта ${project.name}`,
+      tags: [project.code],
+      ref: `user-${project.id}`
+    }));
+
+    return [...projectItems, ...taskItems, ...invoiceItems, ...userItems];
+  }, []);
+
+  const results: PaletteResult = useMemo(() => search(query, dataset), [dataset, query]);
+
+  useEffect(() => {
+    if (!open) {
+      setQuery('');
+      setActiveIndex(0);
+      return;
+    }
+
+    setActiveIndex(0);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setActiveIndex((index) => (index + 1) % Math.max(results.length, 1));
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setActiveIndex((index) => (index - 1 + Math.max(results.length, 1)) % Math.max(results.length, 1));
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = results[activeIndex]?.item;
+        if (target) {
+          toast(`TODO: открыть ${target.type} ${target.title}`);
+          onClose();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [activeIndex, onClose, open, results]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const input = document.getElementById('command-input') as HTMLInputElement | null;
+    input?.focus();
+  }, [open]);
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-start justify-center bg-neutral-950/80 pt-24 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Командная палитра"
+    >
+      <div className="w-full max-w-3xl rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-100">Командная палитра</h2>
+            <p className="text-xs text-neutral-500">Введите маску: @ — проекты и люди, # — задачи, $ — счета.</p>
+          </div>
+          <span className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-400">Esc</span>
+        </div>
+        <div className="mt-4">
+          <label htmlFor="command-input" className="sr-only">
+            Поле поиска по платформе
+          </label>
+          <input
+            id="command-input"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActiveIndex(0);
+            }}
+            placeholder="Например: #12 или @demo"
+            className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+            autoComplete="off"
+          />
+        </div>
+        <ul className="mt-4 max-h-72 overflow-y-auto rounded-xl border border-neutral-800/60 bg-neutral-900/30">
+          {results.length === 0 && (
+            <li className="px-4 py-8 text-center text-sm text-neutral-500">Ничего не найдено</li>
+          )}
+          {results.map((result, index) => {
+            const item = result.item;
+            const isActive = index === activeIndex;
+            return (
+              <li key={`${item.ref}-${index}`}>
+                <button
+                  type="button"
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => {
+                    toast(`TODO: открыть ${item.type} ${item.title}`);
+                    onClose();
+                  }}
+                  className={`flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+                    isActive ? 'bg-indigo-500/10' : 'bg-transparent'
+                  }`}
+                >
+                  <div>
+                    <p className="font-medium text-neutral-100">{item.title}</p>
+                    <p className="text-xs text-neutral-500">{item.subtitle}</p>
+                  </div>
+                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">{item.type}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
