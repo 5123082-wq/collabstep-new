@@ -3,5 +3,10 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   plugins: ["@typescript-eslint"],
   extends: ["next/core-web-vitals"],
-  ignorePatterns: ["**/dist/**", "**/.next/**"]
+  ignorePatterns: ["**/dist/**", "**/.next/**"],
+  settings: {
+    next: {
+      rootDir: ["apps/web"]
+    }
+  }
 };
