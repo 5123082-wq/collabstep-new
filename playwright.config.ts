@@ -8,7 +8,8 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       NEXT_DISABLE_VERSION_CHECK: '1',
-      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_TELEMETRY_DISABLED: '1',
+      NAV_V1: 'on'
     }
   }
 });
