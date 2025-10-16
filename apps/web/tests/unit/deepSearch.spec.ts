@@ -36,6 +36,8 @@ describe('deepSearch', () => {
 
     const result = search('Задача', scopedDataset, { projectId: 'proj-a' });
     expect(result).toHaveLength(1);
-    expect(result[0].item.ref).toBe('task-a');
+    const firstResult = result[0];
+    expect(firstResult).toBeDefined();
+    expect(firstResult?.item.ref).toBe('task-a');
   });
 });

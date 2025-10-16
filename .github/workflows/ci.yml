@@ -17,10 +17,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: cp .env.example .env
-      - run: pnpm lint
-      - run: pnpm --filter @collabverse/web typecheck
-      - run: pnpm build
+      - run: echo "NAV_V1=on" >> .env
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      - run: pnpm test
-      - run: pnpm test:e2e
+      - run: pnpm verify

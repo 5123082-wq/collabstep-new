@@ -1,7 +1,7 @@
 import { NAV_V1 } from '@/lib/feature-flags';
-import Stage0 from './_pages/Stage0';
+import Stage0 from './_pages/stage0';
 import MarketingLayout from './(marketing)/layout';
-import MarketingHome from './(marketing)/_pages/Home';
+import MarketingHome from './(marketing)/_pages/home';
 
 export const dynamic = 'force-dynamic';
 

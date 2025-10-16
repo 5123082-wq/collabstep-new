@@ -1,3 +1,4 @@
+import AnalyticsSuccessCleanup from '@/components/project/AnalyticsSuccessCleanup';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const DASHBOARDS = [
@@ -11,9 +12,38 @@ const FUNNELS = [
   { id: 'consideration', title: 'Consideration → Purchase', conversion: '18%' }
 ];
 
-export default function ProjectAnalyticsPage() {
+type ProjectAnalyticsPageProps = {
+  searchParams?: Record<string, string | string[] | undefined>;
+};
+
+function shouldSimulateError(searchParams?: Record<string, string | string[] | undefined>): boolean {
+  if (!searchParams) {
+    return false;
+  }
+
+  const value = searchParams.__simulate_error;
+  const sessionValue = searchParams.session;
+
+  const session = Array.isArray(sessionValue) ? sessionValue[0] : sessionValue;
+  const shouldRecover = typeof session === 'string' && session.endsWith('-recovered');
+
+  if (Array.isArray(value)) {
+    return value.includes('1') && !shouldRecover;
+  }
+
+  return value === '1' && !shouldRecover;
+}
+
+export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsPageProps) {
+  const shouldFail = shouldSimulateError(searchParams);
+
+  if (shouldFail) {
+    throw new Error('Simulated analytics error');
+  }
+
   return (
     <div className="space-y-8">
+      <AnalyticsSuccessCleanup />
       <ProjectSection
         id="dashboards"
         title="Дашборды"

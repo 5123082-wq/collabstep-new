@@ -3,7 +3,14 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FocusEvent as ReactFocusEvent,
+  type KeyboardEvent as ReactKeyboardEvent
+} from 'react';
 import { marketingMenu, type NavItem } from '@/config/MarketingMenu.config';
 import MobileMenu from './MobileMenu';
 
@@ -32,12 +39,17 @@ const focusableSelectors = 'a[href], button';
 export default function MarketingNavbar() {
   const pathname = usePathname();
   const [openItemId, setOpenItemId] = useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     setOpenItemId(null);
   }, [pathname]);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (!openItemId) {
@@ -64,7 +76,7 @@ export default function MarketingNavbar() {
     };
   }, [openItemId]);
 
-  const handlePanelKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, itemId: string) => {
+  const handlePanelKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>, itemId: string) => {
     if (event.key !== 'Tab') {
       return;
     }
@@ -79,8 +91,11 @@ export default function MarketingNavbar() {
       return;
     }
 
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable.item(0);
+    const last = focusable.item(focusable.length - 1);
+    if (!first || !last) {
+      return;
+    }
     const active = document.activeElement as HTMLElement | null;
 
     if (event.shiftKey) {
@@ -125,6 +140,7 @@ export default function MarketingNavbar() {
           ref={navRef}
           className="hidden items-center gap-6 md:flex"
           aria-label="Основная навигация"
+          data-menu-ready={isHydrated ? 'true' : 'false'}
         >
           {marketingMenu.map((item) => {
             const active = isItemActive(item);
@@ -150,9 +166,10 @@ export default function MarketingNavbar() {
                 className="relative"
                 onMouseEnter={() => setOpenItemId(item.id)}
                 onMouseLeave={() => setOpenItemId((current) => (current === item.id ? null : current))}
-                onFocus={() => setOpenItemId(item.id)}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                onFocusCapture={() => setOpenItemId(item.id)}
+                onBlur={(event: ReactFocusEvent<HTMLDivElement>) => {
+                  const nextTarget = event.relatedTarget;
+                  if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
                     setOpenItemId((current) => (current === item.id ? null : current));
                   }
                 }}
@@ -160,7 +177,7 @@ export default function MarketingNavbar() {
                 <button
                   type="button"
                   aria-haspopup="true"
-                  aria-expanded={isOpen}
+                  aria-expanded={isOpen ? 'true' : 'false'}
                   aria-controls={`mega-${item.id}`}
                   className={clsx(
                     'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
@@ -168,6 +185,17 @@ export default function MarketingNavbar() {
                   )}
                   onFocus={() => setOpenItemId(item.id)}
                   onClick={() => setOpenItemId((current) => (current === item.id ? null : item.id))}
+                  onKeyDown={(event: ReactKeyboardEvent<HTMLButtonElement>) => {
+                    if (event.key === 'Escape') {
+                      setOpenItemId(null);
+                      return;
+                    }
+
+                    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      setOpenItemId(item.id);
+                    }
+                  }}
                 >
                   {item.label}
                 </button>
@@ -177,6 +205,7 @@ export default function MarketingNavbar() {
                     panelRefs.current[item.id] = node;
                   }}
                   onKeyDown={(event) => handlePanelKeyDown(event, item.id)}
+                  role="menu"
                   className={clsx(
                     'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
                     isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
@@ -188,6 +217,7 @@ export default function MarketingNavbar() {
                         <Link
                           href={child.href}
                           onClick={() => setOpenItemId(null)}
+                          role="menuitem"
                           className="text-sm font-semibold text-neutral-100 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                         >
                           {child.label}
@@ -199,6 +229,7 @@ export default function MarketingNavbar() {
                           <Link
                             href={child.cta.href}
                             onClick={() => setOpenItemId(null)}
+                            role="menuitem"
                             className="mt-3 inline-flex rounded-full border border-indigo-500 px-3 py-1 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                           >
                             {child.cta.label}

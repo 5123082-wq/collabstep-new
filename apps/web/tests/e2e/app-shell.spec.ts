@@ -1,27 +1,20 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { captureConsole } from './utils/console';
 
 const appOrigin = 'http://localhost:3000';
 
-const captureConsole = (page: Page, store: string[]) => {
-  page.on('console', (message) => {
-    if (message.type() === 'error') {
-      store.push(message.text());
-    }
-  });
-};
-
 test.describe('app shell', () => {
   test('dashboard без ошибок в консоли', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/app/dashboard`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Рабочий стол/);
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('ширина контента не меняется при раскрытии меню', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/app/dashboard`);
     const content = page.locator('.content-area');
     const initialBox = await content.boundingBox();
@@ -38,7 +31,7 @@ test.describe('app shell', () => {
     await page.waitForTimeout(150);
     const collapsedBox = await content.boundingBox();
     expect(collapsedBox?.width).toBeCloseTo(initialBox!.width!, 1);
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('основные маршруты /app доступны', async ({ page }) => {
@@ -60,8 +53,8 @@ test.describe('app shell', () => {
   });
 
   test('меню создания требует выбор проекта и показывает toast', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/app/dashboard`);
     await page.getByRole('button', { name: 'Создать' }).click();
     const dialog = page.getByRole('dialog', { name: 'Меню создания' });
@@ -71,12 +64,12 @@ test.describe('app shell', () => {
     await dialog.getByRole('button', { name: 'Задачу' }).click();
     const toast = page.getByText('TODO: Создать задачу');
     await expect(toast).toBeVisible();
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('командная палитра поддерживает маски', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/app/dashboard`);
     await page.keyboard.press('Control+K');
     const palette = page.getByRole('dialog', { name: 'Командная палитра' });
@@ -94,7 +87,7 @@ test.describe('app shell', () => {
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every((type) => type === 'project' || type === 'user')).toBe(true);
     await page.keyboard.press('Escape');
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('переключатель фона сохраняет состояние', async ({ page }) => {

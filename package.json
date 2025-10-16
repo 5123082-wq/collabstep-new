@@ -9,19 +9,30 @@
     "start": "pnpm --filter @collabverse/web start",
     "lint": "eslint .",
     "test": "jest -u",
-    "test:e2e": "playwright test"
+    "test:e2e": "pnpm --filter @collabverse/web build && playwright test",
+    "verify:routes": "node apps/web/scripts/verify-routes.mjs",
+    "verify": "pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && npx vercel build --prod",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.4",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-unused-imports": "^3.2.0",
+    "husky": "^9.0.11",
     "prettier": "^3.3.2",
-    "typescript": "^5.5.3",
+    "typescript": "5.5.3",
     "@types/node": "^20.12.12",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",
     "@types/jest": "^29.5.12",
-    "@playwright/test": "^1.46.0"
+    "@playwright/test": "^1.46.0",
+    "vercel": "^37.14.0"
   },
   "packageManager": "pnpm@9.12.2"
 }

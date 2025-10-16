@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import ConsoleFilter from '@/components/util/ConsoleFilter';
 
 export const metadata: Metadata = {
   title: 'Collabverse',
@@ -10,7 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
-      <body>{children}</body>
+      <body>
+        <ConsoleFilter />
+        {children}
+      </body>
     </html>
   );
 }
