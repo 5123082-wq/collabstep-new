@@ -165,7 +165,7 @@ export default function MarketingNavbar() {
           ref={navRef}
           className="hidden items-center gap-6 md:flex"
           aria-label="Основная навигация"
-          data-menu-ready={isHydrated ? 'true' : 'false'}
+          data-menu-ready={isHydrated ? 'true' : undefined}
         >
           {marketingMenu.map((item) => {
             const active = isItemActive(item);
@@ -204,6 +204,7 @@ export default function MarketingNavbar() {
                   aria-haspopup="menu"
                   aria-expanded={isOpen ? 'true' : 'false'}
                   aria-controls={`mega-${item.id}`}
+                  id={`mega-trigger-${item.id}`}
                   data-nav-item={item.id}
                   className={clsx(
                     'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
@@ -232,6 +233,7 @@ export default function MarketingNavbar() {
                   }}
                   onKeyDown={(event) => handlePanelKeyDown(event, item.id)}
                   role="menu"
+                  aria-labelledby={`mega-trigger-${item.id}`}
                   className={clsx(
                     'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
                     isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
