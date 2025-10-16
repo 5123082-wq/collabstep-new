@@ -16,7 +16,14 @@ type ProjectAnalyticsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
+const isAnalyticsErrorSimulationEnabled =
+  process.env.NEXT_PUBLIC_ENABLE_ANALYTICS_ERROR_SIMULATION === 'on';
+
 function shouldSimulateError(searchParams?: Record<string, string | string[] | undefined>): boolean {
+  if (!isAnalyticsErrorSimulationEnabled) {
+    return false;
+  }
+
   if (!searchParams) {
     return false;
   }

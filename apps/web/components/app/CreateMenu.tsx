@@ -111,12 +111,14 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Меню создания"
+      aria-labelledby="create-menu-title"
     >
       <div className="w-full max-w-2xl rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
         <div className="flex items-center justify-between gap-6">
           <div>
-            <h2 className="text-lg font-semibold">Создать</h2>
+            <h2 id="create-menu-title" className="text-lg font-semibold">
+              Меню создания
+            </h2>
             <p className="mt-1 text-sm text-neutral-400">Быстрые действия для запуска рабочей сессии.</p>
           </div>
           <button

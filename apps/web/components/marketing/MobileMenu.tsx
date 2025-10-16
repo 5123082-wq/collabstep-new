@@ -92,6 +92,7 @@ export default function MobileMenu({ menu }: MobileMenuProps) {
         className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-100 transition hover:border-neutral-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
         aria-expanded={open ? 'true' : 'false'}
         aria-controls="mobile-menu-panel"
+        aria-label="Меню"
         onClick={() => setOpen((prev) => !prev)}
       >
         Меню
