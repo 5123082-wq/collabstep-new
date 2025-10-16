@@ -47,6 +47,7 @@ export const marketingMenu: NavItem[] = [
     id: 'audience',
     label: 'Для кого',
     children: [
+      { id: 'audience-home', label: 'Аудитория', href: '/audience' },
       {
         id: 'founder',
         label: 'Бизнес / Основатель',

@@ -16,8 +16,7 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
       - run: pnpm install
-      - run: cp .env.example .env
-      - run: echo "NAV_V1=on" >> .env
+      - run: pnpm ensure-env
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
       - run: pnpm verify
