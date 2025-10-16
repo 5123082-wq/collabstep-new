@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { NAV_V1 } from '@/lib/feature-flags';
 import Stage0 from '../_pages/stage0';
-import ClientMarker from './_components/ClientMarker';
+import ClientMarker from './_components/client-marker';
 import MarketingHome from './_pages/home';
 
 export const metadata: Metadata = {

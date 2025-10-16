@@ -90,7 +90,7 @@ export default function MobileMenu({ menu }: MobileMenuProps) {
       <button
         type="button"
         className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-100 transition hover:border-neutral-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-        aria-expanded={open}
+        aria-expanded={open ? 'true' : 'false'}
         aria-controls="mobile-menu-panel"
         onClick={() => setOpen((prev) => !prev)}
       >
@@ -135,7 +135,7 @@ export default function MobileMenu({ menu }: MobileMenuProps) {
                         <button
                           type="button"
                           className="flex w-full items-center justify-between rounded-lg border border-neutral-800 px-4 py-3 text-left text-sm font-semibold text-neutral-100 transition hover:border-neutral-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                          aria-expanded={isOpen}
+                          aria-expanded={isOpen ? 'true' : 'false'}
                           aria-controls={`mobile-accordion-${item.id}`}
                           onClick={() => toggleSection(item.id)}
                         >

@@ -16,6 +16,7 @@ import MobileMenu from './MobileMenu';
 
 const childDescriptions: Record<string, string> = {
   overview: 'Короткий обзор платформы и её ключевых возможностей.',
+  'audience-home': 'Узнайте, как Collabverse помогает разным ролям и командам.',
   ai: 'Настраивайте AI-агентов, чтобы автоматизировать рутину.',
   pm: 'Готовые шаблоны и сценарии управления проектами.',
   market: 'Соберите команду из проверенных специалистов.',
@@ -40,7 +41,7 @@ export default function MarketingNavbar() {
   const pathname = usePathname();
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const navRef = useRef<HTMLDivElement | null>(null);
+  const navRef = useRef<HTMLElement | null>(null);
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
@@ -176,9 +177,9 @@ export default function MarketingNavbar() {
               >
                 <button
                   type="button"
-                  aria-haspopup="true"
+                  aria-haspopup="menu"
                   aria-expanded={isOpen ? 'true' : 'false'}
-                  aria-controls={`mega-${item.id}`}
+                  aria-controls={`#mega-${item.id}`}
                   className={clsx(
                     'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                     active && 'text-white'

@@ -11,7 +11,8 @@
     "test": "jest -u",
     "test:e2e": "pnpm --filter @collabverse/web build && playwright test",
     "verify:routes": "node apps/web/scripts/verify-routes.mjs",
-    "verify": "pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && npx vercel build --prod",
+    "ensure-env": "node scripts/ensure-env.mjs",
+    "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && npx vercel build --prod",
     "prepare": "husky install"
   },
   "devDependencies": {
