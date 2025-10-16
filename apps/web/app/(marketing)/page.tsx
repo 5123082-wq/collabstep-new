@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { NAV_V1 } from '@/lib/feature-flags';
+import Stage0 from '../_pages/stage0';
+import ClientMarker from './_components/ClientMarker';
 import MarketingHome from './_pages/home';
 
 export const metadata: Metadata = {
@@ -14,6 +17,17 @@ export const metadata: Metadata = {
   }
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function Page() {
-  return <MarketingHome />;
+  if (!NAV_V1) {
+    return <Stage0 />;
+  }
+
+  return (
+    <>
+      <ClientMarker />
+      <MarketingHome />
+    </>
+  );
 }
