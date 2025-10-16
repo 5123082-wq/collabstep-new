@@ -9,9 +9,14 @@ export type SearchItem = {
   subtitle?: string;
   tags?: string[];
   ref: string;
+  projectId?: string;
 };
 
-const options: IFuseOptions<SearchItem> = {
+type SearchOptions = {
+  projectId?: string;
+};
+
+const fuseOptions: IFuseOptions<SearchItem> = {
   includeScore: true,
   threshold: 0.38,
   keys: ['type', 'title', 'subtitle', 'tags']
@@ -38,9 +43,13 @@ function applyMask(query: string, items: SearchItem[]): { normalized: string; sc
   return { normalized: trimmed, scoped: items };
 }
 
-export function search(q: string, data: SearchItem[]): FuseResult<SearchItem>[] {
-  const { normalized, scoped } = applyMask(q, data);
-  const fuse = new Fuse(scoped, options);
+export function search(q: string, data: SearchItem[], searchOptions: SearchOptions = {}): FuseResult<SearchItem>[] {
+  const scopedByProject = searchOptions.projectId
+    ? data.filter((item) => !item.projectId || item.projectId === searchOptions.projectId)
+    : data;
+
+  const { normalized, scoped } = applyMask(q, scopedByProject);
+  const fuse = new Fuse(scoped, fuseOptions);
 
   if (!normalized) {
     return scoped.slice(0, 8).map((item, index) => ({ item, refIndex: index, score: 0 }));

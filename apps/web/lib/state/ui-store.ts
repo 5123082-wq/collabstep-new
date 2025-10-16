@@ -4,11 +4,11 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 type UiState = {
   bgPreset: 'mesh' | 'grid' | 'halo';
   expandedGroups: string[];
-  lastProjectId: string | null;
+  lastProjectId?: string;
   setBgPreset: (v: UiState['bgPreset']) => void;
   toggleGroup: (id: string) => void;
   setExpandedGroups: (ids: string[]) => void;
-  setLastProjectId: (id: string | null) => void;
+  setLastProjectId: (id?: string) => void;
 };
 
 const memoryStore: Record<string, string> = {};
@@ -23,12 +23,16 @@ const memoryStorage = {
   }
 };
 
+const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId'> = {
+  bgPreset: 'mesh',
+  expandedGroups: [],
+  lastProjectId: undefined
+};
+
 export const useUiStore = create<UiState>()(
   persist(
     (set, get) => ({
-      bgPreset: 'mesh',
-      expandedGroups: [],
-      lastProjectId: null,
+      ...defaultState,
       setBgPreset: (v) => set({ bgPreset: v }),
       toggleGroup: (id) => {
         const current = get().expandedGroups;
@@ -40,7 +44,29 @@ export const useUiStore = create<UiState>()(
     }),
     {
       name: 'cv-ui',
-      storage: createJSONStorage(() => (typeof window === 'undefined' ? memoryStorage : window.localStorage))
+      storage: createJSONStorage(() => (typeof window === 'undefined' ? memoryStorage : window.localStorage)),
+      merge: (persistedState, currentState) => {
+        const persisted = (persistedState as Partial<UiState>) ?? {};
+
+        const bgPreset =
+          persisted.bgPreset === 'mesh' || persisted.bgPreset === 'grid' || persisted.bgPreset === 'halo'
+            ? persisted.bgPreset
+            : currentState.bgPreset;
+
+        const expandedGroups = Array.isArray(persisted.expandedGroups)
+          ? persisted.expandedGroups.filter((item): item is string => typeof item === 'string')
+          : currentState.expandedGroups;
+
+        const lastProjectId = typeof persisted.lastProjectId === 'string' ? persisted.lastProjectId : undefined;
+
+        return {
+          ...currentState,
+          ...persisted,
+          bgPreset,
+          expandedGroups,
+          lastProjectId
+        } satisfies UiState;
+      }
     }
   )
 );
