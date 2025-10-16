@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import Footer from '@/components/marketing/sections/Footer';
+import { NAV_V1 } from '@/lib/feature-flags';
 
 export const metadata: Metadata = {
   title: 'Collabverse — платформа для совместной работы',
@@ -10,6 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
+  if (!NAV_V1) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
       <MarketingNavbar />
