@@ -4,17 +4,17 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 type UiState = {
   bgPreset: 'mesh' | 'grid' | 'halo';
   expandedGroups: string[];
-  lastProjectId?: string;
+  lastProjectId: string | null;
   setBgPreset: (v: UiState['bgPreset']) => void;
   toggleGroup: (id: string) => void;
   setExpandedGroups: (ids: string[]) => void;
-  setLastProjectId: (id?: string) => void;
+  setLastProjectId: (id: string | null) => void;
 };
 
 const memoryStore: Record<string, string> = {};
 
 const memoryStorage = {
-  getItem: (name: string) => (name in memoryStore ? memoryStore[name] : null),
+  getItem: (name: string) => (name in memoryStore ? memoryStore[name]! : null),
   setItem: (name: string, value: string) => {
     memoryStore[name] = value;
   },
@@ -26,7 +26,7 @@ const memoryStorage = {
 const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId'> = {
   bgPreset: 'mesh',
   expandedGroups: [],
-  lastProjectId: undefined
+  lastProjectId: null
 };
 
 export const useUiStore = create<UiState>()(
@@ -57,7 +57,7 @@ export const useUiStore = create<UiState>()(
           ? persisted.expandedGroups.filter((item): item is string => typeof item === 'string')
           : currentState.expandedGroups;
 
-        const lastProjectId = typeof persisted.lastProjectId === 'string' ? persisted.lastProjectId : undefined;
+        const lastProjectId = typeof persisted.lastProjectId === 'string' ? persisted.lastProjectId : null;
 
         return {
           ...currentState,

@@ -1,28 +1,22 @@
-import { test, expect, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { captureConsoleMessages } from './utils/console';
 
 const appOrigin = 'http://localhost:3000';
 
-const captureConsole = (page: Page, store: string[]) => {
-  page.on('console', (message) => {
-    if (message.type() === 'error') {
-      store.push(message.text());
-    }
-  });
-};
-
 test.describe('project workspace', () => {
   test('project-landing', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsoleMessages(page, logs);
     const response = await page.goto(`${appOrigin}/project/DEMO/overview`);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1, name: 'Демо-проект' })).toBeVisible();
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('project-tabs-width', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsoleMessages(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
     const content = page.locator('.project-content');
     await expect(content).toBeVisible();
@@ -39,12 +33,12 @@ test.describe('project workspace', () => {
 
     expect(tasksBox?.width).toBeCloseTo(initialBox!.width!, 1);
     expect(designBox?.width).toBeCloseTo(initialBox!.width!, 1);
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('project-header-actions', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsoleMessages(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
 
     const actions = [
@@ -59,10 +53,12 @@ test.describe('project workspace', () => {
       await expect(page.getByText(action.toast)).toBeVisible();
     }
 
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('create-menu-context', async ({ page }) => {
+    const logs: string[] = [];
+    captureConsoleMessages(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
     await page.getByRole('button', { name: 'Открыть меню создания' }).click();
     const projectDialog = page.getByRole('dialog', { name: 'Меню создания' });
@@ -82,9 +78,12 @@ test.describe('project workspace', () => {
     await globalDialog.getByRole('button', { name: /Демо-проект/ }).first().click();
     await globalDialog.getByRole('button', { name: 'Задачу' }).click();
     await expect(page.getByText('TODO: Создать задачу')).toBeVisible();
+    expect(logs).toEqual([]);
   });
 
   test('palette-scope', async ({ page }) => {
+    const logs: string[] = [];
+    captureConsoleMessages(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
     await page.keyboard.press('Control+K');
     const palette = page.getByRole('dialog', { name: 'Командная палитра' });
@@ -112,5 +111,6 @@ test.describe('project workspace', () => {
       await expect(row.locator('p').nth(1)).toContainText('DEMO');
     }
     await page.keyboard.press('Escape');
+    expect(logs).toEqual([]);
   });
 });

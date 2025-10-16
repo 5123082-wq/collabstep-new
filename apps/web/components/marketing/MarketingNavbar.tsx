@@ -79,18 +79,18 @@ export default function MarketingNavbar() {
       return;
     }
 
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable[0] ?? null;
+    const last = focusable[focusable.length - 1] ?? null;
     const active = document.activeElement as HTMLElement | null;
 
     if (event.shiftKey) {
-      if (active === first) {
+      if (first && active === first) {
         event.preventDefault();
-        last.focus();
+        last?.focus();
       }
-    } else if (active === last) {
+    } else if (last && active === last) {
       event.preventDefault();
-      first.focus();
+      first?.focus();
     }
   };
 

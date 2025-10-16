@@ -1,5 +1,9 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
+type AnalyticsPageProps = {
+  searchParams?: { fail?: string };
+};
+
 const DASHBOARDS = [
   { id: 'sales', title: 'Продажи', value: '1.2 млн ₽', trend: '+12%' },
   { id: 'traffic', title: 'Трафик', value: '85 тыс.', trend: '+6%' },
@@ -11,7 +15,11 @@ const FUNNELS = [
   { id: 'consideration', title: 'Consideration → Purchase', conversion: '18%' }
 ];
 
-export default function ProjectAnalyticsPage() {
+export default function ProjectAnalyticsPage({ searchParams }: AnalyticsPageProps) {
+  if (searchParams?.fail === '1') {
+    throw new Error('Имитация ошибки аналитики');
+  }
+
   return (
     <div className="space-y-8">
       <ProjectSection

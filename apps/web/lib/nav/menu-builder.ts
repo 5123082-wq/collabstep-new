@@ -13,11 +13,13 @@ export function buildLeftMenu(roles: UserRole[]): BuiltMenuSection[] {
       return section.roles.some((role) => roles.includes(role));
     })
     .map((section) => {
-      const children = section.children ? filterRoles(section.children, roles) : undefined;
-      if (children && children.length === 0) {
-        return { ...section, children: undefined };
+      const filteredChildren = section.children ? filterRoles(section.children, roles) : undefined;
+
+      if (!filteredChildren || filteredChildren.length === 0) {
+        const { children: _unused, ...rest } = section;
+        return { ...rest } as BuiltMenuSection;
       }
 
-      return { ...section, children };
+      return { ...section, children: filteredChildren } satisfies BuiltMenuSection;
     });
 }
