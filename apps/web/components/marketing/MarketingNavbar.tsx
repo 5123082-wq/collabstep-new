@@ -53,6 +53,30 @@ export default function MarketingNavbar() {
   }, []);
 
   useEffect(() => {
+    if (!isHydrated || openItemId) {
+      return;
+    }
+
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (!(activeElement instanceof HTMLElement)) {
+      return;
+    }
+
+    if (!navRef.current?.contains(activeElement)) {
+      return;
+    }
+
+    const navItemId = activeElement.getAttribute('data-nav-item');
+    if (navItemId) {
+      setOpenItemId(navItemId);
+    }
+  }, [isHydrated, openItemId]);
+
+  useEffect(() => {
     if (!openItemId) {
       return;
     }
@@ -179,7 +203,8 @@ export default function MarketingNavbar() {
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={isOpen ? 'true' : 'false'}
-                  aria-controls={`#mega-${item.id}`}
+                  aria-controls={`mega-${item.id}`}
+                  data-nav-item={item.id}
                   className={clsx(
                     'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                     active && 'text-white'
