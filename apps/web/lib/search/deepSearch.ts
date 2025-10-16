@@ -32,12 +32,15 @@ function applyMask(query: string, items: SearchItem[]): { normalized: string; sc
   const trimmed = query.trim();
   const mask = trimmed[0];
 
-  if (mask && maskMap[mask]) {
-    const normalized = trimmed.slice(1).trim();
-    return {
-      normalized,
-      scoped: items.filter((item) => maskMap[mask].includes(item.type))
-    };
+  if (mask) {
+    const allowedTypes = maskMap[mask];
+    if (allowedTypes) {
+      const normalized = trimmed.slice(1).trim();
+      return {
+        normalized,
+        scoped: items.filter((item) => allowedTypes.includes(item.type))
+      };
+    }
   }
 
   return { normalized: trimmed, scoped: items };

@@ -31,7 +31,7 @@ describe('ui-store', () => {
 
     jest.resetModules();
     reloadStore();
-    useUiStore.setState({ bgPreset: 'mesh', expandedGroups: [], lastProjectId: undefined });
+    useUiStore.setState({ bgPreset: 'mesh', expandedGroups: [], lastProjectId: null });
     await useUiStore.persist?.clearStorage?.();
   });
 
@@ -63,13 +63,13 @@ describe('ui-store', () => {
     expect(useUiStore.getState().lastProjectId).toBe('proj-1');
   });
 
-  it('сбрасывает идентификатор проекта при передаче undefined', () => {
+  it('сбрасывает идентификатор проекта при передаче null', () => {
     act(() => {
       useUiStore.getState().setLastProjectId('proj-2');
-      useUiStore.getState().setLastProjectId(undefined);
+      useUiStore.getState().setLastProjectId(null);
     });
 
-    expect(useUiStore.getState().lastProjectId).toBeUndefined();
+    expect(useUiStore.getState().lastProjectId).toBeNull();
   });
 
   it('восстанавливает идентификатор проекта из persist-слоя', async () => {
