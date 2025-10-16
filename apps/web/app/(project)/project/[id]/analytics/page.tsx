@@ -16,36 +16,23 @@ type ProjectAnalyticsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
-const isAnalyticsErrorSimulationEnabled =
-  process.env.NEXT_PUBLIC_ENABLE_ANALYTICS_ERROR_SIMULATION === 'on';
-
 function shouldSimulateError(searchParams?: Record<string, string | string[] | undefined>): boolean {
-  if (!isAnalyticsErrorSimulationEnabled) {
-    return false;
-  }
-
   if (!searchParams) {
     return false;
   }
 
-  const value = searchParams.__simulate_error;
-  const sessionValue = searchParams.session;
-
-  const session = Array.isArray(sessionValue) ? sessionValue[0] : sessionValue;
-  const shouldRecover = typeof session === 'string' && session.endsWith('-recovered');
+  const value = searchParams.fail;
 
   if (Array.isArray(value)) {
-    return value.includes('1') && !shouldRecover;
+    return value.includes('1');
   }
 
-  return value === '1' && !shouldRecover;
+  return value === '1';
 }
 
 export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsPageProps) {
-  const shouldFail = shouldSimulateError(searchParams);
-
-  if (shouldFail) {
-    throw new Error('Failed to load analytics');
+  if (shouldSimulateError(searchParams)) {
+    throw new Error('Project analytics failed');
   }
 
   return (
