@@ -144,76 +144,71 @@ export default function MarketingNavbar() {
             }
 
             const isOpen = openItemId === item.id;
-            return (
-              <div
-                key={item.id}
-                className="relative"
-                onMouseEnter={() => setOpenItemId(item.id)}
-                onMouseLeave={() => setOpenItemId((current) => (current === item.id ? null : current))}
-                onFocus={() => setOpenItemId(item.id)}
-                onBlur={(event) => {
-                  if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-                    setOpenItemId((current) => (current === item.id ? null : current));
-                  }
-                }}
-              >
-                <button
-                  type="button"
-                  aria-haspopup="true"
-                  aria-expanded={isOpen}
-                  aria-controls={`mega-${item.id}`}
-                  className={clsx(
-                    'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                    active && 'text-white'
-                  )}
-                  onFocus={() => setOpenItemId(item.id)}
-                  onClick={() => setOpenItemId((current) => (current === item.id ? null : item.id))}
-                >
-                  {item.label}
-                </button>
-                <div
-                  id={`mega-${item.id}`}
-                  ref={(node) => {
-                    panelRefs.current[item.id] = node;
-                  }}
-                  onKeyDown={(event) => handlePanelKeyDown(event, item.id)}
-                  className={clsx(
-                    'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
-                    isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
-                  )}
-                >
-                  <div className="space-y-4">
-                    {item.children.map((child) => (
-                      <div key={child.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-                        <Link
-                          href={child.href}
-                          onClick={() => setOpenItemId(null)}
-                          className="text-sm font-semibold text-neutral-100 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                        >
-                          {child.label}
-                        </Link>
-                        <p className="mt-2 text-xs text-neutral-400">
-                          {childDescriptions[child.id] ?? 'Узнать подробнее.'}
-                        </p>
-                        {child.cta && (
-                          <Link
-                            href={child.cta.href}
-                            onClick={() => setOpenItemId(null)}
-                            className="mt-3 inline-flex rounded-full border border-indigo-500 px-3 py-1 text-xs font-semibold text-indigo-300 transition hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                          >
-                            {child.cta.label}
-                          </Link>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </nav>
-        <MobileMenu menu={marketingMenu} />
+          // ...
+return (
+  <div
+    key={item.id}
+    className="relative"
+    onMouseEnter={() => setOpenItemId(item.id)}
+    onMouseLeave={() => setOpenItemId((current) => (current === item.id ? null : current))}
+    onFocusCapture={() => setOpenItemId(item.id)} // ← захватываем фокус ДО всплытия
+    onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+        setOpenItemId((current) => (current === item.id ? null : current));
+      }
+    }}
+  >
+    <button
+      type="button"
+      aria-haspopup="true"
+      aria-controls={`mega-${item.id}`}
+      aria-expanded={isOpen ? 'true' : 'false'} // ← строкой
+      className={clsx(
+        'text-sm font-semibold text-neutral-200 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+        active && 'text-white'
+      )}
+      onClick={() => setOpenItemId((current) => (current === item.id ? null : item.id))}
+      onKeyDown={(e) => {                     // ← клавиатурные открытия
+        if (e.key === 'Escape') setOpenItemId(null);
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+          setOpenItemId(item.id);
+        }
+      }}
+    >
+      {item.label}
+    </button>
+
+    <div
+      id={`mega-${item.id}`}
+      ref={(node) => { panelRefs.current[item.id] = node; }}
+      role="menu"                               // ← роли
+      aria-label={item.label}
+      onKeyDown={(event) => handlePanelKeyDown(event, item.id)}
+      className={clsx(
+        'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
+        isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+      )}
+    >
+      <div className="space-y-4">
+        {item.children.map((child) => (
+          <div key={child.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+            <Link
+              href={child.href}
+              role="menuitem"                   // ← роли
+              onClick={() => setOpenItemId(null)}
+              className="text-sm font-semibold text-neutral-100 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            >
+              {child.label}
+            </Link>
+            {/* ... */}
+          </div>
+        ))}
       </div>
+    </div>
+  </div>
+);
+// ...
+
     </header>
   );
 }
