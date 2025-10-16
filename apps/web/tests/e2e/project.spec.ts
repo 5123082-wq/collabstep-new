@@ -1,0 +1,116 @@
+import { test, expect, type Page } from '@playwright/test';
+
+const appOrigin = 'http://localhost:3000';
+
+const captureConsole = (page: Page, store: string[]) => {
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      store.push(message.text());
+    }
+  });
+};
+
+test.describe('project workspace', () => {
+  test('project-landing', async ({ page }) => {
+    const errors: string[] = [];
+    captureConsole(page, errors);
+    const response = await page.goto(`${appOrigin}/project/DEMO/overview`);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole('heading', { level: 1, name: 'Демо-проект' })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test('project-tabs-width', async ({ page }) => {
+    const errors: string[] = [];
+    captureConsole(page, errors);
+    await page.goto(`${appOrigin}/project/DEMO/overview`);
+    const content = page.locator('.project-content');
+    await expect(content).toBeVisible();
+    const initialBox = await content.boundingBox();
+    expect(initialBox?.width).toBeTruthy();
+
+    await page.getByRole('link', { name: 'Задачи' }).click();
+    await page.waitForURL('**/project/DEMO/tasks');
+    const tasksBox = await content.boundingBox();
+
+    await page.getByRole('link', { name: 'Дизайн' }).click();
+    await page.waitForURL('**/project/DEMO/design');
+    const designBox = await content.boundingBox();
+
+    expect(tasksBox?.width).toBeCloseTo(initialBox!.width!, 1);
+    expect(designBox?.width).toBeCloseTo(initialBox!.width!, 1);
+    expect(errors).toEqual([]);
+  });
+
+  test('project-header-actions', async ({ page }) => {
+    const errors: string[] = [];
+    captureConsole(page, errors);
+    await page.goto(`${appOrigin}/project/DEMO/overview`);
+
+    const actions = [
+      { label: 'Открыть вакансию', toast: 'TODO: Открыть вакансию' },
+      { label: 'Запросить смету', toast: 'TODO: Запросить смету' },
+      { label: 'Открыть эскроу', toast: 'TODO: Открыть эскроу' },
+      { label: 'Настройки проекта', toast: 'TODO: Настройки проекта' }
+    ];
+
+    for (const action of actions) {
+      await page.getByRole('button', { name: action.label }).click();
+      await expect(page.getByText(action.toast)).toBeVisible();
+    }
+
+    expect(errors).toEqual([]);
+  });
+
+  test('create-menu-context', async ({ page }) => {
+    await page.goto(`${appOrigin}/project/DEMO/overview`);
+    await page.getByRole('button', { name: 'Открыть меню создания' }).click();
+    const projectDialog = page.getByRole('dialog', { name: 'Меню создания' });
+    await expect(projectDialog.getByText('Демо-проект')).toBeVisible();
+    await expect(projectDialog.getByText('Найдите проект по названию, коду или стадии')).toHaveCount(0);
+    await projectDialog.getByRole('button', { name: 'Задачу' }).click();
+    await expect(page.getByText('TODO: Создать задачу')).toBeVisible();
+
+    await page.goto(`${appOrigin}/app/dashboard`);
+    await page.getByRole('button', { name: 'Создать' }).click();
+    const globalDialog = page.getByRole('dialog', { name: 'Меню создания' });
+    const switchButton = globalDialog.getByRole('button', { name: 'Сменить' });
+    if ((await switchButton.count()) > 0) {
+      await switchButton.click();
+    }
+    await expect(globalDialog.getByText('Найдите проект по названию, коду или стадии')).toBeVisible();
+    await globalDialog.getByRole('button', { name: /Демо-проект/ }).first().click();
+    await globalDialog.getByRole('button', { name: 'Задачу' }).click();
+    await expect(page.getByText('TODO: Создать задачу')).toBeVisible();
+  });
+
+  test('palette-scope', async ({ page }) => {
+    await page.goto(`${appOrigin}/project/DEMO/overview`);
+    await page.keyboard.press('Control+K');
+    const palette = page.getByRole('dialog', { name: 'Командная палитра' });
+    await expect(palette).toBeVisible();
+
+    await page.keyboard.type('#');
+    const taskRows = palette.locator('li');
+    const taskCount = await taskRows.count();
+    expect(taskCount).toBeGreaterThan(0);
+    for (let index = 0; index < taskCount; index += 1) {
+      const row = taskRows.nth(index);
+      await expect(row.locator('span')).toHaveText('task');
+      await expect(row.locator('p').nth(1)).toContainText('DEMO');
+    }
+    await page.keyboard.press('Escape');
+
+    await page.keyboard.press('Control+K');
+    await page.keyboard.type('$');
+    const invoiceRows = palette.locator('li');
+    const invoiceCount = await invoiceRows.count();
+    expect(invoiceCount).toBeGreaterThan(0);
+    for (let index = 0; index < invoiceCount; index += 1) {
+      const row = invoiceRows.nth(index);
+      await expect(row.locator('span')).toHaveText('invoice');
+      await expect(row.locator('p').nth(1)).toContainText('DEMO');
+    }
+    await page.keyboard.press('Escape');
+  });
+});

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import projectsData from '@/app/mock/projects.json';
 import { toast } from '@/lib/ui/toast';
 import { useUiStore } from '@/lib/state/ui-store';
+import { useProjectContext } from '@/components/project/ProjectContext';
 
 type CreateMenuProps = {
   open: boolean;
@@ -32,6 +33,8 @@ type ProjectOption = {
   name: string;
   code: string;
   status: string;
+  stage: string;
+  visibility: 'private' | 'public';
 };
 
 const projectOptions = projectsData as ProjectOption[];
@@ -41,16 +44,21 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
     lastProjectId: state.lastProjectId,
     setLastProjectId: state.setLastProjectId
   }));
+  const projectContext = useProjectContext();
 
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (open) {
-      setSelected(lastProjectId);
+      if (projectContext) {
+        setSelected(projectContext.projectId);
+      } else {
+        setSelected(lastProjectId ?? undefined);
+      }
       setQuery('');
     }
-  }, [open, lastProjectId]);
+  }, [lastProjectId, open, projectContext]);
 
   useEffect(() => {
     if (!open) {
@@ -74,26 +82,38 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
       return projectOptions;
     }
 
-    return projectOptions.filter((project) =>
-      [project.name, project.code, project.status].some((field) => field.toLowerCase().includes(term))
-    );
+    return projectOptions.filter((project) => {
+      const candidates = [project.name, project.code, project.status, project.stage, project.visibility];
+      return candidates
+        .map((field) => (field ? String(field).toLowerCase() : ''))
+        .some((field) => field.includes(term));
+    });
   }, [query]);
 
   const handleAction = (action: CreateAction) => {
-    if (action.requiresProject && !selected) {
+    const targetProjectId = projectContext?.projectId ?? selected;
+
+    if (action.requiresProject && !targetProjectId) {
       toast('Выберите проект, чтобы продолжить', 'warning');
       return;
     }
 
-    if (selected) {
-      setLastProjectId(selected);
+    if (targetProjectId) {
+      setLastProjectId(targetProjectId);
     }
 
     toast(action.toastMessage);
     onClose();
   };
 
-  const selectedProject = selected ? projectOptions.find((project) => project.id === selected) : null;
+  const selectedProject = (() => {
+    const targetId = projectContext?.projectId ?? selected;
+    if (!targetId) {
+      return null;
+    }
+
+    return projectOptions.find((project) => project.id === targetId) ?? null;
+  })();
 
   if (!open) {
     return null;
@@ -126,17 +146,25 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
           <div>
             <span className="text-xs uppercase text-neutral-500">Контекст проекта</span>
             <div className="mt-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-              {selectedProject ? (
+              {projectContext ? (
+                <div>
+                  <p className="text-sm font-semibold text-neutral-100">{projectContext.projectName}</p>
+                  <p className="mt-1 text-xs text-neutral-400">
+                    Стадия: {projectContext.stage} · {projectContext.visibility === 'public' ? 'Публичный' : 'Приватный'} проект
+                  </p>
+                </div>
+              ) : selectedProject ? (
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-neutral-100">{selectedProject.name}</p>
                     <p className="text-xs text-neutral-400">
-                      {selectedProject.code} · {selectedProject.status}
+                      {selectedProject.code} · {selectedProject.stage} ·{' '}
+                      {selectedProject.visibility === 'public' ? 'Публичный' : 'Приватный'}
                     </p>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setSelected(null)}
+                    onClick={() => setSelected(undefined)}
                     className="text-xs text-indigo-300 underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                   >
                     Сменить
@@ -145,7 +173,7 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
               ) : (
                 <div>
                   <label htmlFor="project-search" className="text-xs text-neutral-400">
-                    Найдите проект по названию или коду
+                    Найдите проект по названию, коду или стадии
                   </label>
                   <input
                     id="project-search"
@@ -153,7 +181,7 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     className="mt-2 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
-                    placeholder="Например: MKT"
+                    placeholder="Например: DEMO"
                   />
                   <ul className="mt-3 max-h-32 space-y-2 overflow-y-auto pr-1 text-sm">
                     {filteredProjects.map((project) => (
@@ -165,7 +193,7 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                         >
                           <p className="font-medium text-neutral-100">{project.name}</p>
                           <p className="text-xs text-neutral-400">
-                            {project.code} · {project.status}
+                            {project.code} · {project.stage} · {project.visibility === 'public' ? 'Публичный' : 'Приватный'}
                           </p>
                         </button>
                       </li>

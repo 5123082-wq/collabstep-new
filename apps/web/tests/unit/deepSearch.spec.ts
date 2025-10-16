@@ -27,4 +27,15 @@ describe('deepSearch', () => {
     const result = search('Demo', dataset);
     expect(result.length).toBeGreaterThan(0);
   });
+
+  it('фильтрует результаты по projectId', () => {
+    const scopedDataset: SearchItem[] = [
+      { type: 'task', title: 'Задача А', ref: 'task-a', projectId: 'proj-a' },
+      { type: 'task', title: 'Задача Б', ref: 'task-b', projectId: 'proj-b' }
+    ];
+
+    const result = search('Задача', scopedDataset, { projectId: 'proj-a' });
+    expect(result).toHaveLength(1);
+    expect(result[0].item.ref).toBe('task-a');
+  });
 });

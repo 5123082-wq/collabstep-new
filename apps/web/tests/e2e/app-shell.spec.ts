@@ -66,7 +66,7 @@ test.describe('app shell', () => {
     await page.getByRole('button', { name: 'Создать' }).click();
     const dialog = page.getByRole('dialog', { name: 'Меню создания' });
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('Найдите проект по названию или коду')).toBeVisible();
+    await expect(dialog.getByText('Найдите проект по названию, коду или стадии')).toBeVisible();
     await dialog.getByRole('button', { name: 'Astro CRM', exact: false }).first().click();
     await dialog.getByRole('button', { name: 'Задачу' }).click();
     const toast = page.getByText('TODO: Создать задачу');

@@ -6,6 +6,7 @@ import projectsData from '@/app/mock/projects.json';
 import tasksData from '@/app/mock/tasks.json';
 import { toast } from '@/lib/ui/toast';
 import { search, type SearchItem } from '@/lib/search/deepSearch';
+import { useProjectContext } from '@/components/project/ProjectContext';
 
 type CommandPaletteProps = {
   open: boolean;
@@ -14,47 +15,77 @@ type CommandPaletteProps = {
 
 type PaletteResult = ReturnType<typeof search>;
 
+const PROJECT_PARTICIPANTS: Record<string, { id: string; name: string; subtitle: string }[]> = {
+  DEMO: [
+    { id: 'user-founder', name: 'founder@demo.collabverse.ru', subtitle: 'FOUNDER · Инициатор проекта' },
+    { id: 'user-pm', name: 'pm@demo.collabverse.ru', subtitle: 'PM · Управление задачами' },
+    { id: 'user-designer', name: 'designer@demo.collabverse.ru', subtitle: 'Дизайнер · Бренд и UI' },
+    { id: 'contractor-print', name: 'print.contractor@demo.collabverse.ru', subtitle: 'CONTRACTOR · Печать и мерч' }
+  ]
+};
+
 export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const projectContext = useProjectContext();
 
   const dataset = useMemo(() => {
-    const projectItems: SearchItem[] = (projectsData as typeof projectsData).map((project) => ({
+    const allProjects = projectsData as typeof projectsData;
+
+    const projectItems: SearchItem[] = allProjects.map((project) => ({
       type: 'project',
       title: project.name,
       subtitle: project.status,
       tags: [project.code],
-      ref: project.id
+      ref: project.id,
+      projectId: project.id
     }));
 
     const taskItems: SearchItem[] = (tasksData as typeof tasksData).map((task) => ({
       type: 'task',
       title: `${task.title}`,
-      subtitle: task.status,
+      subtitle: `${task.status} · ${task.projectId}`,
       tags: [task.projectId, task.id],
-      ref: task.id
+      ref: task.id,
+      projectId: task.projectId
     }));
 
     const invoiceItems: SearchItem[] = (invoicesData as typeof invoicesData).map((invoice) => ({
       type: 'invoice',
       title: invoice.title,
-      subtitle: `${invoice.amount.toLocaleString('ru-RU')} ${invoice.currency}`,
+      subtitle: `${invoice.amount.toLocaleString('ru-RU')} ${invoice.currency} · ${invoice.projectId}`,
       tags: [invoice.projectId, invoice.id],
-      ref: invoice.id
+      ref: invoice.id,
+      projectId: invoice.projectId
     }));
 
-    const userItems: SearchItem[] = (projectsData as typeof projectsData).map((project) => ({
-      type: 'user',
-      title: project.lead,
-      subtitle: `Лид проекта ${project.name}`,
-      tags: [project.code],
-      ref: `user-${project.id}`
-    }));
+    const participantItems: SearchItem[] = Object.entries(PROJECT_PARTICIPANTS).flatMap(([projectId, participants]) =>
+      participants.map((participant) => ({
+        type: 'user',
+        title: participant.name,
+        subtitle: participant.subtitle,
+        tags: [projectId],
+        ref: participant.id,
+        projectId
+      }))
+    );
 
-    return [...projectItems, ...taskItems, ...invoiceItems, ...userItems];
-  }, []);
+    if (projectContext) {
+      return [
+        ...projectItems.filter((item) => item.projectId === projectContext.projectId),
+        ...taskItems.filter((item) => item.projectId === projectContext.projectId),
+        ...invoiceItems.filter((item) => item.projectId === projectContext.projectId),
+        ...participantItems.filter((item) => item.projectId === projectContext.projectId)
+      ];
+    }
 
-  const results: PaletteResult = useMemo(() => search(query, dataset), [dataset, query]);
+    return [...projectItems, ...taskItems, ...invoiceItems, ...participantItems];
+  }, [projectContext]);
+
+  const results: PaletteResult = useMemo(
+    () => search(query, dataset, { projectId: projectContext?.projectId }),
+    [dataset, projectContext?.projectId, query]
+  );
 
   useEffect(() => {
     if (!open) {
@@ -122,7 +153,9 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-semibold text-neutral-100">Командная палитра</h2>
-            <p className="text-xs text-neutral-500">Введите маску: @ — проекты и люди, # — задачи, $ — счета.</p>
+            <p className="text-xs text-neutral-500">
+              Маски: @ — участники и подрядчики, # — задачи, $ — счета.
+            </p>
           </div>
           <span className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-400">Esc</span>
         </div>
