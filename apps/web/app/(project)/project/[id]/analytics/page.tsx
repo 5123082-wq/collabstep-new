@@ -38,18 +38,7 @@ export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsP
   const shouldFail = shouldSimulateError(searchParams);
 
   if (shouldFail) {
-    return (
-      <div className="space-y-6">
-        <AnalyticsSuccessCleanup />
-        <div className="space-y-4 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-rose-100" role="alert">
-          <h2 className="text-lg font-semibold">Аналитика временно недоступна</h2>
-          <p className="text-sm text-rose-100/80">
-            Включена симуляция ошибки (<code>__simulate_error=1</code>). Обновите страницу без параметров запроса или завершите
-            тестовую сессию, чтобы снова увидеть метрики.
-          </p>
-        </div>
-      </div>
-    );
+    throw new Error('Failed to load analytics');
   }
 
   return (
