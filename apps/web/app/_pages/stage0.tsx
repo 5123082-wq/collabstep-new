@@ -17,7 +17,7 @@ export default function Stage0() {
             Маркетинговый layout: <code>/app/(marketing)</code> (заглушка)
           </li>
           <li>
-            Флаг: <code>NAV_V1</code> в <code>.env</code> (по умолчанию off)
+            Флаг: <code>NAV_V1</code> в <code>.env</code> (по умолчанию on)
           </li>
         </ul>
       </section>
