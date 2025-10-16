@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import projectsData from '@/app/mock/projects.json';
+import { useEffect, useState } from 'react';
 import { toast } from '@/lib/ui/toast';
 import { useUiStore } from '@/lib/state/ui-store';
 import { useProjectContext } from '@/components/project/ProjectContext';
+import { loadProjects } from '@/lib/mock/loaders';
+import type { Project } from '@/lib/schemas/project';
 
 type CreateMenuProps = {
   open: boolean;
@@ -28,23 +29,13 @@ const createActions: CreateAction[] = [
   { id: 'payment', label: 'Платёж/Счёт', description: 'Сформировать счёт или оплату.', toastMessage: 'TODO: Создать платёж', requiresProject: true }
 ];
 
-type ProjectOption = {
-  id: string;
-  name: string;
-  code: string;
-  status: string;
-  stage: string;
-  visibility: 'private' | 'public';
-};
-
-const projectOptions = projectsData as ProjectOption[];
-
 export default function CreateMenu({ open, onClose }: CreateMenuProps) {
   const { lastProjectId, setLastProjectId } = useUiStore((state) => ({
     lastProjectId: state.lastProjectId,
     setLastProjectId: state.setLastProjectId
   }));
   const projectContext = useProjectContext();
+  const projectOptions: Project[] = loadProjects();
 
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | undefined>(undefined);
@@ -76,19 +67,15 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, onClose]);
 
-  const filteredProjects = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) {
-      return projectOptions;
-    }
-
-    return projectOptions.filter((project) => {
-      const candidates = [project.name, project.code, project.status, project.stage, project.visibility];
-      return candidates
-        .map((field) => (field ? String(field).toLowerCase() : ''))
-        .some((field) => field.includes(term));
-    });
-  }, [query]);
+  const term = query.trim().toLowerCase();
+  const filteredProjects = term
+    ? projectOptions.filter((project) => {
+        const candidates = [project.name, project.code, project.status, project.stage, project.visibility];
+        return candidates
+          .map((field) => (field ? String(field).toLowerCase() : ''))
+          .some((field) => field.includes(term));
+      })
+    : projectOptions;
 
   const handleAction = (action: CreateAction) => {
     const targetProjectId = projectContext?.projectId ?? selected;

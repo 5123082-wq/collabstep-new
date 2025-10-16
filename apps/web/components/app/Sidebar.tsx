@@ -36,7 +36,7 @@ function MenuIcon({ name }: { name: IconName }) {
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const normalizedPath = pathname.split('?')[0];
+  const [normalizedPath = ''] = (pathname ?? '').split('?');
   const roles = useMemo(() => getUserRoles(), []);
   const menu = useMemo(() => buildLeftMenu(roles), [roles]);
   const { expandedGroups, toggleGroup } = useUiStore((state) => ({
@@ -53,7 +53,7 @@ export default function Sidebar() {
         {menu.map((section) => {
           const isExpanded = expandedGroups.includes(section.id) || !section.children;
           const hasChildren = Boolean(section.children?.length);
-          const isActive = (href?: string) => href && normalizedPath.startsWith(href);
+          const isActive = (href?: string) => Boolean(href && normalizedPath.startsWith(href));
 
           return (
             <div key={section.id} className="rounded-2xl border border-transparent hover:border-neutral-800/80">

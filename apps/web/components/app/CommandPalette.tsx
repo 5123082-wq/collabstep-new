@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import invoicesData from '@/app/mock/invoices.json';
-import projectsData from '@/app/mock/projects.json';
-import tasksData from '@/app/mock/tasks.json';
 import { toast } from '@/lib/ui/toast';
 import { search, type SearchItem } from '@/lib/search/deepSearch';
 import { useProjectContext } from '@/components/project/ProjectContext';
+import { loadInvoices, loadProjects, loadTasks } from '@/lib/mock/loaders';
 
 type CommandPaletteProps = {
   open: boolean;
@@ -30,7 +28,9 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const projectContext = useProjectContext();
 
   const dataset = useMemo(() => {
-    const allProjects = projectsData as typeof projectsData;
+    const allProjects = loadProjects();
+    const allTasks = loadTasks();
+    const allInvoices = loadInvoices();
 
     const projectItems: SearchItem[] = allProjects.map((project) => ({
       type: 'project',
@@ -41,7 +41,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       projectId: project.id
     }));
 
-    const taskItems: SearchItem[] = (tasksData as typeof tasksData).map((task) => ({
+    const taskItems: SearchItem[] = allTasks.map((task) => ({
       type: 'task',
       title: `${task.title}`,
       subtitle: `${task.status} · ${task.projectId}`,
@@ -50,7 +50,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       projectId: task.projectId
     }));
 
-    const invoiceItems: SearchItem[] = (invoicesData as typeof invoicesData).map((invoice) => ({
+    const invoiceItems: SearchItem[] = allInvoices.map((invoice) => ({
       type: 'invoice',
       title: invoice.title,
       subtitle: `${invoice.amount.toLocaleString('ru-RU')} ${invoice.currency} · ${invoice.projectId}`,
@@ -82,10 +82,12 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
     return [...projectItems, ...taskItems, ...invoiceItems, ...participantItems];
   }, [projectContext]);
 
-  const results: PaletteResult = useMemo(
-    () => search(query, dataset, { projectId: projectContext?.projectId }),
-    [dataset, projectContext?.projectId, query]
-  );
+  const projectId = projectContext?.projectId;
+
+  const results: PaletteResult = useMemo(() => {
+    const options = projectId ? { projectId } : {};
+    return search(query, dataset, options);
+  }, [dataset, projectId, query]);
 
   useEffect(() => {
     if (!open) {

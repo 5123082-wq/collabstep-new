@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import MarketingHome from './_pages/Home';
+import MarketingHome from './_pages/home';
 
 export const metadata: Metadata = {
   title: 'Collabverse — платформа для запуска проектов',

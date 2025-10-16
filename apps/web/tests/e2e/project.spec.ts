@@ -1,28 +1,21 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
+import { captureConsole } from './utils/console';
 
 const appOrigin = 'http://localhost:3000';
 
-const captureConsole = (page: Page, store: string[]) => {
-  page.on('console', (message) => {
-    if (message.type() === 'error') {
-      store.push(message.text());
-    }
-  });
-};
-
 test.describe('project workspace', () => {
   test('project-landing', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     const response = await page.goto(`${appOrigin}/project/DEMO/overview`);
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('heading', { level: 1, name: 'Демо-проект' })).toBeVisible();
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('project-tabs-width', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
     const content = page.locator('.project-content');
     await expect(content).toBeVisible();
@@ -39,12 +32,12 @@ test.describe('project workspace', () => {
 
     expect(tasksBox?.width).toBeCloseTo(initialBox!.width!, 1);
     expect(designBox?.width).toBeCloseTo(initialBox!.width!, 1);
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('project-header-actions', async ({ page }) => {
-    const errors: string[] = [];
-    captureConsole(page, errors);
+    const logs: string[] = [];
+    captureConsole(page, logs);
     await page.goto(`${appOrigin}/project/DEMO/overview`);
 
     const actions = [
@@ -59,7 +52,7 @@ test.describe('project workspace', () => {
       await expect(page.getByText(action.toast)).toBeVisible();
     }
 
-    expect(errors).toEqual([]);
+    expect(logs).toEqual([]);
   });
 
   test('create-menu-context', async ({ page }) => {
