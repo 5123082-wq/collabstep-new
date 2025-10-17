@@ -15,7 +15,12 @@ if (!fs.existsSync(envPath)) {
 
 const requiredVars = new Map([
   ['NAV_V1', 'on'],
-  ['APP_LOCALE', 'ru']
+  ['APP_LOCALE', 'ru'],
+  ['AUTH_DEV', 'on'],
+  ['DEMO_ADMIN_EMAIL', 'admin.demo@collabverse.test'],
+  ['DEMO_ADMIN_PASSWORD', 'demo-admin'],
+  ['DEMO_USER_EMAIL', 'user.demo@collabverse.test'],
+  ['DEMO_USER_PASSWORD', 'demo-user']
 ]);
 
 const raw = fs.readFileSync(envPath, 'utf8');

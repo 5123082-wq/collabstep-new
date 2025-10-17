@@ -1,3 +1,4 @@
+import AnalyticsErrorSimulation from '@/components/project/AnalyticsErrorSimulation';
 import AnalyticsSuccessCleanup from '@/components/project/AnalyticsSuccessCleanup';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
@@ -16,23 +17,36 @@ type ProjectAnalyticsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
 
+function getFirstValue(value?: string | string[]): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return undefined;
+}
+
 function shouldSimulateError(searchParams?: Record<string, string | string[] | undefined>): boolean {
   if (!searchParams) {
     return false;
   }
 
-  const value = searchParams.fail;
-
-  if (Array.isArray(value)) {
-    return value.includes('1');
+  const sessionValue = getFirstValue(searchParams.session);
+  if (sessionValue && sessionValue.endsWith('-recovered')) {
+    return false;
   }
 
-  return value === '1';
+  const value = searchParams.fail ?? searchParams['__simulate_error'];
+  return Array.isArray(value) ? value.includes('1') : value === '1';
 }
 
 export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsPageProps) {
   if (shouldSimulateError(searchParams)) {
-    throw new Error('Project analytics failed');
+    const sessionValue = getFirstValue(searchParams?.session);
+    return <AnalyticsErrorSimulation sessionId={sessionValue ?? null} />;
   }
 
   return (
