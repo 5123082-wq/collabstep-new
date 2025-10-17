@@ -9,6 +9,9 @@ test.describe('app shell', () => {
     captureConsole(page, logs);
     await page.goto(`${appOrigin}/app/dashboard`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Рабочий стол/);
+    await expect(page.getByTestId('roadmap-badge')).toBeVisible();
+    await expect(page.getByText('Виджеты подключаются на этапах 8–10. Сейчас — демо-макет.')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/Stage\s*3/i);
     expect(logs).toEqual([]);
   });
 
@@ -96,5 +99,13 @@ test.describe('app shell', () => {
     await expect(page.locator('body')).toHaveClass(/app-bg-halo/);
     await page.reload();
     await expect(page.locator('body')).toHaveClass(/app-bg-halo/);
+    });
   });
-});
+
+  test('страница дорожной карты перечисляет этапы', async ({ page }) => {
+    const response = await page.goto(`${appOrigin}/app/roadmap`);
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Дорожная карта' })).toBeVisible();
+    await expect(page.getByText('Этап 5. Dev-Auth + демо-админ')).toBeVisible();
+    await expect(page.getByText('Этап 15. Хардненинг/качество')).toBeVisible();
+  });

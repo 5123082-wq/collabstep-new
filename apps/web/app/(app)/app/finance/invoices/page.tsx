@@ -1,6 +1,8 @@
 import AppSection from '@/components/app/AppSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 export default function FinanceInvoicesPage() {
+  const stageRange = getStageRangeFor('global.finance');
   return (
     <AppSection
       title="Счета"
@@ -10,6 +12,11 @@ export default function FinanceInvoicesPage() {
         { label: 'Создать счёт', message: 'TODO: Создать счёт' },
         { label: 'Отправить напоминание', message: 'TODO: Напомнить об оплате' }
       ]}
+      roadmap={{
+        sectionId: 'global.finance',
+        status: 'COMING_SOON',
+        message: `Раздел включится на этапе ${stageRange} (этап ${stageRange} — тестовые платежи). Сейчас — демо-заглушка.`
+      }}
     />
   );
 }

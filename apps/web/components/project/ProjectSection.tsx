@@ -1,6 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import RoadmapBadge from '@/components/roadmap/RoadmapBadge';
+import { ROADMAP_HINTS } from '@/lib/feature-flags';
+import { getStageRangeFor, type RoadmapSectionId } from '@/lib/roadmap';
 import { toast } from '@/lib/ui/toast';
 
 export type SectionAction = {
@@ -16,17 +19,29 @@ type ProjectSectionProps = {
   description: string;
   actions: SectionAction[];
   children?: ReactNode;
+  roadmap?: {
+    sectionId: RoadmapSectionId;
+    status: 'DEMO' | 'COMING_SOON' | 'LIVE';
+    message?: string;
+  };
 };
 
-export function ProjectSection({ id, title, description, actions, children }: ProjectSectionProps) {
+export function ProjectSection({ id, title, description, actions, children, roadmap }: ProjectSectionProps) {
+  const stageRange = roadmap ? getStageRangeFor(roadmap.sectionId) : null;
   return (
     <section id={id} className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6 shadow-sm shadow-neutral-950/20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-neutral-100">{title}</h2>
           <p className="text-sm text-neutral-400">{description}</p>
+          {ROADMAP_HINTS && roadmap?.message ? (
+            <p className="mt-2 text-xs text-neutral-500">{roadmap.message}</p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {roadmap && stageRange ? (
+            <RoadmapBadge status={roadmap.status} stageHint={stageRange} roadmapHref="/app/roadmap" />
+          ) : null}
           {actions.map((action) => (
             <button
               key={action.id}

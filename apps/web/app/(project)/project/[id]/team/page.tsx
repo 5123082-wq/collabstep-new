@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const CORE_TEAM = [
   { id: 'founder', name: 'Алина Федорова', role: 'FOUNDER', focus: 'Стратегия и партнёры' },
@@ -18,6 +19,8 @@ const ACTIVITY = [
   { id: 'sync', title: 'Синк с подрядчиками', time: 'По четвергам', owner: 'FOUNDER' }
 ];
 
+const TEAM_STAGE_RANGE = getStageRangeFor('project.team');
+
 export default function ProjectTeamPage() {
   return (
     <div className="space-y-8">
@@ -26,6 +29,11 @@ export default function ProjectTeamPage() {
         title="Ядро команды"
         description="Основные роли и точки контакта внутри проекта."
         actions={[{ id: 'invite', label: 'Пригласить участника', toastMessage: 'TODO: Пригласить участника', tone: 'primary' }]}
+        roadmap={{
+          sectionId: 'project.team',
+          status: 'DEMO',
+          message: `Функции появятся на этапах ${TEAM_STAGE_RANGE}. Сейчас — демо-режим.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {CORE_TEAM.map((member) => (

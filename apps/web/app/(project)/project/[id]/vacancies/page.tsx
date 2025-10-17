@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const OPEN_ROLES = [
   { id: 'frontend', title: 'Frontend-разработчик', level: 'Senior', status: 'Открыта' },
@@ -18,6 +19,8 @@ const PIPELINE = [
   { id: 'offer', name: 'Офер', count: 2 }
 ];
 
+const VACANCY_STAGE_RANGE = getStageRangeFor('project.vacancies');
+
 export default function ProjectVacanciesPage() {
   return (
     <div className="space-y-8">
@@ -29,6 +32,11 @@ export default function ProjectVacanciesPage() {
           { id: 'publish', label: 'Опубликовать', toastMessage: 'TODO: Опубликовать вакансию', tone: 'primary' },
           { id: 'archive', label: 'Снять с публикации', toastMessage: 'TODO: Снять вакансию' }
         ]}
+        roadmap={{
+          sectionId: 'project.vacancies',
+          status: 'DEMO',
+          message: `Функции появятся на этапах ${VACANCY_STAGE_RANGE}. Сейчас — демо-режим.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {OPEN_ROLES.map((role) => (

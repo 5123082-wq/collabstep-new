@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const SESSIONS = [
   { id: 'brainstorm', title: 'AI-бриф: идеи для дропа', status: 'Готово' },
@@ -10,6 +11,8 @@ const HISTORY = [
   { id: '2024-10-01', title: 'Генерация описаний', owner: 'Оля Степанова' },
   { id: '2024-10-03', title: 'Финансовые сценарии', owner: 'Максим Карпов' }
 ];
+
+const PROJECT_AI_STAGE = getStageRangeFor('project.ai');
 
 export default function ProjectAIPage() {
   return (
@@ -23,6 +26,11 @@ export default function ProjectAIPage() {
           { id: 'edit-prompt', label: 'Править промт', toastMessage: 'TODO: Править промт' },
           { id: 'save-doc', label: 'Сохранить в Документы', toastMessage: 'TODO: Сохранить результат' }
         ]}
+        roadmap={{
+          sectionId: 'project.ai',
+          status: 'COMING_SOON',
+          message: `Генерации (mock) — этап ${PROJECT_AI_STAGE}. Сейчас — демо-сцена.`
+        }}
       >
         <div className="space-y-3">
           {SESSIONS.map((session) => (

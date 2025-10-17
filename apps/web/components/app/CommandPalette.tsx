@@ -5,6 +5,8 @@ import { toast } from '@/lib/ui/toast';
 import { search, type SearchItem } from '@/lib/search/deepSearch';
 import { useProjectContext } from '@/components/project/ProjectContext';
 import { loadInvoices, loadProjects, loadTasks } from '@/lib/mock/loaders';
+import { ROADMAP_HINTS } from '@/lib/feature-flags';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 type CommandPaletteProps = {
   open: boolean;
@@ -21,6 +23,8 @@ const PROJECT_PARTICIPANTS: Record<string, { id: string; name: string; subtitle:
     { id: 'contractor-print', name: 'print.contractor@demo.collabverse.ru', subtitle: 'CONTRACTOR · Печать и мерч' }
   ]
 };
+
+const SEARCH_STAGE_RANGE = getStageRangeFor('global.search');
 
 export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
@@ -158,6 +162,11 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
             <p className="text-xs text-neutral-500">
               Маски: @ — участники и подрядчики, # — задачи, $ — счета.
             </p>
+            {ROADMAP_HINTS ? (
+              <p className="mt-1 text-xs text-neutral-500">
+                {`Глубокий поиск — этап ${SEARCH_STAGE_RANGE}. Сейчас — демо-режим.`}
+              </p>
+            ) : null}
           </div>
           <span className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-400">Esc</span>
         </div>

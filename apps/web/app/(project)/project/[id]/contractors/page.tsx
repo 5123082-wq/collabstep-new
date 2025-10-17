@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const CATALOG = [
   { id: 'print', name: 'Print Studio', specialty: 'Печать мерча', rating: '4.8' },
@@ -17,6 +18,8 @@ const CONTRACTS = [
   { id: 'supply', title: 'Контракт на поставку', status: 'Требует подписи' }
 ];
 
+const CONTRACTOR_STAGE_RANGE = getStageRangeFor('project.contractors');
+
 export default function ProjectContractorsPage() {
   return (
     <div className="space-y-8">
@@ -25,6 +28,11 @@ export default function ProjectContractorsPage() {
         title="Каталог"
         description="Подрядчики и их специализация."
         actions={[{ id: 'request-estimate', label: 'Запросить смету', toastMessage: 'TODO: Запросить смету', tone: 'primary' }]}
+        roadmap={{
+          sectionId: 'project.contractors',
+          status: 'COMING_SOON',
+          message: `Сметы и заказы — этап ${CONTRACTOR_STAGE_RANGE}. Сейчас — демо-каталог.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {CATALOG.map((contractor) => (

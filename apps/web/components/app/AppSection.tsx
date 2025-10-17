@@ -4,6 +4,9 @@ import clsx from 'clsx';
 import { useState } from 'react';
 import { canAccessAdmin, canAccessFinance, getUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
+import RoadmapBadge from '@/components/roadmap/RoadmapBadge';
+import { ROADMAP_HINTS } from '@/lib/feature-flags';
+import { getStageRangeFor, type RoadmapSectionId } from '@/lib/roadmap';
 
 type Access = 'finance' | 'admin' | null;
 
@@ -19,6 +22,13 @@ type AppSectionProps = {
   access?: Access;
   emptyMessage?: string;
   errorMessage?: string;
+  roadmap?: {
+    sectionId: RoadmapSectionId;
+    status: 'DEMO' | 'COMING_SOON' | 'LIVE';
+    message?: string;
+    neutralMessage?: string;
+    linkLabel?: string;
+  };
 };
 
 const states = [
@@ -34,10 +44,16 @@ export default function AppSection({
   actions,
   access = null,
   emptyMessage = 'Здесь пока ничего нет. Начните с действия справа.',
-  errorMessage = 'Что-то пошло не так. Повторите попытку.'
+  errorMessage = 'Что-то пошло не так. Повторите попытку.',
+  roadmap
 }: AppSectionProps) {
   const [state, setState] = useState<(typeof states)[number]['id']>('default');
   const roles = getUserRoles();
+
+  const stageRange = roadmap ? getStageRangeFor(roadmap.sectionId) : null;
+  const roadmapMessage = roadmap?.message;
+  const neutralMessage =
+    roadmap?.neutralMessage ?? 'Этот раздел находится в демо-режиме. Функциональность будет доступна позже.';
 
   if (access === 'admin' && !canAccessAdmin(roles)) {
     return (
@@ -66,6 +82,14 @@ export default function AppSection({
             <p className="text-sm text-neutral-400">{description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {roadmap && stageRange ? (
+              <RoadmapBadge
+                status={roadmap.status}
+                stageHint={stageRange}
+                roadmapHref="/app/roadmap"
+                {...(roadmap.linkLabel ? { linkLabel: roadmap.linkLabel } : {})}
+              />
+            ) : null}
             {actions.map((action) => (
               <button
                 key={action.label}
@@ -132,7 +156,7 @@ export default function AppSection({
         <div className="space-y-4">
           <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6">
             <p className="text-sm text-neutral-300">
-              Ключевые метрики и карточки появятся здесь после интеграции Stage 3. Сейчас это заглушка для демонстрации макета.
+              {ROADMAP_HINTS && roadmapMessage ? roadmapMessage : neutralMessage}
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">

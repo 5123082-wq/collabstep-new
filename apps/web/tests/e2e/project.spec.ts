@@ -106,4 +106,10 @@ test.describe('project workspace', () => {
     }
     await page.keyboard.press('Escape');
   });
+
+  test('finance tab показывает подсказку этапа', async ({ page }) => {
+    await page.goto(`${appOrigin}/project/DEMO/finance`);
+    await expect(page.getByTestId('roadmap-badge')).toBeVisible();
+    await expect(page.getByText(/этап 10/i)).toBeVisible();
+  });
 });

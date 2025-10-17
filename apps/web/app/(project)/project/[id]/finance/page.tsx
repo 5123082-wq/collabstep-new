@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const BUDGET = [
   { id: 'plan', title: 'План', value: '5 000 000 ₽' },
@@ -17,6 +18,8 @@ const INVOICES = [
   { id: 'inv-533', title: 'Консультация AI-команды', status: 'Подписан' }
 ];
 
+const PROJECT_FINANCE_STAGE = getStageRangeFor('project.finance');
+
 export default function ProjectFinancePage() {
   return (
     <div className="space-y-8">
@@ -28,6 +31,11 @@ export default function ProjectFinancePage() {
           { id: 'edit-budget', label: 'Редактировать', toastMessage: 'TODO: Редактировать бюджет', tone: 'primary' },
           { id: 'approve-budget', label: 'Утвердить', toastMessage: 'TODO: Утвердить бюджет' }
         ]}
+        roadmap={{
+          sectionId: 'project.finance',
+          status: 'COMING_SOON',
+          message: `Финансы проекта включатся на этапе ${PROJECT_FINANCE_STAGE} (этап ${PROJECT_FINANCE_STAGE} — тестовые платежи). Сейчас — демо-режим.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {BUDGET.map((item) => (

@@ -1,6 +1,7 @@
 import AnalyticsErrorSimulation from '@/components/project/AnalyticsErrorSimulation';
 import AnalyticsSuccessCleanup from '@/components/project/AnalyticsSuccessCleanup';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const DASHBOARDS = [
   { id: 'sales', title: 'Продажи', value: '1.2 млн ₽', trend: '+12%' },
@@ -12,6 +13,8 @@ const FUNNELS = [
   { id: 'awareness', title: 'Awareness → Consideration', conversion: '36%' },
   { id: 'consideration', title: 'Consideration → Purchase', conversion: '18%' }
 ];
+
+const ANALYTICS_STAGE_RANGE = getStageRangeFor('project.analytics');
 
 type ProjectAnalyticsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -60,6 +63,11 @@ export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsP
           { id: 'download-csv', label: 'Скачать CSV', toastMessage: 'TODO: Скачать CSV', tone: 'primary' },
           { id: 'share-dashboard', label: 'Поделиться', toastMessage: 'TODO: Поделиться дашбордом' }
         ]}
+        roadmap={{
+          sectionId: 'project.analytics',
+          status: 'DEMO',
+          message: `Расширенная аналитика появится на этапах ${ANALYTICS_STAGE_RANGE}. Сейчас — демо-витрина.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-3">
           {DASHBOARDS.map((metric) => (

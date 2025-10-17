@@ -1,4 +1,5 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { getStageRangeFor } from '@/lib/roadmap';
 
 const BOARD_COLUMNS = [
   { id: 'backlog', title: 'Backlog', tasks: 12 },
@@ -19,6 +20,8 @@ const REPORTS = [
   { id: 'bugs', title: 'Defects', value: '4 открыто', trend: '+1' }
 ];
 
+const TASK_STAGE_RANGE = getStageRangeFor('project.tasks');
+
 export default function ProjectTasksPage() {
   return (
     <div className="space-y-8">
@@ -31,6 +34,11 @@ export default function ProjectTasksPage() {
           { id: 'assign-task', label: 'Назначить', toastMessage: 'TODO: Назначить задачу' },
           { id: 'checklists', label: 'Управлять чек-листами', toastMessage: 'TODO: Настроить чек-листы' }
         ]}
+        roadmap={{
+          sectionId: 'project.tasks',
+          status: 'DEMO',
+          message: `Функции появятся на этапах ${TASK_STAGE_RANGE}. Сейчас — демо-режим.`
+        }}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {BOARD_COLUMNS.map((column) => (
