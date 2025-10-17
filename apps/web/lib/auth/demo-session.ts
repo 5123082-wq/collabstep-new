@@ -1,0 +1,68 @@
+import { cookies } from 'next/headers';
+
+export type DemoRole = 'admin' | 'user';
+
+export type DemoSession = {
+  email: string;
+  role: DemoRole;
+  issuedAt: number;
+};
+
+export const DEMO_SESSION_COOKIE = 'cv_session';
+export const DEMO_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+
+export function encodeDemoSession(session: DemoSession): string {
+  return Buffer.from(JSON.stringify(session)).toString('base64url');
+}
+
+export function decodeDemoSession(value: string | undefined | null): DemoSession | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const decoded = Buffer.from(value, 'base64url').toString('utf8');
+    const parsed = JSON.parse(decoded) as Partial<DemoSession>;
+
+    if (!parsed || typeof parsed.email !== 'string' || !isDemoRole(parsed.role)) {
+      return null;
+    }
+
+    return {
+      email: parsed.email,
+      role: parsed.role,
+      issuedAt: typeof parsed.issuedAt === 'number' ? parsed.issuedAt : Date.now()
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+export function isDemoRole(value: unknown): value is DemoRole {
+  return value === 'admin' || value === 'user';
+}
+
+export function parseDemoRole(value: unknown): DemoRole | null {
+  return isDemoRole(value) ? value : null;
+}
+
+export function getDemoAccount(role: DemoRole): { email: string; password: string } {
+  const prefix = role === 'admin' ? 'DEMO_ADMIN' : 'DEMO_USER';
+  const fallbackEmail = role === 'admin' ? 'admin.demo@collabverse.test' : 'user.demo@collabverse.test';
+  const fallbackPassword = role === 'admin' ? 'demo-admin' : 'demo-user';
+  const email = process.env[`${prefix}_EMAIL`] ?? fallbackEmail;
+  const password = process.env[`${prefix}_PASSWORD`] ?? fallbackPassword;
+
+  return { email, password };
+}
+
+export function getDemoSessionFromCookies(): DemoSession | null {
+  const store = cookies();
+  const cookie = store.get(DEMO_SESSION_COOKIE);
+  return decodeDemoSession(cookie?.value ?? null);
+}
+
+export function isDemoAuthEnabled(): boolean {
+  const flag = (process.env.AUTH_DEV ?? 'on').toLowerCase();
+  return flag !== 'off' && flag !== 'false' && flag !== '0';
+}

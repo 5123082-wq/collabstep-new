@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useUiStore } from '@/lib/state/ui-store';
 
@@ -17,6 +17,15 @@ const iconPaths: Record<string, string> = {
   wallet: 'M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 0 4H5a2 2 0 0 1-2-2Zm0 5a2 2 0 0 1 2-2h16v8H5a2 2 0 0 1-2-2v-4Zm13 2a1 1 0 1 0 0 2h3v-2h-3Z',
   user: 'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4Z'
 };
+
+type DemoProfile = {
+  email: string;
+  role: 'admin' | 'user';
+};
+
+function resolveRoleLabel(role: DemoProfile['role']): string {
+  return role === 'admin' ? 'Админ' : 'Пользователь';
+}
 
 function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: string }) {
   return (
@@ -49,6 +58,7 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProps) {
   const pathname = usePathname();
   const { bgPreset, setBgPreset } = useUiStore((state) => ({ bgPreset: state.bgPreset, setBgPreset: state.setBgPreset }));
+  const [profile, setProfile] = useState<DemoProfile | null>(null);
 
   useEffect(() => {
     const body = document.body;
@@ -58,6 +68,40 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProp
       body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
     };
   }, [bgPreset, pathname]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadProfile = async () => {
+      try {
+        const response = await fetch('/api/auth/me', { credentials: 'include', signal: controller.signal });
+
+        if (!response.ok) {
+          setProfile(null);
+          return;
+        }
+
+        const data = (await response.json()) as Partial<DemoProfile>;
+
+        if (data && typeof data.email === 'string' && (data.role === 'admin' || data.role === 'user')) {
+          setProfile({ email: data.email, role: data.role });
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        if ((error as { name?: string }).name === 'AbortError') {
+          return;
+        }
+        setProfile(null);
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      controller.abort();
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
@@ -98,6 +142,19 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProp
           <IconButton icon="user" label="Профиль" />
         </div>
         <div className="flex flex-wrap items-center gap-1">
+          {profile ? (
+            <span
+              data-testid="role-badge"
+              className={clsx(
+                'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-100',
+                profile.role === 'admin'
+                  ? 'bg-amber-500/20 text-amber-100 ring-1 ring-inset ring-amber-500/50'
+                  : 'bg-indigo-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-500/50'
+              )}
+            >
+              {resolveRoleLabel(profile.role)}
+            </span>
+          ) : null}
           {backgroundPresets.map((preset) => (
             <button
               key={preset.id}

@@ -45,6 +45,29 @@ export default function LoginPage() {
           Войти
         </button>
       </form>
+      <section className="mt-8 space-y-3">
+        <p className="text-center text-sm text-neutral-400">Попробуйте платформу без регистрации.</p>
+        <div className="space-y-2">
+          <form method="POST" action="/api/auth/login-demo" className="space-y-2">
+            <input type="hidden" name="role" value="user" />
+            <button
+              type="submit"
+              className="w-full rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-sm font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
+            >
+              Войти демо-пользователем
+            </button>
+          </form>
+          <form method="POST" action="/api/auth/login-demo" className="space-y-2">
+            <input type="hidden" name="role" value="admin" />
+            <button
+              type="submit"
+              className="w-full rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-400 hover:bg-amber-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+            >
+              Войти демо-админом
+            </button>
+          </form>
+        </div>
+      </section>
       <p className="mt-6 text-center text-sm text-neutral-400">
         Нет аккаунта?{' '}
         <Link
