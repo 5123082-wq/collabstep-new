@@ -1,3 +1,5 @@
+import type { DemoRole } from '@/lib/auth/demo-session';
+
 export type UserRole =
   | 'FOUNDER'
   | 'SPECIALIST'
@@ -8,6 +10,7 @@ export type UserRole =
   | 'OBSERVER';
 
 const DEFAULT_ROLES: UserRole[] = ['FOUNDER', 'PM'];
+const ADMIN_EXTRA_ROLES: UserRole[] = ['ADMIN', 'MODERATOR'];
 
 const FINANCE_ALLOWED = new Set<UserRole>(['FOUNDER', 'PM', 'ADMIN']);
 const ADMIN_ALLOWED = new Set<UserRole>(['ADMIN', 'MODERATOR']);
@@ -34,6 +37,14 @@ export function setUserRoles(roles: UserRole[]): void {
   if (typeof window !== 'undefined') {
     window.localStorage.setItem('cv-roles', JSON.stringify(roles));
   }
+}
+
+export function getRolesForDemoRole(role: DemoRole): UserRole[] {
+  if (role === 'admin') {
+    return [...DEFAULT_ROLES, ...ADMIN_EXTRA_ROLES];
+  }
+
+  return [...DEFAULT_ROLES];
 }
 
 export function canAccessFinance(roles: UserRole[]): boolean {

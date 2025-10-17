@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import LoginForm from './login-form';
 
 export const metadata: Metadata = {
   title: 'Вход в Collabverse',
@@ -19,32 +21,9 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold">Вход</h1>
         <p className="text-neutral-300">Используйте корпоративную почту для входа в Collabverse.</p>
       </header>
-      <form className="mt-8 space-y-4">
-        <label className="block text-sm text-neutral-300">
-          Email
-          <input
-            type="email"
-            name="email"
-            className="mt-1 w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-100 focus:border-indigo-400 focus:outline-none"
-            placeholder="name@company.com"
-          />
-        </label>
-        <label className="block text-sm text-neutral-300">
-          Пароль
-          <input
-            type="password"
-            name="password"
-            className="mt-1 w-full rounded-lg border border-neutral-800 bg-neutral-900 px-3 py-2 text-neutral-100 focus:border-indigo-400 focus:outline-none"
-            placeholder="••••••••"
-          />
-        </label>
-        <button
-          type="submit"
-          className="w-full rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
-        >
-          Войти
-        </button>
-      </form>
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
       <section className="mt-8 space-y-3">
         <p className="text-center text-sm text-neutral-400">Попробуйте платформу без регистрации.</p>
         <div className="space-y-2">
@@ -74,7 +53,7 @@ export default function LoginPage() {
           href="/register"
           className="font-semibold text-indigo-300 transition hover:text-indigo-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300"
         >
-          Создать профиль
+          Создать аккаунт
         </Link>
       </p>
     </main>

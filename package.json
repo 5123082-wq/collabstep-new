@@ -12,7 +12,7 @@
     "test:e2e": "pnpm --filter @collabverse/web build && playwright test",
     "verify:routes": "node apps/web/scripts/verify-routes.mjs",
     "ensure-env": "node scripts/ensure-env.mjs",
-    "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && npx vercel build --prod",
+    "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && node scripts/run-vercel-build.mjs",
     "prepare": "husky install",
     "vercel-build": "pnpm -C apps/web build"
   },

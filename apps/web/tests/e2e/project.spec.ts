@@ -1,9 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
+import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://localhost:3000';
 
 test.describe('project workspace', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsDemo(page, 'user', appOrigin);
+  });
+
   test('project-landing', async ({ page }) => {
     const logs: string[] = [];
     captureConsole(page, logs);
@@ -72,7 +77,9 @@ test.describe('project workspace', () => {
       await switchButton.click();
     }
     await expect(globalDialog.getByText('Найдите проект по названию, коду или стадии')).toBeVisible();
-    await globalDialog.getByRole('button', { name: /Демо-проект/ }).first().click();
+    const projectCard = globalDialog.getByRole('button', { name: /Демо-проект/ }).first();
+    await expect(projectCard).toBeVisible();
+    await projectCard.click();
     await globalDialog.getByRole('button', { name: 'Задачу' }).click();
     await expect(page.getByText('TODO: Создать задачу')).toBeVisible();
   });

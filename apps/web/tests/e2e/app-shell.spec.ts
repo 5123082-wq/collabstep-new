@@ -1,13 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
+import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://localhost:3000';
 
 test.describe('app shell', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsDemo(page, 'user', appOrigin);
+  });
+
   test('dashboard без ошибок в консоли', async ({ page }) => {
     const logs: string[] = [];
     captureConsole(page, logs);
-    await page.goto(`${appOrigin}/app/dashboard`);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Рабочий стол/);
     expect(logs).toEqual([]);
   });
@@ -15,7 +19,6 @@ test.describe('app shell', () => {
   test('ширина контента не меняется при раскрытии меню', async ({ page }) => {
     const logs: string[] = [];
     captureConsole(page, logs);
-    await page.goto(`${appOrigin}/app/dashboard`);
     const content = page.locator('.content-area');
     const initialBox = await content.boundingBox();
     expect(initialBox?.width).toBeTruthy();

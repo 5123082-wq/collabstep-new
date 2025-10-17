@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
-import { getUserRoles } from '@/lib/auth/roles';
+import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
 
 const iconMap: Record<string, string> = {
@@ -34,10 +34,13 @@ function MenuIcon({ name }: { name: IconName }) {
   );
 }
 
-export default function Sidebar() {
+type SidebarProps = {
+  roles: UserRole[];
+};
+
+export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
-  const roles = useMemo(() => getUserRoles(), []);
   const menu = useMemo(() => buildLeftMenu(roles), [roles]);
   const { expandedGroups, toggleGroup } = useUiStore((state) => ({
     expandedGroups: state.expandedGroups,
