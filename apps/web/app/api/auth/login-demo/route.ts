@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  DEMO_SESSION_COOKIE,
-  DEMO_SESSION_MAX_AGE,
-  encodeDemoSession,
-  getDemoAccount,
-  isDemoAuthEnabled,
-  parseDemoRole,
-  type DemoRole
-} from '@/lib/auth/demo-session';
+import { encodeDemoSession, getDemoAccount, isDemoAuthEnabled, parseDemoRole, type DemoRole } from '@/lib/auth/demo-session';
+import { withSessionCookie } from '@/lib/auth/session-cookie';
 
 type DemoLoginResponse = NextResponse<unknown>;
 
@@ -53,18 +46,5 @@ export async function POST(request: NextRequest): Promise<DemoLoginResponse> {
 
   const sessionToken = encodeDemoSession({ email: account.email, role, issuedAt: Date.now() });
   const response = NextResponse.redirect(new URL('/app/dashboard', request.url), { status: 303 });
-
-  response.cookies.set({
-    name: DEMO_SESSION_COOKIE,
-    value: sessionToken,
-    httpOnly: true,
-    maxAge: DEMO_SESSION_MAX_AGE,
-    sameSite: 'lax',
-    path: '/',
-    secure: process.env.NODE_ENV === 'production'
-  });
-
-  response.headers.set('Cache-Control', 'no-store');
-
-  return response;
+  return withSessionCookie(response, sessionToken);
 }

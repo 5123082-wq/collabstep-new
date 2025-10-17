@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useUiStore } from '@/lib/state/ui-store';
 
@@ -16,11 +16,6 @@ const iconPaths: Record<string, string> = {
   chat: 'M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z',
   wallet: 'M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 0 4H5a2 2 0 0 1-2-2Zm0 5a2 2 0 0 1 2-2h16v8H5a2 2 0 0 1-2-2v-4Zm13 2a1 1 0 1 0 0 2h3v-2h-3Z',
   user: 'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4Z'
-};
-
-type DemoProfile = {
-  email: string;
-  role: 'admin' | 'user';
 };
 
 function resolveRoleLabel(role: DemoProfile['role']): string {
@@ -50,15 +45,22 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
   );
 }
 
+export type DemoProfile = {
+  email: string;
+  role: 'admin' | 'user';
+};
+
 type AppTopbarProps = {
   onOpenCreate: () => void;
   onOpenPalette: () => void;
+  profile: DemoProfile;
+  onLogout: () => void;
+  isLoggingOut: boolean;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
   const { bgPreset, setBgPreset } = useUiStore((state) => ({ bgPreset: state.bgPreset, setBgPreset: state.setBgPreset }));
-  const [profile, setProfile] = useState<DemoProfile | null>(null);
 
   useEffect(() => {
     const body = document.body;
@@ -68,40 +70,6 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProp
       body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
     };
   }, [bgPreset, pathname]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const loadProfile = async () => {
-      try {
-        const response = await fetch('/api/auth/me', { credentials: 'include', signal: controller.signal });
-
-        if (!response.ok) {
-          setProfile(null);
-          return;
-        }
-
-        const data = (await response.json()) as Partial<DemoProfile>;
-
-        if (data && typeof data.email === 'string' && (data.role === 'admin' || data.role === 'user')) {
-          setProfile({ email: data.email, role: data.role });
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        if ((error as { name?: string }).name === 'AbortError') {
-          return;
-        }
-        setProfile(null);
-      }
-    };
-
-    void loadProfile();
-
-    return () => {
-      controller.abort();
-    };
-  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
@@ -142,19 +110,30 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette }: AppTopbarProp
           <IconButton icon="user" label="Профиль" />
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {profile ? (
-            <span
-              data-testid="role-badge"
-              className={clsx(
-                'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-100',
-                profile.role === 'admin'
-                  ? 'bg-amber-500/20 text-amber-100 ring-1 ring-inset ring-amber-500/50'
-                  : 'bg-indigo-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-500/50'
-              )}
-            >
-              {resolveRoleLabel(profile.role)}
-            </span>
-          ) : null}
+          <span
+            data-testid="role-badge"
+            className={clsx(
+              'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-100',
+              profile.role === 'admin'
+                ? 'bg-amber-500/20 text-amber-100 ring-1 ring-inset ring-amber-500/50'
+                : 'bg-indigo-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-500/50'
+            )}
+          >
+            {resolveRoleLabel(profile.role)}
+          </span>
+          <button
+            type="button"
+            onClick={onLogout}
+            disabled={isLoggingOut}
+            className={clsx(
+              'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+              isLoggingOut
+                ? 'cursor-not-allowed border-neutral-800 bg-neutral-900/60 text-neutral-500'
+                : 'border-neutral-800 bg-neutral-900/60 text-neutral-300 hover:border-indigo-500/40 hover:text-white'
+            )}
+          >
+            {isLoggingOut ? 'Выход…' : 'Выйти'}
+          </button>
           {backgroundPresets.map((preset) => (
             <button
               key={preset.id}

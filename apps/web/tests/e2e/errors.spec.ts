@@ -1,9 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { captureConsole } from './utils/console';
+import { loginAsDemo } from './utils/auth';
 
 const appOrigin = 'http://localhost:3000';
 
 test.describe('error boundaries and fallbacks', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsDemo(page, 'user', appOrigin);
+  });
+
   test('unknown project shows not-found page', async ({ page }) => {
     const logs: string[] = [];
     captureConsole(page, logs);

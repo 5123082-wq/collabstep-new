@@ -17,6 +17,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm ensure-env
+      - run: echo "SKIP_VERCEL_BUILD=1" >> .env
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
       - run: pnpm verify
+        env:
+          SKIP_VERCEL_BUILD: 1

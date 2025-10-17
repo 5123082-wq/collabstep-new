@@ -1,6 +1,18 @@
+import { redirect } from 'next/navigation';
 import AppSection from '@/components/app/AppSection';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session';
 
 export default function AdminPage() {
+  const session = getDemoSessionFromCookies();
+
+  if (!session) {
+    redirect('/login?toast=auth-required');
+  }
+
+  if (session.role !== 'admin') {
+    redirect('/app/dashboard?toast=forbidden');
+  }
+
   return (
     <AppSection
       title="Админ-панель"

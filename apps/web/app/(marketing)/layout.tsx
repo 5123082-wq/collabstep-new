@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import MarketingNavbar from '@/components/marketing/MarketingNavbar';
 import Footer from '@/components/marketing/sections/Footer';
+import ToastHub from '@/components/app/ToastHub';
 import { NAV_V1 } from '@/lib/feature-flags';
 
 export const metadata: Metadata = {
@@ -12,7 +13,12 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   if (!NAV_V1) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <ToastHub />
+      </>
+    );
   }
 
   return (
@@ -20,6 +26,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <MarketingNavbar />
       <main className="flex-1">{children}</main>
       <Footer />
+      <ToastHub />
     </div>
   );
 }

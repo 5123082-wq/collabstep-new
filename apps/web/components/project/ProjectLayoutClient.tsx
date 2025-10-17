@@ -11,17 +11,31 @@ import CommandPalette from '@/components/app/CommandPalette';
 import ToastHub from '@/components/app/ToastHub';
 import { useUiStore } from '@/lib/state/ui-store';
 import type { Project } from '@/lib/schemas/project';
+import type { DemoSession } from '@/lib/auth/demo-session';
+import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
+import { useQueryToast } from '@/lib/ui/useQueryToast';
 
 type ProjectLayoutClientProps = {
   project: Project;
   children: ReactNode;
+  session: DemoSession;
 };
 
-export default function ProjectLayoutClient({ project, children }: ProjectLayoutClientProps) {
+const TOAST_MESSAGES: Record<string, { message: string; tone?: 'info' | 'success' | 'warning' }> = {
+  forbidden: { message: 'Недостаточно прав', tone: 'warning' }
+};
+
+export default function ProjectLayoutClient({ project, children, session }: ProjectLayoutClientProps) {
   const pathname = usePathname();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const setLastProjectId = useUiStore((state) => state.setLastProjectId);
+  const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
+  useQueryToast(TOAST_MESSAGES);
+
+  useEffect(() => {
+    setUserRoles(roles);
+  }, [roles]);
 
   useEffect(() => {
     setLastProjectId(project.id);
@@ -56,7 +70,7 @@ export default function ProjectLayoutClient({ project, children }: ProjectLayout
   return (
     <ProjectProvider value={contextValue}>
       <div className="flex min-h-screen bg-neutral-950 text-neutral-100">
-        <ProjectSidebar projectId={project.id} />
+        <ProjectSidebar projectId={project.id} roles={roles} />
         <div className="flex min-h-screen flex-1 flex-col">
           <ProjectHeader
             name={project.name}

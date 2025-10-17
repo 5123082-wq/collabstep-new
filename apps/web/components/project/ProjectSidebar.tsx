@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
-import { getUserRoles } from '@/lib/auth/roles';
+import type { UserRole } from '@/lib/auth/roles';
 import { writeProjectState } from '@/lib/project/storage';
 import { getProjectMenuForRoles, type ProjectMenuItem } from './ProjectMenu.config';
 
@@ -14,11 +14,11 @@ function isActive(pathname: string, projectId: string, item: ProjectMenuItem): b
 
 type ProjectSidebarProps = {
   projectId: string;
+  roles: UserRole[];
 };
 
-export default function ProjectSidebar({ projectId }: ProjectSidebarProps) {
+export default function ProjectSidebar({ projectId, roles }: ProjectSidebarProps) {
   const pathname = usePathname();
-  const roles = useMemo(() => getUserRoles(), []);
   const menu = useMemo(() => getProjectMenuForRoles(roles), [roles]);
 
   const activeEntry = useMemo(() => menu.find((item) => isActive(pathname, projectId, item)), [menu, pathname, projectId]);
