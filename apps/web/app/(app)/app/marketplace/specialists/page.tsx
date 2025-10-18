@@ -1,14 +1,16 @@
-import AppSection from '@/components/app/AppSection';
+import SpecialistsCatalog from '@/components/marketplace/SpecialistsCatalog';
+import { loadSpecialists } from '@/lib/mock/loaders';
 
 export default function MarketplaceSpecialistsPage() {
+  const { items, error } = loadSpecialists();
+
   return (
-    <AppSection
-      title="Специалисты"
-      description="Просматривайте карточки экспертов и создавайте команды."
-      actions={[
-        { label: 'Запросить смету', message: 'TODO: Запросить смету у специалиста' },
-        { label: 'Добавить в пайплайн', message: 'TODO: Добавить в пайплайн' }
-      ]}
-    />
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-semibold text-neutral-50">Специалисты</h1>
+        <p className="text-sm text-neutral-400">Каталог экспертов и подрядчиков с возможностью фильтрации.</p>
+      </header>
+      <SpecialistsCatalog data={items} error={error} />
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/ui/toast';
 import { search, type SearchItem } from '@/lib/search/deepSearch';
 import { useProjectContext } from '@/components/project/ProjectContext';
@@ -12,6 +13,37 @@ type CommandPaletteProps = {
 };
 
 type PaletteResult = ReturnType<typeof search>;
+
+const COMMAND_ITEMS: SearchItem[] = [
+  {
+    type: 'command',
+    title: 'Открыть Маркетплейс',
+    subtitle: 'Переход в общий каталог',
+    tags: ['marketplace'],
+    ref: '/app/marketplace'
+  },
+  {
+    type: 'command',
+    title: 'Открыть раздел специалистов',
+    subtitle: 'Каталог экспертов',
+    tags: ['marketplace', 'specialists'],
+    ref: '/app/marketplace/specialists'
+  },
+  {
+    type: 'command',
+    title: 'Открыть раздел вакансий',
+    subtitle: 'Каталог задач и ролей',
+    tags: ['marketplace', 'vacancies'],
+    ref: '/app/marketplace/vacancies'
+  }
+];
+
+function getTypeLabel(type: SearchItem['type']): string {
+  if (type === 'command') {
+    return 'команда';
+  }
+  return type;
+}
 
 const PROJECT_PARTICIPANTS: Record<string, { id: string; name: string; subtitle: string }[]> = {
   DEMO: [
@@ -26,6 +58,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const projectContext = useProjectContext();
+  const router = useRouter();
 
   const dataset = useMemo(() => {
     const allProjects = loadProjects();
@@ -72,6 +105,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
     if (projectContext) {
       return [
+        ...COMMAND_ITEMS,
         ...projectItems.filter((item) => item.projectId === projectContext.projectId),
         ...taskItems.filter((item) => item.projectId === projectContext.projectId),
         ...invoiceItems.filter((item) => item.projectId === projectContext.projectId),
@@ -79,7 +113,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       ];
     }
 
-    return [...projectItems, ...taskItems, ...invoiceItems, ...participantItems];
+    return [...COMMAND_ITEMS, ...projectItems, ...taskItems, ...invoiceItems, ...participantItems];
   }, [projectContext]);
 
   const projectId = projectContext?.projectId;
@@ -121,6 +155,11 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
         event.preventDefault();
         const target = results[activeIndex]?.item;
         if (target) {
+          if (target.type === 'command') {
+            router.push(target.ref);
+            onClose();
+            return;
+          }
           toast(`TODO: открыть ${target.type} ${target.title}`);
           onClose();
         }
@@ -129,7 +168,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [activeIndex, onClose, open, results]);
+  }, [activeIndex, onClose, open, results, router]);
 
   useEffect(() => {
     if (!open) {
@@ -190,6 +229,11 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   type="button"
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => {
+                    if (item.type === 'command') {
+                      router.push(item.ref);
+                      onClose();
+                      return;
+                    }
                     toast(`TODO: открыть ${item.type} ${item.title}`);
                     onClose();
                   }}
@@ -199,9 +243,9 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 >
                   <div>
                     <p className="font-medium text-neutral-100">{item.title}</p>
-                    <p className="text-xs text-neutral-500">{item.subtitle}</p>
+                    {item.subtitle && <p className="text-xs text-neutral-500">{item.subtitle}</p>}
                   </div>
-                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">{item.type}</span>
+                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">{getTypeLabel(item.type)}</span>
                 </button>
               </li>
             );

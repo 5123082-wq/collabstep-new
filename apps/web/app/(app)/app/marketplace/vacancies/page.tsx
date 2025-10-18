@@ -1,14 +1,16 @@
-import AppSection from '@/components/app/AppSection';
+import VacanciesCatalog from '@/components/marketplace/VacanciesCatalog';
+import { loadVacancies } from '@/lib/mock/loaders';
 
 export default function MarketplaceVacanciesPage() {
+  const { items, error } = loadVacancies();
+
   return (
-    <AppSection
-      title="Вакансии"
-      description="Выбирайте задачи и долгосрочные роли в активных командах."
-      actions={[
-        { label: 'Откликнуться', message: 'TODO: Отклик на вакансию' },
-        { label: 'Поделиться вакансией', message: 'TODO: Поделиться вакансией' }
-      ]}
-    />
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-semibold text-neutral-50">Вакансии</h1>
+        <p className="text-sm text-neutral-400">Здесь собраны активные запросы команд на специалистов и консультантов.</p>
+      </header>
+      <VacanciesCatalog data={items} error={error} />
+    </div>
   );
 }
