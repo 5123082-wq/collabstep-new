@@ -1,15 +1,25 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUiStore } from '@/lib/state/ui-store';
+import { loadSpecialists, loadVacancies } from '@/lib/mock/loaders';
 
 const backgroundPresets = [
   { id: 'mesh', label: 'Mesh' },
   { id: 'grid', label: 'Grid' },
   { id: 'halo', label: 'Halo' }
 ] as const;
+
+type QuickSuggestion = {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+  type: 'specialist' | 'vacancy';
+};
 
 const iconPaths: Record<string, string> = {
   bell: 'M12 22a2 2 0 0 0 2-2H10a2 2 0 0 0 2 2Zm8-6a2 2 0 0 1-2-2v-3a6 6 0 1 0-12 0v3a2 2 0 0 1-2 2h16Z',
@@ -60,7 +70,139 @@ type AppTopbarProps = {
 
 export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { bgPreset, setBgPreset } = useUiStore((state) => ({ bgPreset: state.bgPreset, setBgPreset: state.setBgPreset }));
+  const { items: specialistItems } = loadSpecialists();
+  const { items: vacancyItems } = loadVacancies();
+  const [searchValue, setSearchValue] = useState('');
+  const [isSearchFocused, setSearchFocused] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listboxId = useId();
+  const hintId = `${listboxId}-hint`;
+
+  const suggestions: QuickSuggestion[] = useMemo(() => {
+    const trimmed = searchValue.trim();
+    if (!trimmed) {
+      return [];
+    }
+    const mask = trimmed[0];
+    const keyword = trimmed.slice(1).trim().toLowerCase();
+    if (mask === '@') {
+      if (!keyword) {
+        return [];
+      }
+      return specialistItems
+        .filter((specialist) => {
+          const haystack = [
+            specialist.name,
+            specialist.role,
+            specialist.skills.join(' ')
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(keyword);
+        })
+        .slice(0, 6)
+        .map<QuickSuggestion>((specialist) => ({
+          id: `specialist-${specialist.id}`,
+          label: specialist.name,
+          description: `${specialist.role} · ${specialist.skills.slice(0, 3).join(', ')}`,
+          href: `/p/${specialist.handle}`,
+          type: 'specialist'
+        }));
+    }
+    if (mask === '#') {
+      if (!keyword) {
+        return [];
+      }
+      return vacancyItems
+        .filter((vacancy) => {
+          const haystack = [
+            vacancy.title,
+            vacancy.project,
+            vacancy.summary,
+            vacancy.tags.join(' ')
+          ]
+            .join(' ')
+            .toLowerCase();
+          return haystack.includes(keyword);
+        })
+        .slice(0, 6)
+        .map<QuickSuggestion>((vacancy) => ({
+          id: `vacancy-${vacancy.id}`,
+          label: vacancy.title,
+          description: `${vacancy.project} · ${vacancy.level}`,
+          href: `/app/marketplace/vacancies/${vacancy.id}`,
+          type: 'vacancy'
+        }));
+    }
+    return [];
+  }, [searchValue, specialistItems, vacancyItems]);
+
+  useEffect(() => {
+    setActiveSuggestion(0);
+  }, [suggestions]);
+
+  const handleSelectSuggestion = useCallback(
+    (suggestion: QuickSuggestion) => {
+      router.push(suggestion.href);
+      setSearchValue('');
+      setSearchFocused(false);
+      setActiveSuggestion(0);
+      inputRef.current?.blur();
+    },
+    [router]
+  );
+
+  const handleSearchKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        onOpenPalette();
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setActiveSuggestion((index) => (index + 1) % Math.max(suggestions.length, 1));
+        return;
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setActiveSuggestion((index) => (index - 1 + Math.max(suggestions.length, 1)) % Math.max(suggestions.length, 1));
+        return;
+      }
+      if (event.key === 'Enter') {
+        if (suggestions.length > 0) {
+          event.preventDefault();
+          const target = suggestions[activeSuggestion];
+          if (target) {
+            handleSelectSuggestion(target);
+          }
+        }
+        return;
+      }
+      if (event.key === 'Escape') {
+        setSearchValue('');
+        setSearchFocused(false);
+        setActiveSuggestion(0);
+        inputRef.current?.blur();
+      }
+    },
+    [activeSuggestion, handleSelectSuggestion, onOpenPalette, suggestions]
+  );
+
+  const trimmedQuery = searchValue.trim();
+  const maskSymbol = trimmedQuery[0];
+  const maskKeyword = trimmedQuery.slice(1).trim();
+  const isMaskQuery = maskSymbol === '@' || maskSymbol === '#';
+  const showSuggestionList = isSearchFocused && suggestions.length > 0;
+  const showMaskHint = isSearchFocused && isMaskQuery && maskKeyword.length === 0;
+  const showEmptyState = isSearchFocused && isMaskQuery && maskKeyword.length > 0 && suggestions.length === 0;
+  const showSuggestionPanel = showSuggestionList || showMaskHint || showEmptyState;
+  const activeSuggestionId = showSuggestionList
+    ? `${listboxId}-option-${suggestions[activeSuggestion]?.id ?? activeSuggestion}`
+    : undefined;
 
   useEffect(() => {
     const body = document.body;
@@ -85,14 +227,75 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
             </label>
             <input
               id="app-search"
+              ref={inputRef}
               type="search"
+              value={searchValue}
+              onChange={(event) => {
+                setSearchValue(event.target.value);
+                setActiveSuggestion(0);
+              }}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => {
+                if (typeof window !== 'undefined') {
+                  window.setTimeout(() => setSearchFocused(false), 120);
+                }
+              }}
+              onKeyDown={handleSearchKeyDown}
               placeholder="Поиск по платформе…"
-              onFocus={onOpenPalette}
+              aria-expanded={showSuggestionPanel}
+              aria-autocomplete="list"
+              aria-controls={showSuggestionList ? listboxId : undefined}
+              aria-activedescendant={activeSuggestionId}
+              aria-describedby={showMaskHint || showEmptyState ? hintId : undefined}
+              role="combobox"
+              aria-haspopup="listbox"
               className="w-full rounded-2xl border border-neutral-800 bg-neutral-900/60 px-5 py-3 text-sm text-neutral-100 shadow-inner shadow-neutral-950/20 transition focus:border-indigo-500 focus:outline-none"
+              autoComplete="off"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full border border-neutral-700 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-500 md:flex">
+            <button
+              type="button"
+              onClick={onOpenPalette}
+              className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full border border-neutral-700 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-500 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 md:flex"
+            >
               ⌘K
-            </span>
+            </button>
+            {showSuggestionPanel && (
+              <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/95 shadow-xl">
+                {showSuggestionList ? (
+                  <ul id={listboxId} role="listbox" className="max-h-72 overflow-y-auto">
+                    {suggestions.map((suggestion, index) => (
+                      <li key={suggestion.id}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={index === activeSuggestion}
+                          id={`${listboxId}-option-${suggestion.id}`}
+                          onMouseEnter={() => setActiveSuggestion(index)}
+                          onClick={() => handleSelectSuggestion(suggestion)}
+                          className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 ${
+                            index === activeSuggestion ? 'bg-indigo-500/10' : 'bg-transparent'
+                          }`}
+                        >
+                          <div>
+                            <p className="font-medium text-neutral-100">{suggestion.label}</p>
+                            <p className="text-xs text-neutral-500">{suggestion.description}</p>
+                          </div>
+                          <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+                            {suggestion.type === 'specialist' ? 'специалист' : 'вакансия'}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div id={hintId} className="px-4 py-3 text-sm text-neutral-400">
+                    {showMaskHint
+                      ? 'Введите текст после маски @ или #, чтобы искать специалистов или вакансии.'
+                      : 'Совпадений не найдено. Попробуйте изменить запрос.'}
+                  </div>
+                )}
+              </div>
+            )}
           </form>
           <button
             type="button"

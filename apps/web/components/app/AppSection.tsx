@@ -132,7 +132,7 @@ export default function AppSection({
         <div className="space-y-4">
           <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6">
             <p className="text-sm text-neutral-300">
-              Ключевые метрики и карточки появятся здесь после интеграции Stage 3. Сейчас это заглушка для демонстрации макета.
+              Данные и виджеты будут подключаться на следующих этапах. Сейчас — демо-макет.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">

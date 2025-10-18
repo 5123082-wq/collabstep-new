@@ -4,7 +4,7 @@ import Fuse from 'fuse.js';
 import type { IFuseOptions, FuseResult } from 'fuse.js';
 
 export type SearchItem = {
-  type: 'project' | 'task' | 'invoice' | 'user';
+  type: 'project' | 'task' | 'invoice' | 'user' | 'command';
   title: string;
   subtitle?: string;
   tags?: string[];
