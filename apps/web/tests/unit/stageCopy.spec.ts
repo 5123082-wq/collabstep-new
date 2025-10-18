@@ -3,6 +3,7 @@ import path from 'node:path';
 
 describe('stage copy audit', () => {
   const projectRoot = path.join(__dirname, '..', '..');
+  const repoRoot = path.join(__dirname, '..', '..', '..', '..');
   const targetDirectories = ['app', 'components', 'lib', 'styles']
     .map((segment) => path.join(projectRoot, segment))
     .filter((dir) => {
@@ -13,7 +14,16 @@ describe('stage copy audit', () => {
       }
     });
 
-  const ignoredDirectories = new Set(['node_modules', 'tests', '.next', '.git']);
+  const ignoredDirectories = new Set([
+    'node_modules',
+    '.next',
+    '.git',
+    'coverage',
+    'dist',
+    '.turbo',
+    'playwright-report',
+    'test-results',
+  ]);
   const allowedExtensions = new Set(['.ts', '.tsx', '.json', '.md', '.mjs', '.css']);
   const forbiddenPattern = /stage\s*3/i;
 
@@ -40,8 +50,15 @@ describe('stage copy audit', () => {
     return files;
   }
 
-  it('исключает упоминания Stage 3 из клиентского кода', () => {
+  it('исключает упоминания запрещённого этапа из клиентского кода', () => {
     const files = targetDirectories.flatMap((dir) => collectFiles(dir));
+    const offenders = files.filter((file) => forbiddenPattern.test(readFileSync(file, 'utf8')));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it('в репозитории нет упоминаний запрещённого этапа', () => {
+    const files = collectFiles(repoRoot);
     const offenders = files.filter((file) => forbiddenPattern.test(readFileSync(file, 'utf8')));
 
     expect(offenders).toEqual([]);
