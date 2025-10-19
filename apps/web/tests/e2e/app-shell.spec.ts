@@ -40,7 +40,8 @@ test.describe('app shell', () => {
   test('основные маршруты /app доступны', async ({ page }) => {
     const paths = [
       '/app/dashboard',
-      '/app/marketplace/projects',
+      '/app/marketplace/templates',
+      '/app/performers/specialists',
       '/app/finance/wallet',
       '/app/docs/files',
       '/app/profile',

@@ -23,9 +23,17 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
   '/app/marketplace': {
     title: 'Маркетплейс',
     actions: [
-      { label: 'Откликнуться', message: 'TODO: Откликнуться' },
-      { label: 'Запросить смету', message: 'TODO: Запросить смету' },
-      { label: 'Сохранить проект', message: 'TODO: Сохранить проект' }
+      { label: 'Открыть витрину', message: 'TODO: Открыть витрину решений' },
+      { label: 'Добавить в корзину', message: 'TODO: Добавить товар в корзину' },
+      { label: 'Перейти к заказам', message: 'TODO: Открыть историю заказов' }
+    ]
+  },
+  '/app/performers': {
+    title: 'Исполнители',
+    actions: [
+      { label: 'Найти специалиста', message: 'TODO: Найти специалиста' },
+      { label: 'Разместить вакансию', message: 'TODO: Создать вакансию' },
+      { label: 'Просмотреть отклики', message: 'TODO: Открыть отклики исполнителей' }
     ]
   },
   '/app/ai-hub': {
