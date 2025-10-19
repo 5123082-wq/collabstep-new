@@ -1,6 +1,7 @@
 import {
   applyVacancyFilters,
   buildVacancySearchParams,
+  DEFAULT_VACANCY_FILTERS,
   parseVacancyFilters,
   type VacancyFilters
 } from '@/lib/marketplace/vacancies';
@@ -115,6 +116,11 @@ describe('marketplace vacancies helpers', () => {
       lang: 'en',
       page: '3'
     });
+  });
+
+  it('не добавляет параметры для значений по умолчанию', () => {
+    const params = buildVacancySearchParams(DEFAULT_VACANCY_FILTERS);
+    expect(params.toString()).toBe('');
   });
 
   it('применяет фильтры к вакансиям', () => {

@@ -7,11 +7,13 @@ import type { Specialist } from '@/lib/schemas/marketplace-specialist';
 import {
   applySpecialistFilters,
   buildSpecialistSearchParams,
+  DEFAULT_SPECIALIST_FILTERS,
   parseSpecialistFilters,
   type SpecialistFilters
 } from '@/lib/marketplace/specialists';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { toast } from '@/lib/ui/toast';
+import { EmptyState, ErrorState } from '@/components/marketplace/FeedbackState';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -21,9 +23,19 @@ const WORK_FORMAT_LABEL: Record<'remote' | 'office' | 'hybrid', string> = {
   hybrid: 'Гибрид'
 };
 
-function formatCurrency(currency: string): string {
+const SEARCH_PLACEHOLDER = 'Например: дизайн или Python';
+
+const numberFormatter = new Intl.NumberFormat('ru-RU');
+
+function currencySymbol(currency: string): string {
   if (currency === 'RUB') {
     return '₽';
+  }
+  if (currency === 'USD') {
+    return '$';
+  }
+  if (currency === 'EUR') {
+    return '€';
   }
   return currency;
 }
@@ -39,13 +51,39 @@ function formatPeriod(period: 'hour' | 'day' | 'project'): string {
 }
 
 function formatRate(rate: Specialist['rate']): string {
-  const currencySymbol = formatCurrency(rate.currency);
-  const min = rate.min.toLocaleString('ru-RU');
-  const max = rate.max.toLocaleString('ru-RU');
+  const symbol = currencySymbol(rate.currency);
   if (rate.min === rate.max) {
-    return `${min} ${currencySymbol}/${formatPeriod(rate.period)}`;
+    return `${numberFormatter.format(rate.min)} ${symbol}/${formatPeriod(rate.period)}`;
   }
-  return `${min} – ${max} ${currencySymbol}/${formatPeriod(rate.period)}`;
+  return `${numberFormatter.format(rate.min)} – ${numberFormatter.format(rate.max)} ${symbol}/${formatPeriod(rate.period)}`;
+}
+
+function cloneFilters(filters: SpecialistFilters): SpecialistFilters {
+  return {
+    ...filters,
+    skills: [...filters.skills]
+  };
+}
+
+function areFiltersEqual(a: SpecialistFilters, b: SpecialistFilters): boolean {
+  if (
+    a.query !== b.query ||
+    a.role !== b.role ||
+    a.language !== b.language ||
+    a.workFormat !== b.workFormat ||
+    a.rateMin !== b.rateMin ||
+    a.rateMax !== b.rateMax ||
+    a.sort !== b.sort ||
+    a.page !== b.page
+  ) {
+    return false;
+  }
+
+  if (a.skills.length !== b.skills.length) {
+    return false;
+  }
+
+  return a.skills.every((skill, index) => skill === b.skills[index]);
 }
 
 type SpecialistsCatalogProps = {
@@ -192,37 +230,66 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const urlFilters = useMemo(() => parseSpecialistFilters(searchParams), [searchParams]);
-  const [filters, setFilters] = useState<SpecialistFilters>(urlFilters);
-  const filtersRef = useRef(filters);
-
-  const [searchDraft, setSearchDraft] = useState(filters.query ?? '');
-  const [rateMinDraft, setRateMinDraft] = useState(filters.rateMin !== null ? String(filters.rateMin) : '');
-  const [rateMaxDraft, setRateMaxDraft] = useState(filters.rateMax !== null ? String(filters.rateMax) : '');
+  const [filters, setFilters] = useState<SpecialistFilters>(() => cloneFilters(DEFAULT_SPECIALIST_FILTERS));
+  const filtersRef = useRef<SpecialistFilters>(cloneFilters(DEFAULT_SPECIALIST_FILTERS));
+  const [searchDraft, setSearchDraft] = useState('');
+  const [rateMinDraft, setRateMinDraft] = useState('');
+  const [rateMaxDraft, setRateMaxDraft] = useState('');
+  const [isReady, setIsReady] = useState(false);
+  const lastQueryRef = useRef<string>('');
   const debouncedQuery = useDebouncedValue(searchDraft, 400);
   const debouncedRateMin = useDebouncedValue(rateMinDraft, 400);
   const debouncedRateMax = useDebouncedValue(rateMaxDraft, 400);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setFilters(urlFilters);
-  }, [urlFilters]);
+    const currentQuery = searchParams.toString();
+
+    if (!isReady) {
+      const initialFilters = cloneFilters(parseSpecialistFilters(searchParams));
+      filtersRef.current = initialFilters;
+      setFilters(initialFilters);
+      setSearchDraft(initialFilters.query ?? '');
+      setRateMinDraft(initialFilters.rateMin !== null ? String(initialFilters.rateMin) : '');
+      setRateMaxDraft(initialFilters.rateMax !== null ? String(initialFilters.rateMax) : '');
+      lastQueryRef.current = currentQuery;
+      setIsReady(true);
+      return;
+    }
+
+    if (lastQueryRef.current === currentQuery) {
+      return;
+    }
+
+    const nextFilters = cloneFilters(parseSpecialistFilters(searchParams));
+    filtersRef.current = nextFilters;
+    setFilters(nextFilters);
+    setSearchDraft(nextFilters.query ?? '');
+    setRateMinDraft(nextFilters.rateMin !== null ? String(nextFilters.rateMin) : '');
+    setRateMaxDraft(nextFilters.rateMax !== null ? String(nextFilters.rateMax) : '');
+    lastQueryRef.current = currentQuery;
+  }, [isReady, searchParams]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     setSearchDraft(filters.query ?? '');
-  }, [filters.query]);
+  }, [filters.query, isReady]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     setRateMinDraft(filters.rateMin !== null ? String(filters.rateMin) : '');
-  }, [filters.rateMin]);
+  }, [filters.rateMin, isReady]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     setRateMaxDraft(filters.rateMax !== null ? String(filters.rateMax) : '');
-  }, [filters.rateMax]);
-
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
+  }, [filters.rateMax, isReady]);
 
   const scrollToTop = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -238,25 +305,28 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
     });
   }, []);
 
-  const updateFilters = useCallback(
-    (patch: Partial<SpecialistFilters>, options: { resetPage?: boolean; scroll?: boolean } = {}) => {
-      const current = filtersRef.current;
-      const merged: SpecialistFilters = {
-        ...current,
-        ...patch
-      };
+  const applyFiltersState = useCallback(
+    (nextFilters: SpecialistFilters, options: { scroll?: boolean } = {}) => {
+      const normalized = cloneFilters(nextFilters);
+      const params = buildSpecialistSearchParams(normalized);
+      const nextQuery = params.toString();
+      const currentQuery = lastQueryRef.current;
+      const sameFilters = areFiltersEqual(filtersRef.current, normalized);
+      const sameQuery = currentQuery === nextQuery;
 
-      if (options.resetPage !== false) {
-        merged.page = 1;
+      if (sameFilters && sameQuery) {
+        return;
       }
 
-      filtersRef.current = merged;
-      setFilters(merged);
+      filtersRef.current = normalized;
+      setFilters(normalized);
 
-      const params = buildSpecialistSearchParams(merged);
-      startTransition(() => {
-        router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
-      });
+      if (!sameQuery) {
+        lastQueryRef.current = nextQuery;
+        startTransition(() => {
+          router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+        });
+      }
 
       if (options.scroll !== false) {
         scrollToTop();
@@ -265,18 +335,46 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
     [pathname, router, scrollToTop, startTransition]
   );
 
+  const updateFilters = useCallback(
+    (patch: Partial<SpecialistFilters>, options: { resetPage?: boolean; scroll?: boolean } = {}) => {
+      if (!isReady) {
+        return;
+      }
+
+      const current = filtersRef.current;
+      const merged: SpecialistFilters = {
+        ...current,
+        ...patch,
+        skills: patch.skills ? [...patch.skills] : current.skills
+      };
+
+      if (options.resetPage !== false) {
+        merged.page = 1;
+      }
+
+      applyFiltersState(merged, options);
+    },
+    [applyFiltersState, isReady]
+  );
+
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     const normalized = filters.query ?? '';
     if (debouncedQuery === normalized) {
       return;
     }
     const value = debouncedQuery.trim();
     updateFilters({ query: value || null });
-  }, [debouncedQuery, filters.query, updateFilters]);
+  }, [debouncedQuery, filters.query, isReady, updateFilters]);
 
   useEffect(() => {
-    const current = filters.rateMin !== null ? String(filters.rateMin) : '';
-    if (debouncedRateMin === current) {
+    if (!isReady) {
+      return;
+    }
+    const currentRate = filters.rateMin !== null ? String(filters.rateMin) : '';
+    if (debouncedRateMin === currentRate) {
       return;
     }
     const parsed = debouncedRateMin ? Number.parseInt(debouncedRateMin, 10) : null;
@@ -284,11 +382,14 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
       return;
     }
     updateFilters({ rateMin: parsed }, { scroll: false });
-  }, [debouncedRateMin, filters.rateMin, updateFilters]);
+  }, [debouncedRateMin, filters.rateMin, isReady, updateFilters]);
 
   useEffect(() => {
-    const current = filters.rateMax !== null ? String(filters.rateMax) : '';
-    if (debouncedRateMax === current) {
+    if (!isReady) {
+      return;
+    }
+    const currentRate = filters.rateMax !== null ? String(filters.rateMax) : '';
+    if (debouncedRateMax === currentRate) {
       return;
     }
     const parsed = debouncedRateMax ? Number.parseInt(debouncedRateMax, 10) : null;
@@ -296,7 +397,7 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
       return;
     }
     updateFilters({ rateMax: parsed }, { scroll: false });
-  }, [debouncedRateMax, filters.rateMax, updateFilters]);
+  }, [debouncedRateMax, filters.rateMax, isReady, updateFilters]);
 
   const filteredItems = useMemo(() => applySpecialistFilters(data, filters), [data, filters]);
   const total = filteredItems.length;
@@ -327,22 +428,18 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
   );
 
   if (error) {
-    return (
-      <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
-        <p>Не удалось загрузить каталог специалистов. Попробуйте обновить страницу.</p>
-      </div>
-    );
+    return <ErrorState message="Не удалось загрузить каталог специалистов. Попробуйте обновить страницу." />;
   }
 
   const handleReset = () => {
-    startTransition(() => {
-      router.replace(pathname, { scroll: false });
-    });
-    scrollToTop();
+    if (!isReady) {
+      return;
+    }
+    applyFiltersState(cloneFilters(DEFAULT_SPECIALIST_FILTERS));
   };
 
   return (
-    <section className="space-y-6" aria-live="polite">
+    <section className="space-y-6" aria-live="polite" data-page-ready={isReady ? 'true' : 'false'}>
       <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
@@ -353,6 +450,7 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
             type="button"
             onClick={handleReset}
             className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            aria-controls="results"
           >
             Сбросить фильтры
           </button>
@@ -466,7 +564,7 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
               type="search"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Например: research или Swift"
+              placeholder={SEARCH_PLACEHOLDER}
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
             />
           </label>
@@ -492,17 +590,17 @@ export default function SpecialistsCatalog({ data, error }: SpecialistsCatalogPr
         {isPending && <p className="text-xs text-indigo-300">Обновляем результаты…</p>}
       </div>
 
-      {pageItems.length === 0 ? (
-        <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-10 text-center text-sm text-neutral-400">
-          Ничего не найдено. Измените фильтры.
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {pageItems.map((specialist) => (
-            <SpecialistCard key={specialist.id} specialist={specialist} />
-          ))}
-        </div>
-      )}
+      <div id="results">
+        {pageItems.length === 0 ? (
+          <EmptyState message="Ничего не найдено. Измените фильтры." />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {pageItems.map((specialist) => (
+              <SpecialistCard key={specialist.id} specialist={specialist} />
+            ))}
+          </div>
+        )}
+      </div>
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onChange={(page) => updateFilters({ page }, { resetPage: false })} />
     </section>

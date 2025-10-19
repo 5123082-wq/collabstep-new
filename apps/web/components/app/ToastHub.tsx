@@ -45,7 +45,11 @@ export default function ToastHub() {
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-6 right-6 z-[150] flex w-80 flex-col gap-3">
+    <div
+      className="pointer-events-none fixed bottom-6 right-6 z-[150] flex w-80 flex-col gap-3"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {toasts.map((toast) => (
         <div
           key={toast.id}

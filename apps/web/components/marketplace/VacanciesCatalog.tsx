@@ -7,11 +7,13 @@ import type { Vacancy } from '@/lib/schemas/marketplace-vacancy';
 import {
   applyVacancyFilters,
   buildVacancySearchParams,
+  DEFAULT_VACANCY_FILTERS,
   parseVacancyFilters,
   type VacancyFilters
 } from '@/lib/marketplace/vacancies';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
 import { toast } from '@/lib/ui/toast';
+import { EmptyState, ErrorState } from '@/components/marketplace/FeedbackState';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -27,27 +29,68 @@ const FORMAT_LABEL: Record<'remote' | 'office' | 'hybrid', string> = {
   hybrid: 'Гибрид'
 };
 
+const SEARCH_PLACEHOLDER = 'Например: дизайн или Python';
+
+const numberFormatter = new Intl.NumberFormat('ru-RU');
+const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long' });
+
+function currencySymbol(currency: string): string {
+  if (currency === 'RUB') {
+    return '₽';
+  }
+  if (currency === 'USD') {
+    return '$';
+  }
+  if (currency === 'EUR') {
+    return '€';
+  }
+  return currency;
+}
+
+function formatPeriod(period: 'hour' | 'day' | 'project'): string {
+  if (period === 'hour') {
+    return 'час';
+  }
+  if (period === 'day') {
+    return 'день';
+  }
+  return 'проект';
+}
+
 function formatReward(reward: Vacancy['reward']): string {
   if (reward.type === 'rate') {
-    const min = reward.min.toLocaleString('ru-RU');
-    const max = reward.max.toLocaleString('ru-RU');
-    const period = reward.period === 'hour' ? 'час' : reward.period === 'day' ? 'день' : 'проект';
-    const currency = reward.currency === 'RUB' ? '₽' : reward.currency;
+    const symbol = currencySymbol(reward.currency);
     if (reward.min === reward.max) {
-      return `${min} ${currency}/${period}`;
+      return `${numberFormatter.format(reward.min)} ${symbol}/${formatPeriod(reward.period)}`;
     }
-    return `${min} – ${max} ${currency}/${period}`;
+    return `${numberFormatter.format(reward.min)} – ${numberFormatter.format(reward.max)} ${symbol}/${formatPeriod(reward.period)}`;
   }
   if (reward.type === 'salary') {
-    const amount = reward.amount.toLocaleString('ru-RU');
-    const currency = reward.currency === 'RUB' ? '₽' : reward.currency;
-    return `${amount} ${currency}/мес.`;
+    const symbol = currencySymbol(reward.currency);
+    return `${numberFormatter.format(reward.amount)} ${symbol}/мес.`;
   }
   return `Доля ${reward.share}`;
 }
 
 function formatDeadline(date: string): string {
-  return new Date(date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+  return dateFormatter.format(new Date(date));
+}
+
+function cloneFilters(filters: VacancyFilters): VacancyFilters {
+  return { ...filters };
+}
+
+function areFiltersEqual(a: VacancyFilters, b: VacancyFilters): boolean {
+  return (
+    a.query === b.query &&
+    a.role === b.role &&
+    a.level === b.level &&
+    a.employment === b.employment &&
+    a.format === b.format &&
+    a.rewardType === b.rewardType &&
+    a.language === b.language &&
+    a.page === b.page
+  );
 }
 
 type VacanciesCatalogProps = {
@@ -190,24 +233,44 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const urlFilters = useMemo(() => parseVacancyFilters(searchParams), [searchParams]);
-  const [filters, setFilters] = useState<VacancyFilters>(urlFilters);
-  const filtersRef = useRef(filters);
-  const [searchDraft, setSearchDraft] = useState(filters.query ?? '');
+  const [filters, setFilters] = useState<VacancyFilters>(() => cloneFilters(DEFAULT_VACANCY_FILTERS));
+  const filtersRef = useRef<VacancyFilters>(cloneFilters(DEFAULT_VACANCY_FILTERS));
+  const [searchDraft, setSearchDraft] = useState('');
+  const [isReady, setIsReady] = useState(false);
+  const lastQueryRef = useRef<string>('');
   const debouncedQuery = useDebouncedValue(searchDraft, 400);
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setFilters(urlFilters);
-  }, [urlFilters]);
+    const currentQuery = searchParams.toString();
+
+    if (!isReady) {
+      const initialFilters = cloneFilters(parseVacancyFilters(searchParams));
+      filtersRef.current = initialFilters;
+      setFilters(initialFilters);
+      setSearchDraft(initialFilters.query ?? '');
+      lastQueryRef.current = currentQuery;
+      setIsReady(true);
+      return;
+    }
+
+    if (lastQueryRef.current === currentQuery) {
+      return;
+    }
+
+    const nextFilters = cloneFilters(parseVacancyFilters(searchParams));
+    filtersRef.current = nextFilters;
+    setFilters(nextFilters);
+    setSearchDraft(nextFilters.query ?? '');
+    lastQueryRef.current = currentQuery;
+  }, [isReady, searchParams]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     setSearchDraft(filters.query ?? '');
-  }, [filters.query]);
-
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
+  }, [filters.query, isReady]);
 
   const scrollToTop = useCallback(() => {
     if (typeof window === 'undefined') {
@@ -223,8 +286,42 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
     });
   }, []);
 
+  const applyFiltersState = useCallback(
+    (nextFilters: VacancyFilters, options: { scroll?: boolean } = {}) => {
+      const normalized = cloneFilters(nextFilters);
+      const params = buildVacancySearchParams(normalized);
+      const nextQuery = params.toString();
+      const currentQuery = lastQueryRef.current;
+      const sameFilters = areFiltersEqual(filtersRef.current, normalized);
+      const sameQuery = currentQuery === nextQuery;
+
+      if (sameFilters && sameQuery) {
+        return;
+      }
+
+      filtersRef.current = normalized;
+      setFilters(normalized);
+
+      if (!sameQuery) {
+        lastQueryRef.current = nextQuery;
+        startTransition(() => {
+          router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+        });
+      }
+
+      if (options.scroll !== false) {
+        scrollToTop();
+      }
+    },
+    [pathname, router, scrollToTop, startTransition]
+  );
+
   const updateFilters = useCallback(
     (patch: Partial<VacancyFilters>, options: { resetPage?: boolean; scroll?: boolean } = {}) => {
+      if (!isReady) {
+        return;
+      }
+
       const current = filtersRef.current;
       const merged: VacancyFilters = {
         ...current,
@@ -235,29 +332,22 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
         merged.page = 1;
       }
 
-      filtersRef.current = merged;
-      setFilters(merged);
-
-      const params = buildVacancySearchParams(merged);
-      startTransition(() => {
-        router.replace(params.toString() ? `${pathname}?${params.toString()}` : pathname, { scroll: false });
-      });
-
-      if (options.scroll !== false) {
-        scrollToTop();
-      }
+      applyFiltersState(merged, options);
     },
-    [pathname, router, scrollToTop, startTransition]
+    [applyFiltersState, isReady]
   );
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
     const normalized = filters.query ?? '';
-    if (normalized === debouncedQuery) {
+    if (debouncedQuery === normalized) {
       return;
     }
     const value = debouncedQuery.trim();
     updateFilters({ query: value || null });
-  }, [debouncedQuery, filters.query, updateFilters]);
+  }, [debouncedQuery, filters.query, isReady, updateFilters]);
 
   const filteredItems = useMemo(() => applyVacancyFilters(data, filters), [data, filters]);
   const total = filteredItems.length;
@@ -284,22 +374,18 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
   );
 
   if (error) {
-    return (
-      <div className="rounded-3xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">
-        <p>Не удалось загрузить вакансии. Попробуйте обновить страницу.</p>
-      </div>
-    );
+    return <ErrorState message="Не удалось загрузить вакансии. Попробуйте обновить страницу." />;
   }
 
   const handleReset = () => {
-    startTransition(() => {
-      router.replace(pathname, { scroll: false });
-    });
-    scrollToTop();
+    if (!isReady) {
+      return;
+    }
+    applyFiltersState(cloneFilters(DEFAULT_VACANCY_FILTERS));
   };
 
   return (
-    <section className="space-y-6" aria-live="polite">
+    <section className="space-y-6" aria-live="polite" data-page-ready={isReady ? 'true' : 'false'}>
       <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
@@ -310,6 +396,7 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
             type="button"
             onClick={handleReset}
             className="rounded-xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            aria-controls="results"
           >
             Сбросить фильтры
           </button>
@@ -407,7 +494,7 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
               type="search"
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
-              placeholder="Например: маркетинг или Python"
+              placeholder={SEARCH_PLACEHOLDER}
               className="w-full rounded-xl border border-neutral-800 bg-neutral-900/70 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
             />
           </label>
@@ -421,17 +508,17 @@ export default function VacanciesCatalog({ data, error }: VacanciesCatalogProps)
         {isPending && <p className="text-xs text-indigo-300">Обновляем результаты…</p>}
       </div>
 
-      {pageItems.length === 0 ? (
-        <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-10 text-center text-sm text-neutral-400">
-          Ничего не найдено. Измените фильтры.
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {pageItems.map((vacancy) => (
-            <VacancyCard key={vacancy.id} vacancy={vacancy} />
-          ))}
-        </div>
-      )}
+      <div id="results">
+        {pageItems.length === 0 ? (
+          <EmptyState message="Ничего не найдено. Измените фильтры." />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {pageItems.map((vacancy) => (
+              <VacancyCard key={vacancy.id} vacancy={vacancy} />
+            ))}
+          </div>
+        )}
+      </div>
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onChange={(page) => updateFilters({ page }, { resetPage: false })} />
     </section>
