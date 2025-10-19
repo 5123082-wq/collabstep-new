@@ -14,13 +14,30 @@ export type LeftMenuIcon =
   | 'admin'
   | 'performers';
 
-export type LeftMenuChild = {
-  id: string;
-  label: string;
-  href: string;
-  description?: string;
-  roles?: ('FOUNDER' | 'SPECIALIST' | 'CONTRACTOR' | 'PM' | 'ADMIN' | 'MODERATOR' | 'OBSERVER')[];
-};
+type LeftMenuBaseRoles = (
+  | 'FOUNDER'
+  | 'SPECIALIST'
+  | 'CONTRACTOR'
+  | 'PM'
+  | 'ADMIN'
+  | 'MODERATOR'
+  | 'OBSERVER'
+)[];
+
+export type LeftMenuChild =
+  | {
+      id: string;
+      label: string;
+      href: string;
+      description?: string;
+      roles?: LeftMenuBaseRoles;
+      type?: 'link';
+    }
+  | {
+      id: string;
+      type: 'divider';
+      roles?: LeftMenuBaseRoles;
+    };
 
 export type LeftMenuSection = {
   id: string;
@@ -53,13 +70,18 @@ export const leftMenuConfig: LeftMenuSection[] = [
     id: 'marketplace',
     label: 'Маркетплейс',
     icon: 'marketplace',
-    href: '/app/marketplace/categories',
+    href: '/market/templates',
     children: [
-      { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/app/marketplace/templates' },
-      { id: 'marketplace-projects', label: 'Каталог проектов', href: '/app/marketplace/projects' },
-      { id: 'marketplace-favorites', label: 'Избранное', href: '/app/marketplace/favorites' },
-      { id: 'marketplace-cart', label: 'Корзина', href: '/app/marketplace/cart' },
-      { id: 'marketplace-orders', label: 'Мои заказы', href: '/app/marketplace/orders' }
+      { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/market/templates' },
+      { id: 'marketplace-projects', label: 'Готовые проекты', href: '/market/projects' },
+      { id: 'marketplace-services', label: 'Пакеты услуг', href: '/market/services' },
+      { id: 'marketplace-categories', label: 'Категории и подборки', href: '/market/categories' },
+      { id: 'marketplace-favorites', label: 'Избранное', href: '/market/favorites' },
+      { id: 'marketplace-cart', label: 'Корзина', href: '/market/cart' },
+      { id: 'marketplace-orders', label: 'Мои заказы', href: '/market/orders' },
+      { id: 'marketplace-divider', type: 'divider' },
+      { id: 'marketplace-publish', label: 'Опубликовать', href: '/market/publish' },
+      { id: 'marketplace-seller', label: 'Мои продажи', href: '/market/seller' }
     ]
   },
   {

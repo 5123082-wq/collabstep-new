@@ -93,19 +93,27 @@ export default function Sidebar({ roles }: SidebarProps) {
               </div>
               {hasChildren && isExpanded && (
                 <ul className="space-y-1 px-3 pb-3">
-                  {section.children?.map((child) => (
-                    <li key={child.id}>
-                      <Link
-                        href={child.href}
-                        className={clsx(
-                          'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                          normalizedPath === child.href && 'bg-indigo-500/10 text-white'
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    </li>
-                  ))}
+                  {section.children?.map((child) => {
+                    if (child.type === 'divider') {
+                      return (
+                        <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
+                      );
+                    }
+
+                    return (
+                      <li key={child.id}>
+                        <Link
+                          href={child.href}
+                          className={clsx(
+                            'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                            normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                          )}
+                        >
+                          {child.label}
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
