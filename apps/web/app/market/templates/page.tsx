@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import MarketBreadcrumbs from '@/components/marketplace/MarketBreadcrumbs';
 import TemplatesCatalog from '@/components/marketplace/templates/TemplatesCatalog';
+import TemplatesSkeleton from '@/components/marketplace/templates/TemplatesSkeleton';
 import { templates } from '@/lib/marketplace/data';
 
 export const metadata: Metadata = {
@@ -19,7 +21,15 @@ export default function MarketTemplatesPage() {
           избранное и собирайте коллекции для своих проектов.
         </p>
       </div>
-      <TemplatesCatalog templates={templates} />
+      <Suspense
+        fallback={
+          <div className="space-y-6">
+            <TemplatesSkeleton />
+          </div>
+        }
+      >
+        <TemplatesCatalog templates={templates} />
+      </Suspense>
     </div>
   );
 }
