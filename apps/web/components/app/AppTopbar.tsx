@@ -6,6 +6,7 @@ import type { KeyboardEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUiStore } from '@/lib/state/ui-store';
 import { loadSpecialists, loadVacancies } from '@/lib/mock/loaders';
+import { toast } from '@/lib/ui/toast';
 
 const backgroundPresets = [
   { id: 'mesh', label: 'Mesh' },
@@ -203,6 +204,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
   const activeSuggestionId = showSuggestionList
     ? `${listboxId}-option-${suggestions[activeSuggestion]?.id ?? activeSuggestion}`
     : undefined;
+  const currentSubscriptionLabel = 'Подписка Pro';
 
   useEffect(() => {
     const body = document.body;
@@ -307,6 +309,26 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           </button>
         </div>
         <div className="hidden items-center gap-2 md:flex">
+          <button
+            type="button"
+            onClick={() => toast('Раздел тарифов скоро появится в демо-версии платформы', 'info')}
+            className="inline-flex items-center gap-2 rounded-2xl border border-indigo-500/60 bg-indigo-500/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 9.5 7 5l5 5 5-5 3 4.5V20H4z" />
+              <path d="M4 15h16" />
+            </svg>
+            {currentSubscriptionLabel}
+          </button>
           <IconButton icon="bell" label="Уведомления" />
           <IconButton icon="chat" label="Сообщения" />
           <IconButton icon="wallet" label="Кошелёк" />

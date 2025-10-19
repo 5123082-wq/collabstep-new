@@ -3,12 +3,7 @@
 import { useMemo } from 'react';
 import { useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
-
-const currencyFormatter = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
-  maximumFractionDigits: 0
-});
+import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 
 type TemplatePurchaseActionsProps = {
   template: MarketplaceTemplate;
@@ -20,14 +15,17 @@ export default function TemplatePurchaseActions({ template }: TemplatePurchaseAc
   const favorites = useMarketplaceStore((state) => state.favorites);
   const isFavorite = favorites.includes(template.id);
 
-  const priceLabel = useMemo(() => currencyFormatter.format(template.price), [template.price]);
+  const priceInfo = useMemo(() => getTemplatePriceLabel(template), [template]);
 
   return (
     <div className="space-y-4">
       <div>
         <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">Стоимость</p>
-        <p className="text-3xl font-semibold text-neutral-50">{priceLabel}</p>
-        <p className="mt-2 text-sm text-neutral-400">Лицензия: {template.license}</p>
+        <p className="text-3xl font-semibold text-neutral-50">{priceInfo.primary}</p>
+        {priceInfo.secondary ? (
+          <p className="mt-1 text-sm text-neutral-500">{priceInfo.secondary}</p>
+        ) : null}
+        <p className="mt-3 text-sm text-neutral-400">Лицензия: {template.license}</p>
       </div>
       <div className="flex flex-col gap-3">
         <button

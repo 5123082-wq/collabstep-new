@@ -4,12 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMarketplaceStore, enrichCartItems } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
-
-const currencyFormatter = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
-  maximumFractionDigits: 0
-});
+import { formatTemplatePrice, getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 
 type CartViewProps = {
   templates: MarketplaceTemplate[];
@@ -23,8 +18,11 @@ export default function CartView({ templates }: CartViewProps) {
   const [promo, setPromo] = useState('');
 
   const items = useMemo(() => enrichCartItems(cart, templates), [cart, templates]);
-  const subtotal = items.reduce((acc, item) => acc + item.template.price * item.quantity, 0);
-  const totalLabel = currencyFormatter.format(subtotal);
+  const subtotal = items.reduce(
+    (acc, item) => (item.template.pricingType === 'paid' ? acc + item.template.price * item.quantity : acc),
+    0
+  );
+  const totalLabel = formatTemplatePrice(subtotal);
 
   if (items.length === 0) {
     return (
@@ -44,43 +42,60 @@ export default function CartView({ templates }: CartViewProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.templateId} className="flex flex-col gap-3 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center">
-            <div className="flex flex-1 flex-col gap-2">
-              <Link
-                href={`/market/templates/${item.template.id}`}
-                className="text-lg font-semibold text-neutral-100 transition hover:text-indigo-300"
-              >
-                {item.template.title}
-              </Link>
-              <p className="text-sm text-neutral-400">{item.template.description}</p>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
-                <span className="font-semibold text-neutral-100">{currencyFormatter.format(item.template.price)}</span>
-                <span aria-hidden className="text-neutral-700">•</span>
-                <span>{item.quantity} шт.</span>
+        {items.map((item) => {
+          const priceInfo = getTemplatePriceLabel(item.template);
+
+          return (
+            <div
+              key={item.templateId}
+              className="flex flex-col gap-3 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center"
+            >
+              <div className="flex flex-1 flex-col gap-2">
+                <Link
+                  href={`/market/templates/${item.template.id}`}
+                  className="text-lg font-semibold text-neutral-100 transition hover:text-indigo-300"
+                >
+                  {item.template.title}
+                </Link>
+                <p className="text-sm text-neutral-400">{item.template.description}</p>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
+                  <span className="font-semibold text-neutral-100">{priceInfo.primary}</span>
+                  {item.template.pricingType === 'paid' ? (
+                    <>
+                      <span aria-hidden className="text-neutral-700">•</span>
+                      <span>{item.quantity} шт.</span>
+                      <span aria-hidden className="text-neutral-700">•</span>
+                      <span className="text-neutral-500">
+                        {formatTemplatePrice(item.template.price * item.quantity)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-neutral-500">{priceInfo.secondary ?? 'Без оплаты'}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                <label className="flex items-center gap-2 rounded-xl border border-neutral-800/80 bg-neutral-950/60 px-3 py-2 text-sm">
+                  <span className="text-neutral-500">Кол-во</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={item.quantity}
+                    onChange={(event) => updateQuantity(item.templateId, Number(event.target.value))}
+                    className="w-16 rounded border border-neutral-800/60 bg-neutral-950/0 px-2 py-1 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => removeFromCart(item.templateId)}
+                  className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-500 hover:text-neutral-50"
+                >
+                  Удалить
+                </button>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:flex-col sm:items-end">
-              <label className="flex items-center gap-2 rounded-xl border border-neutral-800/80 bg-neutral-950/60 px-3 py-2 text-sm">
-                <span className="text-neutral-500">Кол-во</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={item.quantity}
-                  onChange={(event) => updateQuantity(item.templateId, Number(event.target.value))}
-                  className="w-16 rounded border border-neutral-800/60 bg-neutral-950/0 px-2 py-1 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={() => removeFromCart(item.templateId)}
-                className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-500 hover:text-neutral-50"
-              >
-                Удалить
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <aside className="space-y-4 rounded-2xl border border-neutral-800/80 bg-neutral-900/60 p-6">
         <div className="space-y-3">
