@@ -3,16 +3,15 @@
 import { Suspense, lazy } from 'react';
 import { useUI } from '@/stores/ui';
 
-const ChatDrawer = lazy(() => import('./ChatDrawer'));
-const NotificationsDrawer = lazy(() => import('./NotificationsDrawer'));
+const CommunicationDrawer = lazy(() => import('./CommunicationDrawer'));
 
 export function DrawerManager() {
   const drawer = useUI((state) => state.drawer);
+  const isCommunicationDrawer = drawer === 'chats' || drawer === 'notifications';
 
   return (
     <Suspense fallback={null}>
-      {drawer === 'chats' ? <ChatDrawer /> : null}
-      {drawer === 'notifications' ? <NotificationsDrawer /> : null}
+      {isCommunicationDrawer ? <CommunicationDrawer /> : null}
     </Suspense>
   );
 }
