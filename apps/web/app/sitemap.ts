@@ -30,7 +30,17 @@ const marketingPaths = [
   '/mkt/pricing',
   '/mkt/blog',
   '/mkt/login',
-  '/mkt/register'
+  '/mkt/register',
+  '/market',
+  '/market/templates',
+  '/market/projects',
+  '/market/services',
+  '/market/categories',
+  '/market/favorites',
+  '/market/cart',
+  '/market/orders',
+  '/market/publish',
+  '/market/seller'
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
