@@ -10,6 +10,7 @@ import CreateMenu from '@/components/app/CreateMenu';
 import RightActionsPanel from '@/components/app/RightActionsPanel';
 import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
+import HoverRail from '@/components/right-rail/HoverRail';
 import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
@@ -52,6 +53,10 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  const railFlagValue =
+    process.env.NEXT_PUBLIC_VITE_FEATURE_RAIL ?? process.env.VITE_FEATURE_RAIL ?? '0';
+  const isHoverRailEnabled = ['1', 'true', 'on', 'enabled'].includes(railFlagValue.toLowerCase());
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -100,12 +105,13 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
         />
         <div className="flex flex-1 overflow-hidden bg-neutral-950/70">
           <ContentContainer>{children}</ContentContainer>
-          <RightActionsPanel />
+          {!isHoverRailEnabled ? <RightActionsPanel /> : null}
         </div>
       </div>
       <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
       <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
       <ToastHub />
+      {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
     </div>
   );
 }
