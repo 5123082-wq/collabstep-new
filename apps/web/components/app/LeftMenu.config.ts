@@ -55,10 +55,10 @@ export const leftMenuConfig: LeftMenuSection[] = [
     icon: 'marketplace',
     href: '/app/marketplace/categories',
     children: [
-      { id: 'marketplace-flow', label: 'Полный пользовательский цикл', href: '/app/marketplace/cart' },
-      { id: 'marketplace-showcase', label: 'Витрина решений', href: '/app/marketplace/categories' },
       { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/app/marketplace/templates' },
-      { id: 'marketplace-services', label: 'Пакеты услуг', href: '/app/marketplace/services' },
+      { id: 'marketplace-projects', label: 'Каталог проектов', href: '/app/marketplace/projects' },
+      { id: 'marketplace-favorites', label: 'Избранное', href: '/app/marketplace/favorites' },
+      { id: 'marketplace-cart', label: 'Корзина', href: '/app/marketplace/cart' },
       { id: 'marketplace-orders', label: 'Мои заказы', href: '/app/marketplace/orders' }
     ]
   },
