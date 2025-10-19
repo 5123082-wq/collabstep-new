@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function MarketplaceSpecialistsRedirectPage() {
+export default function PerformersIndexPage() {
   redirect('/app/performers/specialists');
 }

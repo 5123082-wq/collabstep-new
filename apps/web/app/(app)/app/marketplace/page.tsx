@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
-export default function MarketplaceProjectsRedirectPage() {
+export default function MarketplaceIndexPage() {
   redirect('/app/marketplace/templates');
 }
