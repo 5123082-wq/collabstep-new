@@ -104,8 +104,18 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           isLoggingOut={isLoggingOut}
         />
         <div className="flex flex-1 overflow-hidden bg-neutral-950/70">
-          <ContentContainer>{children}</ContentContainer>
-          {!isHoverRailEnabled ? <RightActionsPanel /> : null}
+          <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-8' : ''}>
+            {children}
+          </ContentContainer>
+          {isHoverRailEnabled ? (
+            <div
+              className="hidden shrink-0 lg:block"
+              style={{ width: '72px' }}
+              aria-hidden="true"
+            />
+          ) : (
+            <RightActionsPanel />
+          )}
         </div>
       </div>
       <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
