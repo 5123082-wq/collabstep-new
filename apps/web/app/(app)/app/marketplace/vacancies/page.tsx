@@ -1,5 +1,15 @@
+import type { Metadata } from 'next';
 import VacanciesCatalog from '@/components/marketplace/VacanciesCatalog';
 import { loadVacancies } from '@/lib/mock/loaders';
+import { getSiteUrl } from '@/lib/seo/siteUrl';
+
+export const metadata: Metadata = {
+  title: 'Вакансии маркетплейса — Collabverse',
+  description: 'Актуальные запросы команд Collabverse: проекты, условия и форматы сотрудничества для специалистов.',
+  alternates: {
+    canonical: `${getSiteUrl()}/app/marketplace/vacancies`
+  }
+};
 
 export default function MarketplaceVacanciesPage() {
   const { items, error } = loadVacancies();

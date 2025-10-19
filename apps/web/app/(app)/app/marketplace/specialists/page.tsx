@@ -1,5 +1,15 @@
+import type { Metadata } from 'next';
 import SpecialistsCatalog from '@/components/marketplace/SpecialistsCatalog';
 import { loadSpecialists } from '@/lib/mock/loaders';
+import { getSiteUrl } from '@/lib/seo/siteUrl';
+
+export const metadata: Metadata = {
+  title: 'Специалисты маркетплейса — Collabverse',
+  description: 'Каталог специалистов Collabverse: дизайнеры, разработчики, менеджеры и продюсеры для ваших проектов.',
+  alternates: {
+    canonical: `${getSiteUrl()}/app/marketplace/specialists`
+  }
+};
 
 export default function MarketplaceSpecialistsPage() {
   const { items, error } = loadSpecialists();

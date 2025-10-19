@@ -1,6 +1,7 @@
 import {
   applySpecialistFilters,
   buildSpecialistSearchParams,
+  DEFAULT_SPECIALIST_FILTERS,
   parseSpecialistFilters,
   type SpecialistFilters
 } from '@/lib/marketplace/specialists';
@@ -112,6 +113,11 @@ describe('marketplace specialists helpers', () => {
       sort: 'new',
       page: '3'
     });
+  });
+
+  it('не добавляет значения по умолчанию в query-параметры', () => {
+    const params = buildSpecialistSearchParams(DEFAULT_SPECIALIST_FILTERS);
+    expect(params.toString()).toBe('');
   });
 
   it('применяет фильтры к каталогу', () => {
