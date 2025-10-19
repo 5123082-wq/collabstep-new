@@ -20,21 +20,35 @@ const COMMAND_ITEMS: SearchItem[] = [
     title: 'Открыть Маркетплейс',
     subtitle: 'Переход в общий каталог',
     tags: ['marketplace'],
-    ref: '/app/marketplace'
+    ref: '/app/marketplace/categories'
   },
   {
     type: 'command',
-    title: 'Открыть раздел специалистов',
-    subtitle: 'Каталог экспертов',
-    tags: ['marketplace', 'specialists'],
-    ref: '/app/marketplace/specialists'
+    title: 'Открыть каталог шаблонов',
+    subtitle: 'Готовые решения для старта проекта',
+    tags: ['marketplace', 'templates'],
+    ref: '/app/marketplace/templates'
   },
   {
     type: 'command',
-    title: 'Открыть раздел вакансий',
-    subtitle: 'Каталог задач и ролей',
-    tags: ['marketplace', 'vacancies'],
-    ref: '/app/marketplace/vacancies'
+    title: 'Открыть пакеты услуг',
+    subtitle: 'Форматные предложения команд и студий',
+    tags: ['marketplace', 'services'],
+    ref: '/app/marketplace/services'
+  },
+  {
+    type: 'command',
+    title: 'Открыть раздел исполнителей',
+    subtitle: 'Каталог специалистов и команд',
+    tags: ['performers', 'specialists'],
+    ref: '/app/performers/specialists'
+  },
+  {
+    type: 'command',
+    title: 'Посмотреть вакансии исполнителей',
+    subtitle: 'Актуальные запросы на специалистов',
+    tags: ['performers', 'vacancies'],
+    ref: '/app/performers/vacancies'
   }
 ];
 

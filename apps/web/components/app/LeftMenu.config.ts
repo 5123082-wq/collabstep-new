@@ -11,7 +11,8 @@ export type LeftMenuIcon =
   | 'profile'
   | 'org'
   | 'support'
-  | 'admin';
+  | 'admin'
+  | 'performers';
 
 export type LeftMenuChild = {
   id: string;
@@ -52,13 +53,26 @@ export const leftMenuConfig: LeftMenuSection[] = [
     id: 'marketplace',
     label: 'Маркетплейс',
     icon: 'marketplace',
-    href: '/app/marketplace/projects',
+    href: '/app/marketplace/categories',
     children: [
-      { id: 'marketplace-projects', label: 'Проекты', href: '/app/marketplace/projects' },
-      { id: 'marketplace-vacancies', label: 'Вакансии', href: '/app/marketplace/vacancies' },
-      { id: 'marketplace-specialists', label: 'Специалисты', href: '/app/marketplace/specialists' },
-      { id: 'marketplace-contractors', label: 'Подрядчики', href: '/app/marketplace/contractors' },
-      { id: 'marketplace-packs', label: 'Паки услуг', href: '/app/marketplace/packs' }
+      { id: 'marketplace-flow', label: 'Полный пользовательский цикл', href: '/app/marketplace/cart' },
+      { id: 'marketplace-showcase', label: 'Витрина решений', href: '/app/marketplace/categories' },
+      { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/app/marketplace/templates' },
+      { id: 'marketplace-services', label: 'Пакеты услуг', href: '/app/marketplace/services' },
+      { id: 'marketplace-orders', label: 'Мои заказы', href: '/app/marketplace/orders' }
+    ]
+  },
+  {
+    id: 'performers',
+    label: 'Исполнители',
+    icon: 'performers',
+    href: '/app/performers/specialists',
+    children: [
+      { id: 'performers-specialists', label: 'Специалисты', href: '/app/performers/specialists' },
+      { id: 'performers-teams', label: 'Команды и подрядчики', href: '/app/performers/teams' },
+      { id: 'performers-vacancies', label: 'Вакансии и задачи', href: '/app/performers/vacancies' },
+      { id: 'performers-my-vacancies', label: 'Мои вакансии', href: '/app/performers/my-vacancies' },
+      { id: 'performers-responses', label: 'Отклики и приглашения', href: '/app/performers/responses' }
     ]
   },
   {
