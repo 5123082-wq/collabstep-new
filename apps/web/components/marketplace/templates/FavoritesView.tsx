@@ -5,12 +5,7 @@ import Image from 'next/image';
 import clsx from 'clsx';
 import { useMarketplaceStore } from '@/lib/marketplace/store';
 import type { MarketplaceTemplate } from '@/lib/marketplace/types';
-
-const currencyFormatter = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'RUB',
-  maximumFractionDigits: 0
-});
+import { getTemplatePriceLabel } from '@/lib/marketplace/pricing';
 
 type FavoritesViewProps = {
   templates: MarketplaceTemplate[];
@@ -42,51 +37,56 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
 
   return (
     <div className="grid gap-4">
-      {favoriteTemplates.map((template) => (
-        <div
-          key={template.id}
-          className="flex flex-col gap-4 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center"
-        >
-          <Link href={`/market/templates/${template.id}`} className="relative h-32 w-full overflow-hidden rounded-xl sm:w-48">
-            <Image src={template.previewUrl} alt={template.title} fill className="object-cover" sizes="192px" />
-          </Link>
-          <div className="flex flex-1 flex-col gap-2">
-            <Link
-              href={`/market/templates/${template.id}`}
-              className="line-clamp-2 text-lg font-semibold text-neutral-100 transition hover:text-indigo-300"
-            >
-              {template.title}
+      {favoriteTemplates.map((template) => {
+        const priceInfo = getTemplatePriceLabel(template);
+
+        return (
+          <div
+            key={template.id}
+            className="flex flex-col gap-4 rounded-2xl border border-neutral-800/70 bg-neutral-900/40 p-4 sm:flex-row sm:items-center"
+          >
+            <Link href={`/market/templates/${template.id}`} className="relative h-32 w-full overflow-hidden rounded-xl sm:w-48">
+              <Image src={template.previewUrl} alt={template.title} fill className="object-cover" sizes="192px" />
             </Link>
-            <p className="text-sm text-neutral-400">{template.description}</p>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
-              <span className="font-semibold text-neutral-100">{currencyFormatter.format(template.price)}</span>
-              <span aria-hidden className="text-neutral-700">•</span>
-              <span>
-                ★ {template.rating.toFixed(1)} <span className="text-neutral-600">({template.ratingCount})</span>
-              </span>
+            <div className="flex flex-1 flex-col gap-2">
+              <Link
+                href={`/market/templates/${template.id}`}
+                className="line-clamp-2 text-lg font-semibold text-neutral-100 transition hover:text-indigo-300"
+              >
+                {template.title}
+              </Link>
+              <p className="text-sm text-neutral-400">{template.description}</p>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-neutral-400">
+                <span className="font-semibold text-neutral-100">{priceInfo.primary}</span>
+                {priceInfo.secondary ? <span className="text-xs text-neutral-500">{priceInfo.secondary}</span> : null}
+                <span aria-hidden className="text-neutral-700">•</span>
+                <span>
+                  ★ {template.rating.toFixed(1)} <span className="text-neutral-600">({template.ratingCount})</span>
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 sm:w-48">
+              <button
+                type="button"
+                onClick={() => addToCart(template.id)}
+                className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
+              >
+                В корзину
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleFavorite(template.id)}
+                className={clsx(
+                  'rounded-xl border px-4 py-2 text-sm font-semibold transition',
+                  'border-neutral-700 text-neutral-200 hover:border-neutral-500 hover:text-neutral-50'
+                )}
+              >
+                Удалить
+              </button>
             </div>
           </div>
-          <div className="flex flex-col gap-2 sm:w-48">
-            <button
-              type="button"
-              onClick={() => addToCart(template.id)}
-              className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
-            >
-              В корзину
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleFavorite(template.id)}
-              className={clsx(
-                'rounded-xl border px-4 py-2 text-sm font-semibold transition',
-                'border-neutral-700 text-neutral-200 hover:border-neutral-500 hover:text-neutral-50'
-              )}
-            >
-              Удалить
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

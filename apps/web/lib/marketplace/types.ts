@@ -13,12 +13,16 @@ export type MarketplaceSeller = {
   portfolioCount: number;
 };
 
+export type TemplatePricingType = 'free' | 'subscription' | 'paid';
+
 export type MarketplaceTemplate = {
   id: string;
   title: string;
   description: string;
   category: MarketplaceCategory;
   price: number;
+  pricingType: TemplatePricingType;
+  subscriptionTier?: string;
   rating: number;
   ratingCount: number;
   salesCount: number;
