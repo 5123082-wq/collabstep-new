@@ -1,7 +1,8 @@
+'use client';
+
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { flags } from '@/lib/flags';
-import { PROJECTS } from '@/app/api/projects/storage';
+import { useEffect, useState } from 'react';
+import type { Project } from '@/domain/projects/types';
 
 const quickLinks = [
   { href: (id: string) => `/project/${id}/tasks`, label: 'Задачи' },
@@ -10,7 +11,7 @@ const quickLinks = [
   { href: (id: string) => `/project/${id}/settings`, label: 'Настройки' }
 ] as const;
 
-const WIDGETS = [
+const widgets = [
   {
     id: 'progress',
     title: 'Прогресс проекта',
@@ -28,21 +29,71 @@ const WIDGETS = [
   }
 ] as const;
 
-type ProjectPageParams = {
-  params: {
-    id: string;
-  };
+type ProjectDashboardPageClientProps = {
+  projectId: string;
 };
 
-export default function ProjectDashboardPage({ params }: ProjectPageParams) {
-  if (!flags.PROJECTS_V1) {
-    notFound();
+type ProjectResponse = Project & {
+  error?: never;
+};
+
+export function ProjectDashboardPageClient({ projectId }: ProjectDashboardPageClientProps) {
+  const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProject() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/projects/${projectId}`);
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить проект');
+        }
+        const data = (await response.json()) as ProjectResponse;
+        if (!cancelled) {
+          setProject(data);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+          setProject(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadProject();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center text-sm text-neutral-400">
+        Загрузка проекта…
+      </div>
+    );
   }
 
-  const project = PROJECTS.find((item) => item.id === params.id);
-
-  if (!project) {
-    notFound();
+  if (error || !project) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-6 text-center text-sm text-neutral-400">
+          <p>{error ?? 'Проект не найден.'}</p>
+          <p className="mt-2 text-xs text-neutral-500">
+            Проверьте ссылку или создайте проект заново.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -66,7 +117,7 @@ export default function ProjectDashboardPage({ params }: ProjectPageParams) {
         </nav>
       </header>
       <section className="grid gap-4 md:grid-cols-2">
-        {WIDGETS.map((widget) => (
+        {widgets.map((widget) => (
           <article key={widget.id} className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-6">
             <h2 className="text-lg font-semibold text-white">{widget.title}</h2>
             <p className="text-sm text-neutral-400">{widget.description}</p>
@@ -79,3 +130,5 @@ export default function ProjectDashboardPage({ params }: ProjectPageParams) {
     </div>
   );
 }
+
+export default ProjectDashboardPageClient;

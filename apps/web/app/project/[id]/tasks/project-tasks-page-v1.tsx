@@ -1,23 +1,21 @@
 import { notFound } from 'next/navigation';
-import { flags } from '@/lib/flags';
 import { PROJECTS } from '@/app/api/projects/storage';
 import ProjectTasksPageClient from './project-tasks-page-client';
 
-type ProjectTasksPageProps = {
+type ProjectTasksPageV1Props = {
   params: {
     id: string;
   };
 };
 
-export default function ProjectTasksPage({ params }: ProjectTasksPageProps) {
-  if (!flags.PROJECTS_V1) {
-    notFound();
-  }
+export function ProjectTasksPageV1({ params }: ProjectTasksPageV1Props) {
+  const project = PROJECTS.find((candidate) => candidate.id === params.id);
 
-  const project = PROJECTS.find((item) => item.id === params.id);
   if (!project) {
     notFound();
   }
 
   return <ProjectTasksPageClient projectId={project.id} projectTitle={project.title} />;
 }
+
+export default ProjectTasksPageV1;
