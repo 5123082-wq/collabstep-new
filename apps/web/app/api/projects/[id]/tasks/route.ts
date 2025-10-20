@@ -1,41 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { flags } from '@/lib/flags';
 import type { Task, TaskStatus } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
 
-export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const items = memory.TASKS.filter((task) => task.projectId === params.id);
+  const sp = req.nextUrl.searchParams;
+  const status = sp.get('status') as TaskStatus | null;
+  const iterationId = sp.get('iterationId');
+
+  let items = memory.TASKS.filter((task) => task.projectId === params.id);
+  if (status) {
+    items = items.filter((task) => task.status === status);
+  }
+  if (iterationId) {
+    items = items.filter((task) => task.iterationId === iterationId);
+  }
+
   return NextResponse.json({ items });
 }
+
+const TaskCreate = z.object({
+  title: z.string().trim().min(1).optional(),
+  description: z.string().optional(),
+  status: z.enum(['new', 'in_progress', 'review', 'done', 'blocked']).optional(),
+  parentId: z.string().optional(),
+  iterationId: z.string().optional(),
+  assigneeId: z.string().optional(),
+  dueAt: z.string().datetime().optional(),
+  priority: z.enum(['low', 'med', 'high']).optional(),
+  labels: z.array(z.string()).optional()
+});
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const body = await req.json().catch(() => ({}));
+  const parsed = TaskCreate.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'bad_request' }, { status: 400 });
+  }
+
+  const b = parsed.data;
   const now = new Date().toISOString();
-  const allowedStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
-  const requestedStatus = typeof body.status === 'string' ? (body.status as TaskStatus) : undefined;
-  const status = requestedStatus && allowedStatuses.includes(requestedStatus) ? requestedStatus : 'new';
-  const task: Task = {
+  const status: TaskStatus = b.status ?? 'new';
+
+  const base = {
     id: crypto.randomUUID(),
     projectId: params.id,
-    parentId: typeof body.parentId === 'string' ? body.parentId : undefined,
-    title: typeof body.title === 'string' && body.title.trim() ? body.title.trim() : 'Новая задача',
-    description: typeof body.description === 'string' ? body.description : '',
+    title: b.title ?? 'Новая задача',
+    description: b.description ?? '',
     status,
-    assigneeId: typeof body.assigneeId === 'string' ? body.assigneeId : undefined,
-    dueAt: typeof body.dueAt === 'string' ? body.dueAt : undefined,
-    priority: typeof body.priority === 'string' ? body.priority : 'med',
-    labels: Array.isArray(body.labels) ? body.labels : [],
     createdAt: now,
     updatedAt: now
   };
+
+  const task: Task = {
+    ...base,
+    ...(b.parentId ? { parentId: b.parentId } : {}),
+    ...(b.iterationId ? { iterationId: b.iterationId } : {}),
+    ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
+    ...(b.dueAt ? { dueAt: b.dueAt } : {}),
+    ...(b.priority ? { priority: b.priority } : {}),
+    ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
+  } satisfies Task;
 
   memory.TASKS.push(task);
 

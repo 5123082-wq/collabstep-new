@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build && node scripts/fix-manifests.mjs",
     "start": "next start",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:routes": "node scripts/check-app-routes.mjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",
