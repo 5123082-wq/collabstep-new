@@ -133,7 +133,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         onBlurCapture={handleBlur}
         className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
         style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
-        aria-expanded={expanded}
+        data-expanded={expanded}
       >
         <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
           {actions.map((action, index) => {
