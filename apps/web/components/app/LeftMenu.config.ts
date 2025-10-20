@@ -1,3 +1,5 @@
+import { flags } from '@/lib/flags';
+
 export type LeftMenuIcon =
   | 'dashboard'
   | 'projects'
@@ -47,8 +49,7 @@ export type LeftMenuSection = {
   roles?: LeftMenuChild['roles'];
   children?: LeftMenuChild[];
 };
-
-export const leftMenuConfig: LeftMenuSection[] = [
+const baseLeftMenuConfig: LeftMenuSection[] = [
   {
     id: 'dashboard',
     label: 'Обзор',
@@ -200,3 +201,15 @@ export const leftMenuConfig: LeftMenuSection[] = [
     href: '/app/admin'
   }
 ];
+
+export const leftMenuConfig: LeftMenuSection[] = flags.PROJECTS_V1
+  ? [
+      ...baseLeftMenuConfig,
+      {
+        id: 'projects-crm-v1',
+        label: 'Проекты',
+        icon: 'projects',
+        href: '/project/new'
+      }
+    ]
+  : baseLeftMenuConfig;

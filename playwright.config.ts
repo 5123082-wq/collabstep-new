@@ -14,6 +14,7 @@ export default defineConfig({
       NEXT_DISABLE_VERSION_CHECK: '1',
       NEXT_TELEMETRY_DISABLED: '1',
       NAV_V1: 'on',
+      FEATURE_PROJECTS_V1: '1',
       HOSTNAME: '127.0.0.1',
       PORT: '3000'
     }
