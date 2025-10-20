@@ -1,3 +1,5 @@
+import ProjectTasksPageV1 from '@/app/project/[id]/tasks/project-tasks-page-v1';
+import { flags } from '@/lib/flags';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const BOARD_COLUMNS = [
@@ -19,7 +21,11 @@ const REPORTS = [
   { id: 'bugs', title: 'Defects', value: '4 открыто', trend: '+1' }
 ];
 
-export default function ProjectTasksPage() {
+export default function ProjectTasksPage({ params }: { params: { id: string } }) {
+  if (flags.PROJECTS_V1) {
+    return <ProjectTasksPageV1 params={params} />;
+  }
+
   return (
     <div className="space-y-8">
       <ProjectSection
