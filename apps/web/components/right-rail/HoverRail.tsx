@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DrawerManager } from './DrawerManager';
 import { RailItem } from './RailItem';
@@ -133,18 +133,26 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         onBlurCapture={handleBlur}
         className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
         style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
-        aria-expanded={expanded}
+        data-expanded={expanded}
       >
         <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
-          {actions.map((action) => (
-            <RailItem
-              key={action.id}
-              action={action}
-              expanded={expanded}
-              onClick={() => handleAction(action)}
-              badge={action.badge}
-            />
-          ))}
+          {actions.map((action, index) => {
+            const previous = index > 0 ? actions[index - 1] : undefined;
+            const currentSection = action.section ?? 'default';
+            const previousSection = previous?.section ?? 'default';
+            const showSeparator = index > 0 && currentSection !== previousSection;
+            return (
+              <Fragment key={action.id}>
+                {showSeparator ? <div className="my-2 border-t border-neutral-800/60" aria-hidden="true" /> : null}
+                <RailItem
+                  action={action}
+                  expanded={expanded}
+                  onClick={() => handleAction(action)}
+                  badge={action.badge}
+                />
+              </Fragment>
+            );
+          })}
         </div>
       </aside>
 

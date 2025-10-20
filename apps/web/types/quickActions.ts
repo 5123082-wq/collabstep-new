@@ -11,4 +11,5 @@ export interface QuickAction {
   featureFlag?: string;
   permission?: string;
   badgeSelector?: (state: unknown) => number;
+  section?: 'actions' | 'communication' | string;
 }
