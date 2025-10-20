@@ -72,7 +72,7 @@ export default function CommunicationDrawer() {
     <Sheet open={isOpen} onOpenChange={(next) => (!next ? closeDrawer() : undefined)}>
       <SheetContent
         side="right"
-        className="flex h-full flex-col overflow-hidden bg-neutral-900/90 p-0 text-neutral-50 shadow-2xl sm:max-w-[520px] md:max-w-[620px] lg:max-w-[70vw]"
+        className="flex h-full flex-col overflow-hidden bg-neutral-900/90 p-0 text-neutral-50 shadow-2xl sm:max-w-[440px] md:max-w-[500px] lg:max-w-[560px]"
       >
         <header className="flex items-center gap-3 border-b border-neutral-800 px-6 py-4">
           <button
