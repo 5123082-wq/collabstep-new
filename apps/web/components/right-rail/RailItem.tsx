@@ -19,7 +19,7 @@ export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative my-1 grid w-full grid-cols-[auto,1fr] items-center rounded-xl px-3 py-2 transition-all duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+        'group relative my-1 grid w-full grid-cols-[auto,1fr] items-center rounded-xl pl-2 pr-3 py-2 transition-all duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
         'hover:shadow-lg hover:scale-[1.03]'
       )}
       aria-label={expanded ? undefined : action.label}
