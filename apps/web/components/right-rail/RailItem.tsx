@@ -19,12 +19,12 @@ export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative my-1 flex w-full items-center rounded-xl px-3 py-2 transition-all duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+        'group relative my-1 grid w-full grid-cols-[56px,1fr] items-center rounded-xl py-2 pr-3 transition-all duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
         'hover:shadow-lg hover:scale-[1.03]'
       )}
       aria-label={expanded ? undefined : action.label}
     >
-      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+      <div className="relative flex h-10 w-10 items-center justify-center justify-self-center">
         <Icon className="h-6 w-6 text-neutral-200" aria-hidden="true" />
         {showBadge ? (
           <span className="absolute -top-1 -right-1">
@@ -35,8 +35,8 @@ export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
       <span
         aria-hidden={!expanded}
         className={cn(
-          'ml-0 overflow-hidden whitespace-nowrap text-sm text-neutral-100/90 opacity-0 transition-[margin,max-width,opacity,transform] duration-200 ease-out',
-          expanded ? 'ml-3 max-w-[160px] opacity-100 translate-x-0' : 'max-w-0 -translate-x-1'
+          'col-start-2 row-start-1 overflow-hidden whitespace-nowrap text-sm text-neutral-100/90 opacity-0 transition-[margin,max-width,opacity,transform] duration-200 ease-out',
+          expanded ? 'ml-3 max-w-[160px] opacity-100 translate-x-0' : 'ml-0 max-w-0 -translate-x-1'
         )}
       >
         {action.label}
