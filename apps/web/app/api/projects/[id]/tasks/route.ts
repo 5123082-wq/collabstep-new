@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import type { Task, TaskStatus } from '@/domain/projects/types';
-import { TASKS } from '../../storage';
+import { memory } from '@/mocks/projects-memory';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const items = TASKS.filter((task) => task.projectId === params.id);
+  const items = memory.TASKS.filter((task) => task.projectId === params.id);
   return NextResponse.json({ items });
 }
 
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     updatedAt: now
   };
 
-  TASKS.push(task);
+  memory.TASKS.push(task);
 
   return NextResponse.json(task, { status: 201 });
 }

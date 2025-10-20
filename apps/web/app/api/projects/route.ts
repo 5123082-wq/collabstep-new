@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import type { Project, ProjectStage } from '@/domain/projects/types';
-import { PROJECTS } from './storage';
+import { memory } from '@/mocks/projects-memory';
 
 export async function GET() {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ items: PROJECTS });
+  return NextResponse.json({ items: memory.PROJECTS });
 }
 
 export async function POST(req: NextRequest) {
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     updatedAt: now
   };
 
-  PROJECTS.push(project);
+  memory.PROJECTS.push(project);
 
   return NextResponse.json(project, { status: 201 });
 }

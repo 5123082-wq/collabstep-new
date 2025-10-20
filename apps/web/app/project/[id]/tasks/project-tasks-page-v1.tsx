@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { PROJECTS } from '@/app/api/projects/storage';
+import { memory } from '@/mocks/projects-memory';
 import ProjectTasksPageClient from './project-tasks-page-client';
 
 type ProjectTasksPageV1Props = {
@@ -9,7 +9,7 @@ type ProjectTasksPageV1Props = {
 };
 
 export function ProjectTasksPageV1({ params }: ProjectTasksPageV1Props) {
-  const project = PROJECTS.find((candidate) => candidate.id === params.id);
+  const project = memory.PROJECTS.find((candidate) => candidate.id === params.id);
 
   if (!project) {
     notFound();
