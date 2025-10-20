@@ -6,16 +6,27 @@ type ProjectTasksPageV1Props = {
   params: {
     id: string;
   };
+  searchParams?: {
+    view?: string;
+  };
 };
 
-export function ProjectTasksPageV1({ params }: ProjectTasksPageV1Props) {
+export function ProjectTasksPageV1({ params, searchParams }: ProjectTasksPageV1Props) {
   const project = memory.PROJECTS.find((candidate) => candidate.id === params.id);
 
   if (!project) {
     notFound();
   }
 
-  return <ProjectTasksPageClient projectId={project.id} projectTitle={project.title} />;
+  const initialView = (searchParams?.view as 'list' | 'kanban') ?? 'list';
+
+  return (
+    <ProjectTasksPageClient
+      projectId={project.id}
+      projectTitle={project.title}
+      initialView={initialView}
+    />
+  );
 }
 
 export default ProjectTasksPageV1;

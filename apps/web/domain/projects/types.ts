@@ -19,10 +19,24 @@ export interface ProjectMember {
   role: 'owner' | 'coord' | 'member' | 'viewer';
 }
 
+export interface ProjectWorkflow {
+  projectId: ID;
+  statuses: TaskStatus[];
+}
+
+export interface Iteration {
+  id: ID;
+  projectId: ID;
+  title: string;
+  start?: string;
+  end?: string;
+}
+
 export interface Task {
   id: ID;
   projectId: ID;
   parentId?: ID;
+  iterationId?: ID;
   title: string;
   description?: string;
   status: TaskStatus;
