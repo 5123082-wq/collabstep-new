@@ -3,15 +3,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import TopSubmenu from '@/components/app/TopSubmenu';
 import type { ProjectStage } from '@/domain/projects/types';
+import {
+  useProjectCatalogStore,
+  type CatalogProject,
+  type CatalogTab,
+  type CatalogTemplate
+} from '@/stores/projectCatalog';
 
-const TAB_OPTIONS = [
+const TAB_OPTIONS: { key: CatalogTab; label: string }[] = [
   { key: 'my', label: 'Мои проекты' },
   { key: 'templates', label: 'Шаблоны' },
   { key: 'archive', label: 'Архив' }
-] as const;
-
-type TabKey = (typeof TAB_OPTIONS)[number]['key'];
+];
 
 type SortOption = 'updated-desc' | 'updated-asc' | 'title-asc' | 'title-desc';
 
@@ -37,24 +42,7 @@ const TEMPLATE_KIND_LABELS: Record<string, string> = {
   product: 'Продукт'
 };
 
-type ProjectListItem = {
-  id: string;
-  title: string;
-  stage: ProjectStage | null;
-  updatedAt: string;
-  tasksCount: number;
-  labels: string[];
-  archived: boolean;
-};
-
-type TemplateItem = {
-  id: string;
-  title: string;
-  kind: string;
-  summary: string;
-};
-
-function parseTab(value?: string | null): TabKey {
+function parseTab(value?: string | null): CatalogTab {
   if (value === 'templates' || value === 'archive') {
     return value;
   }
@@ -81,7 +69,7 @@ function formatTasks(count: number) {
   return new Intl.NumberFormat('ru-RU').format(count);
 }
 
-function normalizeProject(data: unknown): ProjectListItem | null {
+function normalizeProject(data: unknown): CatalogProject | null {
   if (!data || typeof data !== 'object') {
     return null;
   }
@@ -115,7 +103,7 @@ function normalizeProject(data: unknown): ProjectListItem | null {
   };
 }
 
-function normalizeTemplate(data: unknown): TemplateItem | null {
+function normalizeTemplate(data: unknown): CatalogTemplate | null {
   if (!data || typeof data !== 'object') {
     return null;
   }
@@ -136,39 +124,46 @@ type ProjectsIndexPageClientProps = {
   initialTab?: string;
 };
 
-type AttachState = {
-  template: TemplateItem;
-  projectId: string;
-  isSubmitting: boolean;
-  error: string | null;
-  projectOptions: ProjectListItem[];
-};
-
 export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = useMemo<TabKey>(() => {
-    const fromQuery = searchParams?.get('tab') ?? initialTab ?? null;
-    return parseTab(fromQuery);
-  }, [initialTab, searchParams]);
+  const tab = useProjectCatalogStore((state) => state.activeTab);
+  const setActiveTab = useProjectCatalogStore((state) => state.setActiveTab);
+  const message = useProjectCatalogStore((state) => state.message);
+  const setMessage = useProjectCatalogStore((state) => state.setMessage);
+  const attachModal = useProjectCatalogStore((state) => state.attachModal);
+  const openAttachModal = useProjectCatalogStore((state) => state.openAttachModal);
+  const closeAttachModal = useProjectCatalogStore((state) => state.closeAttachModal);
+  const updateAttachModal = useProjectCatalogStore((state) => state.updateAttachModal);
+  const resetUiState = useProjectCatalogStore((state) => state.reset);
 
-  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [projects, setProjects] = useState<CatalogProject[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
   const [projectsError, setProjectsError] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<TemplateItem[]>([]);
+  const [templates, setTemplates] = useState<CatalogTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [labelFilter, setLabelFilter] = useState('all');
   const [sort, setSort] = useState<SortOption>('updated-desc');
-  const [message, setMessage] = useState<string | null>(null);
-  const [attachState, setAttachState] = useState<AttachState | null>(null);
-  const [activeProjectsCache, setActiveProjectsCache] = useState<ProjectListItem[]>([]);
+  const [activeProjectsCache, setActiveProjectsCache] = useState<CatalogProject[]>([]);
+
+  useEffect(() => {
+    resetUiState();
+  }, [resetUiState]);
+
+  useEffect(() => {
+    const fromQuery = searchParams?.get('tab') ?? initialTab ?? null;
+    const parsed = parseTab(fromQuery);
+    if (parsed !== tab) {
+      setActiveTab(parsed);
+    }
+  }, [initialTab, searchParams, setActiveTab, tab]);
 
   const applyTabToRouter = useCallback(
-    (next: TabKey) => {
+    (next: CatalogTab) => {
       const params = new URLSearchParams(searchParams?.toString() ?? '');
       if (next === 'my') {
         params.delete('tab');
@@ -181,8 +176,19 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
     [pathname, router, searchParams]
   );
 
+  const handleSelectTab = useCallback(
+    (next: CatalogTab) => {
+      if (next === tab) {
+        return;
+      }
+      setActiveTab(next);
+      applyTabToRouter(next);
+    },
+    [applyTabToRouter, setActiveTab, tab]
+  );
+
   const fetchProjects = useCallback(
-    async (targetTab: TabKey, signal?: AbortSignal) => {
+    async (targetTab: CatalogTab, signal?: AbortSignal) => {
       const archived = targetTab === 'archive' ? 'true' : 'false';
       const init: RequestInit = {
         method: 'GET',
@@ -198,7 +204,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
 
       const payload = (await response.json()) as { items?: unknown };
       const rawItems = Array.isArray(payload.items) ? payload.items : [];
-      const normalized: ProjectListItem[] = [];
+      const normalized: CatalogProject[] = [];
       for (const item of rawItems) {
         const candidate = normalizeProject(item);
         if (candidate) {
@@ -225,7 +231,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
 
     const payload = (await response.json()) as { items?: unknown };
     const rawItems = Array.isArray(payload.items) ? payload.items : [];
-    const normalized: TemplateItem[] = [];
+    const normalized: CatalogTemplate[] = [];
     for (const item of rawItems) {
       const candidate = normalizeTemplate(item);
       if (candidate) {
@@ -236,7 +242,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
   }, []);
 
   const loadProjects = useCallback(
-    async (targetTab: TabKey) => {
+    async (targetTab: CatalogTab) => {
       setProjectsLoading(true);
       setProjectsError(null);
       try {
@@ -400,31 +406,25 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
     }
   }, [activeProjectsCache, fetchProjects]);
 
-  const openAttachModal = useCallback(
-    async (template: TemplateItem) => {
+  const handleOpenAttachModal = useCallback(
+    async (template: CatalogTemplate) => {
       try {
         const items = await ensureActiveProjects();
         if (items.length === 0) {
           setMessage('Нет активных проектов для прикрепления шаблона');
           return;
         }
-        setAttachState({
+        openAttachModal({
           template,
           projectId: items[0]?.id ?? '',
-          isSubmitting: false,
-          error: null,
           projectOptions: items
         });
       } catch (err) {
         setMessage('Не удалось загрузить список проектов');
       }
     },
-    [ensureActiveProjects]
+    [ensureActiveProjects, openAttachModal, setMessage]
   );
-
-  const closeAttachModal = useCallback(() => {
-    setAttachState(null);
-  }, []);
 
   const handleArchive = useCallback(
     async (projectId: string) => {
@@ -492,7 +492,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
     [loadProjects, tab]
   );
 
-  const handleCreateFromTemplate = useCallback(async (template: TemplateItem) => {
+  const handleCreateFromTemplate = useCallback(async (template: CatalogTemplate) => {
     const title = window.prompt('Название нового проекта', template.title) ?? '';
     if (!title.trim()) {
       return;
@@ -520,19 +520,19 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
   }, [loadProjects, tab]);
 
   const handleAttachTemplate = useCallback(async () => {
-    if (!attachState) {
+    if (!attachModal.open || !attachModal.template) {
       return;
     }
-    if (!attachState.projectId) {
-      setAttachState({ ...attachState, error: 'Выберите проект' });
+    if (!attachModal.projectId) {
+      updateAttachModal({ error: 'Выберите проект' });
       return;
     }
-    setAttachState({ ...attachState, isSubmitting: true, error: null });
+    updateAttachModal({ isSubmitting: true, error: null });
     try {
-      const response = await fetch(`/api/projects/${attachState.projectId}/templates/attach`, {
+      const response = await fetch(`/api/projects/${attachModal.projectId}/templates/attach`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateId: attachState.template.id })
+        body: JSON.stringify({ templateId: attachModal.template.id })
       });
       if (!response.ok) {
         throw new Error('Не удалось прикрепить шаблон');
@@ -541,9 +541,12 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
       closeAttachModal();
     } catch (err) {
       console.error(err);
-      setAttachState({ ...attachState, isSubmitting: false, error: err instanceof Error ? err.message : 'Ошибка' });
+      updateAttachModal({
+        isSubmitting: false,
+        error: err instanceof Error ? err.message : 'Ошибка'
+      });
     }
-  }, [attachState, closeAttachModal]);
+  }, [attachModal, closeAttachModal, setMessage, updateAttachModal]);
 
   const renderProjectsList = () => {
     if (projectsLoading) {
@@ -697,7 +700,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
               </button>
               <button
                 type="button"
-                onClick={() => openAttachModal(template)}
+                onClick={() => handleOpenAttachModal(template)}
                 className="rounded-xl border border-neutral-800 px-4 py-2 text-sm font-medium text-neutral-300 hover:border-neutral-700 hover:text-white"
               >
                 Прикрепить к проекту…
@@ -738,25 +741,15 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
         </Link>
       </header>
 
-      <nav className="flex flex-wrap items-center gap-2 rounded-2xl border border-neutral-900 bg-neutral-950/70 p-2">
-        {TAB_OPTIONS.map((option) => {
-          const isActive = tab === option.key;
-          return (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => applyTabToRouter(option.key)}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
-                isActive
-                  ? 'bg-indigo-500 text-white shadow'
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </nav>
+      <TopSubmenu
+        ariaLabel="Разделы каталога проектов"
+        items={TAB_OPTIONS.map((option) => ({
+          id: option.key,
+          label: option.label,
+          active: tab === option.key,
+          onSelect: () => handleSelectTab(option.key)
+        }))}
+      />
 
       {tab !== 'templates' ? (
         <div className="flex flex-col gap-3 rounded-2xl border border-neutral-900 bg-neutral-950/50 p-4 md:flex-row md:items-end md:justify-between">
@@ -826,40 +819,34 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
 
       {renderContent()}
 
-      {attachState ? (
+      {attachModal.open && attachModal.template ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 p-4 backdrop-blur">
           <div className="w-full max-w-md space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950 p-6">
             <div>
               <h2 className="text-lg font-semibold text-white">Прикрепить шаблон</h2>
-              <p className="text-sm text-neutral-400">{attachState.template.title}</p>
+              <p className="text-sm text-neutral-400">{attachModal.template.title}</p>
             </div>
             <label className="flex flex-col gap-1">
               <span className="text-xs uppercase tracking-wide text-neutral-500">Проект</span>
               <select
-                value={attachState.projectId}
-                onChange={(event) =>
-                  setAttachState({
-                    ...attachState,
-                    projectId: event.target.value,
-                    error: null
-                  })
-                }
+                value={attachModal.projectId}
+                onChange={(event) => updateAttachModal({ projectId: event.target.value, error: null })}
                 className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
               >
-                {attachState.projectOptions.map((project) => (
+                {attachModal.projectOptions.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.title}
                   </option>
                 ))}
               </select>
             </label>
-            {attachState.error ? <p className="text-sm text-red-400">{attachState.error}</p> : null}
+            {attachModal.error ? <p className="text-sm text-red-400">{attachModal.error}</p> : null}
             <div className="flex justify-end gap-2">
               <button
                 type="button"
                 onClick={closeAttachModal}
                 className="rounded-xl border border-neutral-800 px-4 py-2 text-sm font-medium text-neutral-400 hover:border-neutral-700 hover:text-white"
-                disabled={attachState.isSubmitting}
+                disabled={attachModal.isSubmitting}
               >
                 Отмена
               </button>
@@ -867,9 +854,9 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
                 type="button"
                 onClick={handleAttachTemplate}
                 className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50"
-                disabled={attachState.isSubmitting}
+                disabled={attachModal.isSubmitting}
               >
-                {attachState.isSubmitting ? 'Прикрепляем…' : 'Прикрепить'}
+                {attachModal.isSubmitting ? 'Прикрепляем…' : 'Прикрепить'}
               </button>
             </div>
           </div>
