@@ -22,7 +22,17 @@ const iconMap: Record<string, string> = {
   org: 'M4 21V9l8-6 8 6v12H4Zm4-10h8v10H8V11Z',
   support: 'M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3Zm0 16h.01',
   admin: 'M12 2 2 7l10 5 10-5-10-5Zm0 9.91L4 8.27V17l8 5 8-5V8.27l-8 3.64Z',
-  performers: 'M4 7h4a4 4 0 0 1 8 0h4v12H4V7Zm6 0h4a2 2 0 1 0-4 0Zm-2 6a2 2 0 1 1 4 0v2H8v-2Zm6 0a2 2 0 1 1 4 0v2h-4v-2Z'
+  performers: 'M4 7h4a4 4 0 0 1 8 0h4v12H4V7Zm6 0h4a2 2 0 1 0-4 0Zm-2 6a2 2 0 1 1 4 0v2H8v-2Zm6 0a2 2 0 1 1 4 0v2h-4v-2Z',
+  overview: 'M4 4h16v16H4z',
+  tasks: 'M6 4h12a2 2 0 0 1 2 2v14l-8-3-8 3V6a2 2 0 0 1 2-2Zm0 2v11l6-2.25L18 17V6H6Z',
+  calendar: 'M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Zm0 4h12M16 3v4M8 3v4',
+  team: 'M9 7a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm-5 12v-1c0-2.761 3.134-5 7-5s7 2.239 7 5v1H4Zm14-9a2.5 2.5 0 1 0-2.121-3.872A5.5 5.5 0 0 1 18 10Zm-12 0a5.5 5.5 0 0 1-1.879-3.872A2.5 2.5 0 1 0 6 10Z',
+  files: 'M6 3h9l5 5v13H6V3Zm9 5h5',
+  analytics: 'M5 14h2v6H5v-6Zm6-4h2v10h-2V10Zm6 2h2v8h-2v-8Z',
+  automations: 'M12 4 14.5 7h4l-2 3 2 3h-4L12 16l-2.5-3h-4l2-3-2-3h4L12 4Z',
+  modules: 'M4 9l8-4 8 4-8 4-8-4Zm0 6 8 4 8-4-8-4-8 4Zm8-2 8-4',
+  integrations: 'M7 3h4v4H7V3Zm6 0h4v4h-4V3ZM7 17h4v4H7v-4Zm6 0h4v4h-4v-4ZM5 9h14v6H5V9Z',
+  settings: 'M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0-6 1.6 3 3.4.4-2.4 2.4.4 3.4L12 14l-3 1.2.4-3.4-2.4-2.4 3.4-.4L12 2Z'
 };
 
 type IconName = keyof typeof iconMap;

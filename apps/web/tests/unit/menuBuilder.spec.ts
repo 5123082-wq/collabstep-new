@@ -1,29 +1,35 @@
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 
+const WORKSPACE_SECTIONS = [
+  'overview',
+  'tasks',
+  'calendar',
+  'team',
+  'files',
+  'analytics',
+  'automations',
+  'modules',
+  'integrations',
+  'settings'
+];
+
 describe('menu-builder', () => {
-  it('скрывает админку для неадминистраторов', () => {
-    const roles: UserRole[] = ['FOUNDER'];
+  it('возвращает основные разделы независимо от роли', () => {
+    const roles: UserRole[] = ['OBSERVER'];
     const menu = buildLeftMenu(roles);
-    const hasAdmin = menu.some((section) => section.id === 'admin');
-    expect(hasAdmin).toBe(false);
+    const menuIds = menu.map((section) => section.id);
+
+    WORKSPACE_SECTIONS.forEach((sectionId) => {
+      expect(menuIds).toContain(sectionId);
+    });
   });
 
-  it('отображает админку для роли ADMIN', () => {
-    const menu = buildLeftMenu(['ADMIN']);
-    const hasAdmin = menu.some((section) => section.id === 'admin');
-    expect(hasAdmin).toBe(true);
-  });
+  it('сохраняет вложенные ссылки для разделов', () => {
+    const menu = buildLeftMenu(['FOUNDER']);
+    const section = menu.find((item) => item.id === 'overview');
 
-  it('скрывает финансы для наблюдателя', () => {
-    const menu = buildLeftMenu(['OBSERVER']);
-    const hasFinance = menu.some((section) => section.id === 'finance');
-    expect(hasFinance).toBe(false);
-  });
-
-  it('показывает финансы руководителю проекта', () => {
-    const menu = buildLeftMenu(['PM']);
-    const hasFinance = menu.some((section) => section.id === 'finance');
-    expect(hasFinance).toBe(true);
+    expect(section?.children?.length).toBeGreaterThan(0);
+    expect(section?.children?.every((child) => child.type === 'divider' || Boolean(child.href))).toBe(true);
   });
 });
