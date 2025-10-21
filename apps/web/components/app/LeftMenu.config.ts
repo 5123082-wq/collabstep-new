@@ -1,5 +1,3 @@
-import { flags } from '@/lib/flags';
-
 export type LeftMenuIcon =
   | 'dashboard'
   | 'projects'
@@ -60,12 +58,7 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     id: 'projects',
     label: 'Проекты',
     icon: 'projects',
-    href: '/app/projects',
-    children: [
-      { id: 'projects-all', label: 'Мои проекты', href: '/app/projects' },
-      { id: 'projects-templates', label: 'Шаблоны', href: '/app/projects/templates' },
-      { id: 'projects-archive', label: 'Архив', href: '/app/projects/archive' }
-    ]
+    href: '/project'
   },
   {
     id: 'marketplace',
@@ -202,14 +195,4 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
   }
 ];
 
-export const leftMenuConfig: LeftMenuSection[] = flags.PROJECTS_V1
-  ? [
-      ...baseLeftMenuConfig,
-      {
-        id: 'projects-crm-v1',
-        label: 'Проекты',
-        icon: 'projects',
-        href: '/project/new'
-      }
-    ]
-  : baseLeftMenuConfig;
+export const leftMenuConfig: LeftMenuSection[] = baseLeftMenuConfig;

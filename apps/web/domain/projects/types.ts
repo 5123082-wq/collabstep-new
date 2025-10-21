@@ -23,6 +23,7 @@ export interface Project {
   ownerId: ID;
   deadline?: string;
   stage?: ProjectStage;
+  archived: boolean;
   createdAt: string;
   updatedAt: string;
 }
