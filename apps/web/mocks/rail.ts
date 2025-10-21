@@ -1,4 +1,5 @@
 import { Bell, ListTodo, MessageSquare, PlusCircle, UserPlus } from 'lucide-react';
+import AssistantIcon from '@/components/right-rail/AssistantIcon';
 import type { QuickAction } from '@/types/quickActions';
 
 export const defaultRailConfig: QuickAction[] = [
@@ -49,5 +50,13 @@ export const defaultRailConfig: QuickAction[] = [
       const casted = state as { ui?: { unreadNotifications?: number } };
       return casted.ui?.unreadNotifications ?? 0;
     }
+  },
+  {
+    id: 'assistant',
+    label: 'Помощник',
+    icon: AssistantIcon,
+    intent: 'sheet',
+    payload: { sheet: 'assistant' },
+    section: 'assistant'
   }
 ];

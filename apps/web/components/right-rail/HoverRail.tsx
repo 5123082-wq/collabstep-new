@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DrawerManager } from './DrawerManager';
+import { DialogManager } from './DialogManager';
 import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -28,6 +29,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
   const openDrawer = useUI((state) => state.openDrawer);
   const openDialog = useUI((state) => state.openDialog);
   const setRailExpanded = useUI((state) => state.setRailExpanded);
+  const activeDrawer = useUI((state) => state.drawer);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -52,7 +54,11 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
   }, [clearTimer]);
 
   useEffect(() => {
-    setRailExpanded(expanded);
+    if (!expanded) {
+      setRailExpanded(false);
+      return;
+    }
+    setRailExpanded(true);
   }, [expanded, setRailExpanded]);
 
   useEffect(() => {
@@ -60,6 +66,15 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
       clearTimer();
     };
   }, [clearTimer]);
+
+  const hideRail = activeDrawer === 'task' || activeDrawer === 'document';
+
+  useEffect(() => {
+    if (hideRail) {
+      setExpanded(false);
+      setMobileOpen(false);
+    }
+  }, [hideRail]);
 
   const handleMouseEnter = useCallback(() => {
     scheduleExpand();
@@ -123,9 +138,17 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
 
   const mobileActions = useMemo(() => actions, [actions]);
 
+  const handleOpenSettings = useCallback(() => {
+    openDrawer('rail-settings');
+    setMobileOpen(false);
+  }, [openDrawer]);
+
+  const shouldRenderRail = !hideRail;
+
   return (
     <>
-      <aside
+      {shouldRenderRail ? (
+        <aside
         ref={containerRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -134,29 +157,40 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
         style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
         data-expanded={expanded}
-      >
-        <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
-          {actions.map((action, index) => {
-            const previous = index > 0 ? actions[index - 1] : undefined;
-            const currentSection = action.section ?? 'default';
-            const previousSection = previous?.section ?? 'default';
-            const showSeparator = index > 0 && currentSection !== previousSection;
-            return (
-              <Fragment key={action.id}>
-                {showSeparator ? <div className="my-2 border-t border-neutral-800/60" aria-hidden="true" /> : null}
-                <RailItem
-                  action={action}
-                  expanded={expanded}
-                  onClick={() => handleAction(action)}
-                  badge={action.badge}
-                />
-              </Fragment>
-            );
-          })}
-        </div>
-      </aside>
+        >
+          <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
+            {actions.map((action, index) => {
+              const previous = index > 0 ? actions[index - 1] : undefined;
+              const currentSection = action.section ?? 'default';
+              const previousSection = previous?.section ?? 'default';
+              const showSeparator = index > 0 && currentSection !== previousSection;
+              return (
+                <Fragment key={action.id}>
+                  {showSeparator ? <div className="my-2 border-t border-neutral-800/60" aria-hidden="true" /> : null}
+                  <RailItem
+                    action={action}
+                    expanded={expanded}
+                    onClick={() => handleAction(action)}
+                    badge={action.badge}
+                  />
+                </Fragment>
+              );
+            })}
+            <div className="mt-auto border-t border-neutral-800/60 pt-3">
+              <button
+                type="button"
+                onClick={handleOpenSettings}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                Настроить меню
+              </button>
+            </div>
+          </div>
+        </aside>
+      ) : null}
 
-      <button
+      {shouldRenderRail ? (
+        <button
         type="button"
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500 text-white shadow-xl transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 lg:hidden"
         aria-label="Открыть быстрые действия"
@@ -168,37 +202,48 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
           <path d="M5 12h14" />
         </svg>
       </button>
+      ) : null}
 
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen} side="bottom">
-        <SheetContent side="bottom" className="max-h-[80vh] w-full rounded-t-3xl border-neutral-800 bg-neutral-900/95 p-4">
-          <SheetHeader className="border-none pb-2">
-            <SheetTitle>Быстрый доступ</SheetTitle>
-          </SheetHeader>
-          <div className="mt-2 grid gap-2">
-            {mobileActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.id}
-                  type="button"
-                  className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/80 px-4 py-3 text-left text-sm text-neutral-100 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                  onClick={() => handleAction(action)}
-                >
-                  <span className="flex items-center gap-3">
-                    <Icon className="h-5 w-5" />
-                    {action.label}
-                  </span>
-                  {typeof action.badge === 'number' && action.badge > 0 ? (
-                    <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-200">{action.badge}</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </SheetContent>
-      </Sheet>
+      {shouldRenderRail ? (
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen} side="bottom">
+          <SheetContent side="bottom" className="max-h-[80vh] w-full rounded-t-3xl border-neutral-800 bg-neutral-900/95 p-4">
+            <SheetHeader className="border-none pb-2">
+              <SheetTitle>Быстрый доступ</SheetTitle>
+            </SheetHeader>
+            <div className="mt-2 grid gap-2">
+              {mobileActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/80 px-4 py-3 text-left text-sm text-neutral-100 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                    onClick={() => handleAction(action)}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Icon className="h-5 w-5" />
+                      {action.label}
+                    </span>
+                    {typeof action.badge === 'number' && action.badge > 0 ? (
+                      <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-xs text-indigo-200">{action.badge}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={handleOpenSettings}
+                className="mt-2 rounded-xl border border-neutral-800 bg-neutral-950/70 px-4 py-3 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                Настроить меню
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
+      ) : null}
 
       <DrawerManager />
+      <DialogManager />
     </>
   );
 }

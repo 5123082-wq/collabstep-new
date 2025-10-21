@@ -5,6 +5,7 @@ import { defaultRailConfig } from '@/mocks/rail';
 import type { QuickAction } from '@/types/quickActions';
 import { isFeatureEnabled } from '@/lib/utils';
 import { useUI } from '@/stores/ui';
+import { useRailPreferencesStore } from '@/stores/railPreferences';
 
 type UseRailConfigOptions = {
   permissions?: string[];
@@ -18,9 +19,17 @@ export function useRailConfig(options: UseRailConfigOptions = {}) {
   const unreadChats = useUI((state) => state.unreadChats);
   const unreadNotifications = useUI((state) => state.unreadNotifications);
 
+  const enabledActionIds = useRailPreferencesStore((state) => state.enabledActionIds);
+
   return useMemo<QuickActionWithBadge[]>(() => {
     const permissionSet = new Set(permissions);
-    return defaultRailConfig
+    const availableMap = new Map(defaultRailConfig.map((action) => [action.id, action]));
+
+    const orderedActions = enabledActionIds
+      .map((id) => availableMap.get(id))
+      .filter((action): action is QuickAction => Boolean(action));
+
+    return orderedActions
       .filter((action) => {
         if (action.permission && !permissionSet.has(action.permission)) {
           return false;
@@ -43,5 +52,5 @@ export function useRailConfig(options: UseRailConfigOptions = {}) {
         const normalizedBadge = Number.isFinite(badge) && badge > 0 ? badge : 0;
         return { ...action, badge: normalizedBadge };
       });
-  }, [featureFlags, permissions, unreadChats, unreadNotifications]);
+  }, [enabledActionIds, featureFlags, permissions, unreadChats, unreadNotifications]);
 }
