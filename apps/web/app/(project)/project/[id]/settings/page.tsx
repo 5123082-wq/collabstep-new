@@ -74,7 +74,7 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-      {flags.PROJECTS_V1 && flags.PROJECTS_VIEWS ? (
+      {flags.PROJECTS_V1 ? (
         <ProjectSection
           id="workflow"
           title="Workflow"

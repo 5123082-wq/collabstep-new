@@ -27,8 +27,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = (await req.json().catch(() => ({}))) as Partial<Project>;
-  const { id: _id, createdAt: _createdAt, ownerId: _ownerId, updatedAt: _updatedAt, ...rest } = body;
-  const safe: Partial<Omit<Project, 'id' | 'createdAt' | 'ownerId' | 'updatedAt'>> = {};
+  const { id: _id, createdAt: _createdAt, ownerId: _ownerId, updatedAt: _updatedAt, archived: _archived, ...rest } = body;
+  const safe: Partial<Omit<Project, 'id' | 'createdAt' | 'ownerId' | 'updatedAt' | 'archived'>> = {};
   const allowedStages: ProjectStage[] = ['discovery', 'design', 'build', 'launch', 'support'];
 
   if (typeof rest.title === 'string' && rest.title.trim()) {
@@ -55,10 +55,29 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     id: current.id,
     ownerId: current.ownerId,
     createdAt: current.createdAt,
+    archived: current.archived,
     title: safe.title ?? current.title
   };
 
   memory.PROJECTS[idx] = merged;
 
   return NextResponse.json(merged);
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+  if (!flags.PROJECTS_V1) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  const idx = memory.PROJECTS.findIndex((item) => item.id === params.id);
+  if (idx === -1) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  memory.PROJECTS.splice(idx, 1);
+  memory.TASKS = memory.TASKS.filter((task) => task.projectId !== params.id);
+  memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== params.id);
+  delete memory.WORKFLOWS[params.id];
+
+  return NextResponse.json({ success: true });
 }
