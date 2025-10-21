@@ -27,39 +27,6 @@ const baseMenu: ProjectMenuItem[] = [
     ]
   },
   {
-    id: 'brief',
-    label: 'Бриф',
-    slug: 'brief',
-    description: 'Исходные данные и цели проекта.',
-    tabs: [
-      { id: 'summary', label: 'Ключевые тезисы' },
-      { id: 'audience', label: 'Целевая аудитория' },
-      { id: 'success', label: 'Критерии успеха' }
-    ]
-  },
-  {
-    id: 'team',
-    label: 'Команда & Роли',
-    slug: 'team',
-    description: 'Состав команды, роли и зоны ответственности.',
-    tabs: [
-      { id: 'core-team', label: 'Ядро команды' },
-      { id: 'roles', label: 'Роли и доступы' },
-      { id: 'activity', label: 'Активность' }
-    ]
-  },
-  {
-    id: 'vacancies',
-    label: 'Вакансии',
-    slug: 'vacancies',
-    description: 'Открытые позиции и отклики кандидатов.',
-    tabs: [
-      { id: 'open-roles', label: 'Открытые роли' },
-      { id: 'responses', label: 'Отклики' },
-      { id: 'pipeline', label: 'Этапы найма' }
-    ]
-  },
-  {
     id: 'tasks',
     label: 'Задачи',
     slug: 'tasks',
@@ -71,71 +38,25 @@ const baseMenu: ProjectMenuItem[] = [
     ]
   },
   {
-    id: 'design',
-    label: 'Дизайн',
-    slug: 'design',
-    description: 'Дизайн-система, макеты и печатные материалы.',
+    id: 'calendar',
+    label: 'Календарь',
+    slug: 'calendar',
+    description: 'Дорожная карта и календари команд.',
     tabs: [
-      { id: 'brand', label: 'Бренд-система' },
-      { id: 'layouts', label: 'Макеты' },
-      { id: 'print', label: 'Печать / Полиграфия' }
+      { id: 'timeline', label: 'Дорожная карта' },
+      { id: 'team-calendar', label: 'Календари команд' },
+      { id: 'sync', label: 'Синхронизации' }
     ]
   },
   {
-    id: 'web',
-    label: 'Сайт / Разработка',
-    slug: 'web',
-    description: 'Разработка и сопровождение продукта.',
+    id: 'team',
+    label: 'Команда',
+    slug: 'team',
+    description: 'Состав команды, роли и зоны ответственности.',
     tabs: [
-      { id: 'repo', label: 'Репозиторий' },
-      { id: 'pages', label: 'Страницы' },
-      { id: 'bugs', label: 'Баги' }
-    ]
-  },
-  {
-    id: 'marketing',
-    label: 'Маркетинг',
-    slug: 'marketing',
-    description: 'Кампании, креативы и медиа-план.',
-    tabs: [
-      { id: 'personas', label: 'Персоны / JTBD' },
-      { id: 'campaigns', label: 'Кампании' },
-      { id: 'calendar', label: 'Календарь' }
-    ]
-  },
-  {
-    id: 'contractors',
-    label: 'Подрядчики',
-    slug: 'contractors',
-    description: 'Каталог и заказы у подрядчиков.',
-    roles: ['FOUNDER', 'PM', 'CONTRACTOR'],
-    tabs: [
-      { id: 'catalog', label: 'Каталог подрядчиков' },
-      { id: 'orders', label: 'Текущие заказы' },
-      { id: 'contracts', label: 'Договоры' }
-    ]
-  },
-  {
-    id: 'ai',
-    label: 'AI проекта',
-    slug: 'ai',
-    description: 'AI-сессии и история взаимодействий.',
-    tabs: [
-      { id: 'sessions', label: 'Сессии' },
-      { id: 'history', label: 'История' },
-      { id: 'library', label: 'Библиотека' }
-    ]
-  },
-  {
-    id: 'finance',
-    label: 'Финансы проекта',
-    slug: 'finance',
-    description: 'Бюджет, счета и эскроу.',
-    roles: ['FOUNDER', 'PM', 'ADMIN'],
-    tabs: [
-      { id: 'budget', label: 'Бюджет' },
-      { id: 'escrow', label: 'Эскроу' },
-      { id: 'invoices', label: 'Счета' }
+      { id: 'core-team', label: 'Ядро команды' },
+      { id: 'roles', label: 'Роли и доступы' },
+      { id: 'activity', label: 'Активность' }
     ]
   },
   {
@@ -150,17 +71,6 @@ const baseMenu: ProjectMenuItem[] = [
     ]
   },
   {
-    id: 'timeline',
-    label: 'Таймлайн',
-    slug: 'timeline',
-    description: 'Вехи и ключевые события проекта.',
-    tabs: [
-      { id: 'events', label: 'События' },
-      { id: 'milestones', label: 'Вехи' },
-      { id: 'reports', label: 'Отчёты' }
-    ]
-  },
-  {
     id: 'analytics',
     label: 'Аналитика',
     slug: 'analytics',
@@ -172,10 +82,43 @@ const baseMenu: ProjectMenuItem[] = [
     ]
   },
   {
+    id: 'automations',
+    label: 'Автоматизации',
+    slug: 'automations',
+    description: 'Правила, боты и библиотека сценариев.',
+    tabs: [
+      { id: 'rules', label: 'Правила' },
+      { id: 'bots', label: 'Боты' },
+      { id: 'recipes', label: 'Рецепты' }
+    ]
+  },
+  {
+    id: 'modules',
+    label: 'Модули',
+    slug: 'modules',
+    description: 'Конструктор рабочей среды проекта.',
+    tabs: [
+      { id: 'catalog', label: 'Каталог' },
+      { id: 'library', label: 'Пакеты' },
+      { id: 'requests', label: 'Запросы' }
+    ]
+  },
+  {
+    id: 'integrations',
+    label: 'Интеграции',
+    slug: 'integrations',
+    description: 'Подключения, маркетплейс и API.',
+    tabs: [
+      { id: 'connected', label: 'Подключённые' },
+      { id: 'marketplace', label: 'Маркетплейс' },
+      { id: 'api', label: 'API и ключи' }
+    ]
+  },
+  {
     id: 'settings',
-    label: 'Настройки проекта',
+    label: 'Настройки',
     slug: 'settings',
-    description: 'Общие настройки и интеграции.',
+    description: 'Общие настройки и политики доступа.',
     roles: ['FOUNDER', 'PM', 'ADMIN'],
     tabs: [
       { id: 'general', label: 'Основные' },

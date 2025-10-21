@@ -31,12 +31,12 @@ test.describe('project workspace', () => {
     await page.waitForURL('**/project/DEMO/tasks');
     const tasksBox = await content.boundingBox();
 
-    await page.getByRole('link', { name: 'Дизайн' }).click();
-    await page.waitForURL('**/project/DEMO/design');
-    const designBox = await content.boundingBox();
+    await page.getByRole('link', { name: 'Интеграции' }).click();
+    await page.waitForURL('**/project/DEMO/integrations');
+    const integrationsBox = await content.boundingBox();
 
     expect(tasksBox?.width).toBeCloseTo(initialBox!.width!, 1);
-    expect(designBox?.width).toBeCloseTo(initialBox!.width!, 1);
+    expect(integrationsBox?.width).toBeCloseTo(initialBox!.width!, 1);
     expect(logs).toEqual([]);
   });
 

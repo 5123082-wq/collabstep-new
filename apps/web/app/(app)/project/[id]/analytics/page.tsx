@@ -13,6 +13,12 @@ const FUNNELS = [
   { id: 'consideration', title: 'Consideration → Purchase', conversion: '18%' }
 ];
 
+const EXPORT_PRESETS = [
+  { id: 'weekly', title: 'Еженедельный отчёт', format: 'Google Sheets' },
+  { id: 'investors', title: 'Для инвесторов', format: 'PDF' },
+  { id: 'raw-data', title: 'Сырые данные', format: 'CSV' }
+];
+
 type ProjectAnalyticsPageProps = {
   searchParams?: Record<string, string | string[] | undefined>;
 };
@@ -82,6 +88,24 @@ export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsP
             <div key={funnel.id} className="rounded-2xl border border-neutral-900 bg-neutral-900/60 p-4">
               <p className="text-sm font-semibold text-neutral-100">{funnel.title}</p>
               <p className="text-xs text-neutral-400">Конверсия: {funnel.conversion}</p>
+            </div>
+          ))}
+        </div>
+      </ProjectSection>
+      <ProjectSection
+        id="exports"
+        title="Экспорты"
+        description="Регулярные выгрузки и шаблоны отчётов."
+        actions={[
+          { id: 'configure-export', label: 'Настроить', toastMessage: 'TODO: Настроить экспорт', tone: 'primary' },
+          { id: 'send-now', label: 'Отправить сейчас', toastMessage: 'TODO: Отправить отчёт' }
+        ]}
+      >
+        <div className="grid gap-3 sm:grid-cols-3">
+          {EXPORT_PRESETS.map((preset) => (
+            <div key={preset.id} className="rounded-2xl border border-neutral-900 bg-neutral-900/60 p-4">
+              <p className="text-sm font-semibold text-neutral-100">{preset.title}</p>
+              <p className="text-xs text-neutral-400">Формат: {preset.format}</p>
             </div>
           ))}
           <ProjectStatePreview />
