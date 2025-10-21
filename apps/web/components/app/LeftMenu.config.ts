@@ -53,7 +53,26 @@ export const PROJECTS_MENU_SECTION: LeftMenuSection = {
   id: 'projects',
   label: 'Проекты',
   icon: 'projects',
-  href: PROJECTS_HUB_PATH
+  href: PROJECTS_HUB_PATH,
+  children: [
+    { id: 'projects-overview', label: 'Обзор проектов', href: PROJECTS_HUB_PATH },
+    { id: 'projects-my', label: 'Мои проекты', href: `${PROJECTS_HUB_PATH}?tab=my` },
+    { id: 'projects-templates', label: 'Шаблоны', href: `${PROJECTS_HUB_PATH}?tab=templates` },
+    { id: 'projects-archive', label: 'Архив', href: `${PROJECTS_HUB_PATH}?tab=archive` },
+    { id: 'projects-divider-management', type: 'divider' },
+    { id: 'projects-create', label: 'Создать проект', href: `${PROJECTS_HUB_PATH}/new` },
+    { id: 'projects-modules', label: 'CRM-модули', href: `${PROJECTS_HUB_PATH}/modules` },
+    { id: 'projects-modules-tasks', label: 'Задачи и дорожки', href: `${PROJECTS_HUB_PATH}/modules#tasks` },
+    { id: 'projects-modules-calendar', label: 'Календарь и планирование', href: `${PROJECTS_HUB_PATH}/modules#calendar` },
+    { id: 'projects-modules-team', label: 'Команда и роли', href: `${PROJECTS_HUB_PATH}/modules#team` },
+    { id: 'projects-modules-docs', label: 'Документы и файлы', href: `${PROJECTS_HUB_PATH}/modules#docs` },
+    { id: 'projects-modules-finance', label: 'Финансы и бюджеты', href: `${PROJECTS_HUB_PATH}/modules#finance` },
+    { id: 'projects-modules-analytics', label: 'Аналитика и отчёты', href: `${PROJECTS_HUB_PATH}/modules#analytics` },
+    { id: 'projects-modules-automations', label: 'Автоматизации', href: `${PROJECTS_HUB_PATH}/modules#automations` },
+    { id: 'projects-modules-risk', label: 'Риски и контроль качества', href: `${PROJECTS_HUB_PATH}/modules#risk` },
+    { id: 'projects-modules-clients', label: 'Клиентские отношения', href: `${PROJECTS_HUB_PATH}/modules#clients` },
+    { id: 'projects-modules-integrations', label: 'Интеграции', href: `${PROJECTS_HUB_PATH}/modules#integrations` }
+  ]
 };
 
 const baseLeftMenuConfig: LeftMenuSection[] = [
