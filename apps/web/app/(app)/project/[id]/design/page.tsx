@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const BRAND_SYSTEM = [
@@ -20,7 +21,7 @@ const PRINT = [
 
 export default function ProjectDesignPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="design">
       <ProjectSection
         id="brand"
         title="Бренд-система"
@@ -78,6 +79,6 @@ export default function ProjectDesignPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

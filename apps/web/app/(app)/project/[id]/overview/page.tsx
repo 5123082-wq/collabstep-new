@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const STAGE_ITEMS = [
@@ -21,7 +22,7 @@ const RISK_ITEMS = [
 
 export default function ProjectOverviewPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="overview">
       <ProjectSection
         id="stages"
         title="Карта стадий"
@@ -80,6 +81,6 @@ export default function ProjectOverviewPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

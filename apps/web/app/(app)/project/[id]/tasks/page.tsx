@@ -1,5 +1,6 @@
 import ProjectTasksPageV1 from './project-tasks-page-v1';
 import { flags } from '@/lib/flags';
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const BOARD_COLUMNS = [
@@ -33,7 +34,7 @@ export default function ProjectTasksPage({
   }
 
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="tasks">
       <ProjectSection
         id="kanban"
         title="Канбан / Спринт"
@@ -94,6 +95,6 @@ export default function ProjectTasksPage({
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

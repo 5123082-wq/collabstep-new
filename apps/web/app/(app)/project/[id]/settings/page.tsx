@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 import { flags } from '@/lib/flags';
 import WorkflowEditorClient from './workflow-editor-client';
@@ -25,7 +26,7 @@ type ProjectSettingsPageProps = {
 
 export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps) {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="settings">
       <ProjectSection
         id="general"
         title="Основные"
@@ -84,6 +85,6 @@ export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps
           <WorkflowEditorClient projectId={params.id} />
         </ProjectSection>
       ) : null}
-    </div>
+    </ProjectPageFrame>
   );
 }

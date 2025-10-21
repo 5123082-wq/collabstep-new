@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const TIMELINE_ITEMS = [
@@ -20,7 +21,7 @@ const SYNC_CHANNELS = [
 
 export default function ProjectCalendarPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="calendar">
       <ProjectSection
         id="timeline"
         title="Дорожная карта"
@@ -86,6 +87,6 @@ export default function ProjectCalendarPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

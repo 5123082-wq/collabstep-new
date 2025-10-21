@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const OPEN_ROLES = [
@@ -20,7 +21,7 @@ const PIPELINE = [
 
 export default function ProjectVacanciesPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="vacancies">
       <ProjectSection
         id="open-roles"
         title="Список ролей"
@@ -83,6 +84,6 @@ export default function ProjectVacanciesPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

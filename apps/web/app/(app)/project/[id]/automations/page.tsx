@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const RULES = [
@@ -18,7 +19,7 @@ const RECIPES = [
 
 export default function ProjectAutomationsPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="automations">
       <ProjectSection
         id="rules"
         title="Правила и триггеры"
@@ -76,6 +77,6 @@ export default function ProjectAutomationsPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

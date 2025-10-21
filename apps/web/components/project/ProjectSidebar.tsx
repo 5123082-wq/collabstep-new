@@ -3,9 +3,8 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { UserRole } from '@/lib/auth/roles';
-import { writeProjectState } from '@/lib/project/storage';
 import { getProjectMenuForRoles, type ProjectMenuItem } from './ProjectMenu.config';
 
 function isActive(pathname: string, projectId: string, item: ProjectMenuItem): boolean {
@@ -24,14 +23,6 @@ export default function ProjectSidebar({ projectId, roles, className }: ProjectS
   const menu = useMemo(() => getProjectMenuForRoles(roles), [roles]);
 
   const activeEntry = useMemo(() => menu.find((item) => isActive(pathname, projectId, item)), [menu, pathname, projectId]);
-
-  useEffect(() => {
-    if (!activeEntry) {
-      return;
-    }
-
-    writeProjectState(projectId, { lastTab: activeEntry.slug });
-  }, [activeEntry, projectId]);
 
   return (
     <aside

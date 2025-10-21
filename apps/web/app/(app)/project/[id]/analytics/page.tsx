@@ -1,5 +1,6 @@
 import AnalyticsErrorSimulation from '@/components/project/AnalyticsErrorSimulation';
 import AnalyticsSuccessCleanup from '@/components/project/AnalyticsSuccessCleanup';
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const DASHBOARDS = [
@@ -56,7 +57,7 @@ export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsP
   }
 
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="analytics">
       <AnalyticsSuccessCleanup />
       <ProjectSection
         id="dashboards"
@@ -111,6 +112,6 @@ export default function ProjectAnalyticsPage({ searchParams }: ProjectAnalyticsP
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const BUDGET = [
@@ -19,7 +20,7 @@ const INVOICES = [
 
 export default function ProjectFinancePage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="finance">
       <ProjectSection
         id="budget"
         title="Бюджет"
@@ -79,6 +80,6 @@ export default function ProjectFinancePage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

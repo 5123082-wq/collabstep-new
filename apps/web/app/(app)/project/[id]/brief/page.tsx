@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const SUMMARY_POINTS = [
@@ -20,7 +21,7 @@ const SUCCESS_CRITERIA = [
 
 export default function ProjectBriefPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="brief">
       <ProjectSection
         id="summary"
         title="Ключевые тезисы"
@@ -68,6 +69,6 @@ export default function ProjectBriefPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

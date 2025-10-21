@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const REPO_INFO = [
@@ -20,7 +21,7 @@ const BUGS = [
 
 export default function ProjectWebPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="web">
       <ProjectSection
         id="repo"
         title="Репозиторий"
@@ -79,6 +80,6 @@ export default function ProjectWebPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

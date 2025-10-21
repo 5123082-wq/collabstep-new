@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const SESSIONS = [
@@ -13,7 +14,7 @@ const HISTORY = [
 
 export default function ProjectAIPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="ai">
       <ProjectSection
         id="sessions"
         title="AI-сессии"
@@ -58,6 +59,6 @@ export default function ProjectAIPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

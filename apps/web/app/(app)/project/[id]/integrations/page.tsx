@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const CONNECTED = [
@@ -19,7 +20,7 @@ const API_KEYS = [
 
 export default function ProjectIntegrationsPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="integrations">
       <ProjectSection
         id="connected"
         title="Подключённые интеграции"
@@ -82,6 +83,6 @@ export default function ProjectIntegrationsPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }
