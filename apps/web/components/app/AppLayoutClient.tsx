@@ -8,7 +8,6 @@ import AppTopbar from '@/components/app/AppTopbar';
 import CommandPalette from '@/components/app/CommandPalette';
 import ContentContainer from '@/components/app/ContentContainer';
 import CreateMenu from '@/components/app/CreateMenu';
-import RightActionsPanel from '@/components/app/RightActionsPanel';
 import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
@@ -64,7 +63,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   }, []);
 
   const railFlagValue =
-    process.env.NEXT_PUBLIC_VITE_FEATURE_RAIL ?? process.env.VITE_FEATURE_RAIL ?? '0';
+    process.env.NEXT_PUBLIC_VITE_FEATURE_RAIL ?? process.env.VITE_FEATURE_RAIL ?? '1';
   const isHoverRailEnabled = ['1', 'true', 'on', 'enabled'].includes(railFlagValue.toLowerCase());
 
   const handleLogout = async () => {
@@ -114,18 +113,9 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
           isLoggingOut={isLoggingOut}
         />
         <div className="flex flex-1 overflow-hidden bg-neutral-950/70">
-          <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-8' : ''}>
+          <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
             {children}
           </ContentContainer>
-          {isHoverRailEnabled ? (
-            <div
-              className="hidden shrink-0 lg:block"
-              style={{ width: '72px' }}
-              aria-hidden="true"
-            />
-          ) : (
-            <RightActionsPanel />
-          )}
         </div>
       </div>
       <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />

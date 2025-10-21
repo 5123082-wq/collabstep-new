@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from '@/lib/ui/toast';
+import { useAppShell } from '@/components/app/AppShellContext';
+import { useUI } from '@/stores/ui';
 
 const ACTIONS = [
   { id: 'invite', label: 'Пригласить', toastMessage: 'TODO: Пригласить участника' },
@@ -16,6 +18,9 @@ type ProjectActionsProps = {
 };
 
 export default function ProjectActions({ className }: ProjectActionsProps) {
+  const { openCreateMenu } = useAppShell();
+  const openDrawer = useUI((state) => state.openDrawer);
+  const openDialog = useUI((state) => state.openDialog);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -50,12 +55,34 @@ export default function ProjectActions({ className }: ProjectActionsProps) {
     };
   }, [open]);
 
+  const handleAction = useCallback(
+    (id: (typeof ACTIONS)[number]['id']) => {
+      switch (id) {
+        case 'invite':
+          openDialog('invite');
+          return;
+        case 'vacancy':
+          openCreateMenu();
+          return;
+        case 'estimate':
+          openDrawer('assistant');
+          return;
+        case 'escrow':
+          openDrawer('document');
+          return;
+        default:
+          toast('Действие пока недоступно');
+      }
+    },
+    [openCreateMenu, openDialog, openDrawer]
+  );
+
   return (
     <div className={className}>
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          onClick={() => toast(primaryAction.toastMessage)}
+          onClick={() => handleAction(primaryAction.id)}
           className="rounded-2xl border border-indigo-500/60 bg-indigo-500/15 px-4 py-2 text-sm font-semibold text-indigo-100 transition hover:border-indigo-400 hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           aria-label="Пригласить участника в проект"
         >
@@ -66,7 +93,7 @@ export default function ProjectActions({ className }: ProjectActionsProps) {
             <button
               key={action.id}
               type="button"
-              onClick={() => toast(action.toastMessage)}
+              onClick={() => handleAction(action.id)}
               className="rounded-2xl border border-neutral-800 bg-neutral-900/70 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
               aria-label={action.label}
             >
@@ -97,7 +124,7 @@ export default function ProjectActions({ className }: ProjectActionsProps) {
                   role="menuitem"
                   type="button"
                   onClick={() => {
-                    toast(action.toastMessage);
+                    handleAction(action.id);
                     setOpen(false);
                   }}
                   className="block w-full rounded-xl px-3 py-2 text-left text-sm text-neutral-200 transition hover:bg-indigo-500/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"

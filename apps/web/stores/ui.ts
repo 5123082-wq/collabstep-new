@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type Drawer = null | 'chats' | 'notifications' | 'task';
+export type Drawer = null | 'chats' | 'notifications' | 'task' | 'document' | 'assistant' | 'rail-settings';
 export type Dialog = null | 'invite';
 
 type UIState = {
