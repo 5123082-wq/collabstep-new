@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { flags } from '@/lib/flags';
 import type { TaskStatus } from '@/domain/projects/types';
-import { memory } from '@/mocks/projects-memory';
+import { InvalidTaskStatusError, TaskNotFoundError, tasksService } from '@collabverse/api';
 
 const TaskPatchSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -12,6 +12,7 @@ const TaskPatchSchema = z.object({
   assigneeId: z.string().nullable().optional(),
   startAt: z.string().datetime().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
+  priority: z.enum(['low', 'med', 'high']).nullable().optional(),
   labels: z.array(z.string()).optional()
 });
 
@@ -25,65 +26,43 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const idx = memory.TASKS.findIndex((task) => task.id === params.taskId && task.projectId === params.id);
-  if (idx === -1) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  const existing = memory.TASKS[idx];
-  if (!existing) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
   const body = parsed.data;
-
-  if (typeof body.title === 'string') {
-    existing.title = body.title;
-  }
-  if (body.description !== undefined) {
-    existing.description = body.description ?? '';
-  }
-  if (body.status) {
-    const flow = memory.WORKFLOWS[params.id]?.statuses ?? ['new', 'in_progress', 'review', 'done'];
-    if (!flow.includes(body.status)) {
+  try {
+    const task = tasksService.update(params.id, params.taskId, {
+      title: body.title,
+      description: body.description ?? undefined,
+      status: body.status,
+      iterationId: body.iterationId ?? undefined,
+      assigneeId: body.assigneeId ?? undefined,
+      startAt: body.startAt ?? undefined,
+      dueAt: body.dueAt ?? undefined,
+      priority: body.priority ?? undefined,
+      labels: body.labels
+    });
+    return NextResponse.json(task);
+  } catch (err) {
+    if (err instanceof InvalidTaskStatusError) {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
-    existing.status = body.status;
-  }
-  if (body.iterationId !== undefined) {
-    if (body.iterationId === null || body.iterationId === '') {
-      delete existing.iterationId;
-    } else {
-      existing.iterationId = body.iterationId;
+    if (err instanceof TaskNotFoundError) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
     }
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
-  if (body.assigneeId !== undefined) {
-    if (body.assigneeId === null || body.assigneeId === '') {
-      delete existing.assigneeId;
-    } else {
-      existing.assigneeId = body.assigneeId;
-    }
-  }
-  if (body.startAt !== undefined) {
-    if (body.startAt === null || body.startAt === '') {
-      delete existing.startAt;
-    } else {
-      existing.startAt = body.startAt;
-    }
-  }
-  if (body.dueAt !== undefined) {
-    if (body.dueAt === null || body.dueAt === '') {
-      delete existing.dueAt;
-    } else {
-      existing.dueAt = body.dueAt;
-    }
-  }
-  if (body.labels !== undefined) {
-    existing.labels = body.labels;
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: { id: string; taskId: string } }) {
+  if (!flags.PROJECTS_V1) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  existing.updatedAt = new Date().toISOString();
-  memory.TASKS[idx] = existing;
-
-  return NextResponse.json(existing);
+  try {
+    tasksService.delete(params.id, params.taskId);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof TaskNotFoundError) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+  }
 }

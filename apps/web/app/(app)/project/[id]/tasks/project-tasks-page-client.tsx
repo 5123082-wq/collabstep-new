@@ -1,19 +1,31 @@
 'use client';
 
+import clsx from 'clsx';
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
+import { toast } from '@/lib/ui/toast';
+import { useUndoOperation } from '@/lib/ui/useUndoOperation';
 
 type TaskItem = Pick<
   Task,
-  'id' | 'title' | 'status' | 'iterationId' | 'description' | 'assigneeId' | 'startAt' | 'dueAt' | 'labels'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'iterationId'
+  | 'description'
+  | 'assigneeId'
+  | 'startAt'
+  | 'dueAt'
+  | 'labels'
+  | 'priority'
 >;
 
 type IterationItem = Pick<Iteration, 'id' | 'title'>;
 
-type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt';
+type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt' | 'backlog';
 
 type ProjectTasksPageClientProps = {
   projectId: string;
@@ -31,12 +43,25 @@ type TaskUpdatePayload = {
   startAt?: string | null;
   dueAt?: string | null;
   labels?: string[];
+  priority?: 'low' | 'med' | 'high' | null;
 };
 
 type IterationPayload = {
   title?: string;
   start?: string;
   end?: string;
+};
+
+type TaskCreateModalPayload = {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  iterationId?: string;
+  assigneeId?: string;
+  startAt?: string | null;
+  dueAt?: string | null;
+  labels?: string[];
+  priority?: 'low' | 'med' | 'high';
 };
 
 const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done'];
@@ -123,7 +148,10 @@ export default function ProjectTasksPageClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const availableViews = useMemo<BoardView[]>(() => {
-    return viewsEnabled ? ['list', 'kanban', 'calendar', 'gantt'] : ['list', 'kanban'];
+    if (!viewsEnabled) {
+      return ['list', 'kanban'];
+    }
+    return ['list', 'kanban', 'calendar', 'gantt', 'backlog'];
   }, [viewsEnabled]);
   const defaultView: BoardView = useMemo(() => {
     const candidate = (initialView ?? '').toLowerCase();
@@ -135,19 +163,45 @@ export default function ProjectTasksPageClient({
   const [workflow, setWorkflow] = useState<ProjectWorkflow | null>(null);
   const [iterations, setIterations] = useState<IterationItem[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<string | 'all'>('all');
-  const [title, setTitle] = useState('');
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | 'all'>('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('');
+  const [labelsFilter, setLabelsFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setLoading] = useState(true);
-  const [isSubmitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [iterationModalOpen, setIterationModalOpen] = useState(false);
+  const [newTaskModalOpen, setNewTaskModalOpen] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [isBulkUpdating, setBulkUpdating] = useState(false);
+  const [bulkStatusTarget, setBulkStatusTarget] = useState<TaskStatus>('in_progress');
+  const [bulkIterationTarget, setBulkIterationTarget] = useState<'none' | string>('none');
+  const { register: registerUndo } = useUndoOperation();
 
   useEffect(() => {
     if (!availableViews.includes(view) && availableViews.length > 0) {
       setView(availableViews[0] as BoardView);
     }
   }, [availableViews, view]);
+
+  useEffect(() => {
+    if (view === 'backlog' && statusFilter !== 'new') {
+      setStatusFilter('new');
+    }
+  }, [statusFilter, view]);
+
+  useEffect(() => {
+    if (statuses.length > 0 && !statuses.includes(bulkStatusTarget)) {
+      setBulkStatusTarget(statuses[0]!);
+    }
+  }, [bulkStatusTarget, statuses]);
+
+  useEffect(() => {
+    if (bulkIterationTarget !== 'none' && !iterations.some((iter) => iter.id === bulkIterationTarget)) {
+      setBulkIterationTarget('none');
+    }
+  }, [bulkIterationTarget, iterations]);
 
   const statuses = useMemo(() => workflow?.statuses ?? DEFAULT_STATUSES, [workflow]);
 
@@ -209,19 +263,53 @@ export default function ProjectTasksPageClient({
       if (selectedIteration !== 'all') {
         params.set('iterationId', selectedIteration);
       }
+      const statusFilters: TaskStatus[] = [];
+      if (view === 'backlog') {
+        statusFilters.push('new');
+      } else if (statusFilter !== 'all') {
+        statusFilters.push(statusFilter);
+      }
+      statusFilters.forEach((status) => params.append('status', status));
+      if (assigneeFilter.trim()) {
+        params.set('assignee', assigneeFilter.trim());
+      }
+      if (labelsFilter.trim()) {
+        labelsFilter
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean)
+          .forEach((label) => params.append('label', label));
+      }
+      if (searchTerm.trim()) {
+        params.set('q', searchTerm.trim());
+      }
       const query = params.toString();
       const response = await fetch(`/api/projects/${projectId}/tasks${query ? `?${query}` : ''}`);
       if (!response.ok) {
         throw new Error('Не удалось загрузить задачи');
       }
       const data = (await response.json()) as { items?: TaskItem[] };
-      setItems(Array.isArray(data.items) ? data.items : []);
+      const nextItems = Array.isArray(data.items) ? data.items : [];
+      setItems(nextItems);
+      setSelectedTaskIds((prev) => {
+        if (prev.size === 0) {
+          return prev;
+        }
+        const available = new Set(nextItems.map((task) => task.id));
+        const next = new Set<string>();
+        prev.forEach((id) => {
+          if (available.has(id)) {
+            next.add(id);
+          }
+        });
+        return next;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
     } finally {
       setLoading(false);
     }
-  }, [projectId, selectedIteration]);
+  }, [assigneeFilter, labelsFilter, projectId, searchTerm, selectedIteration, statusFilter, view]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadWorkflow(), loadIterations(), loadTasks()]);
@@ -236,38 +324,55 @@ export default function ProjectTasksPageClient({
     void loadTasks();
   }, [loadTasks]);
 
-  const handleAdd = async () => {
-    if (!title.trim() || isSubmitting) {
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      const payload: Record<string, unknown> = { title: title.trim() };
-      if (selectedIteration !== 'all') {
-        payload.iterationId = selectedIteration;
+  const handleCreateTask = useCallback(
+    async (payload: TaskCreateModalPayload) => {
+      const base: Record<string, unknown> = {
+        title: payload.title,
+        description: payload.description,
+        status: payload.status,
+        assigneeId: payload.assigneeId,
+        startAt: payload.startAt ?? undefined,
+        dueAt: payload.dueAt ?? undefined,
+        labels: payload.labels,
+        priority: payload.priority
+      };
+      if (payload.iterationId) {
+        base.iterationId = payload.iterationId;
+      } else if (selectedIteration !== 'all') {
+        base.iterationId = selectedIteration;
       }
       const response = await fetch(`/api/projects/${projectId}/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(base)
       });
       if (!response.ok) {
-        throw new Error('Не удалось добавить задачу');
+        const message = await response.text().catch(() => '');
+        throw new Error(message || 'Не удалось создать задачу');
       }
-      setTitle('');
+      const task = (await response.json()) as TaskItem;
+      toast(`Задача «${task.title}» создана`, 'success');
+      registerUndo({
+        label: `Создана задача «${task.title}»`,
+        successMessage: `Задача «${task.title}» удалена`,
+        undo: async () => {
+          await fetch(`/api/projects/${projectId}/tasks/${task.id}`, { method: 'DELETE' });
+          await loadTasks();
+        }
+      });
       await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    },
+    [loadTasks, projectId, registerUndo, selectedIteration]
+  );
 
   const handleTransition = useCallback(
     async (taskId: string, toStatus: TaskStatus) => {
+      const current = items.find((task) => task.id === taskId);
+      if (!current || current.status === toStatus) {
+        return;
+      }
       try {
         const response = await fetch(`/api/projects/${projectId}/tasks/transition`, {
           method: 'POST',
@@ -279,12 +384,27 @@ export default function ProjectTasksPageClient({
         if (!response.ok) {
           throw new Error('Не удалось обновить статус');
         }
+        toast(`Задача «${current.title}» → ${toStatus}`, 'success');
+        registerUndo({
+          label: `Статус задачи «${current.title}» изменён`,
+          successMessage: `Статус задачи «${current.title}» восстановлен`,
+          undo: async () => {
+            await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status: current.status })
+            });
+            await loadTasks();
+          }
+        });
         await loadTasks();
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
       }
     },
-    [loadTasks, projectId]
+    [items, loadTasks, projectId, registerUndo]
   );
 
   const handleViewChange = useCallback(
@@ -293,6 +413,128 @@ export default function ProjectTasksPageClient({
       syncViewToQuery(next);
     },
     [syncViewToQuery]
+  );
+
+  const toggleTaskSelection = useCallback((taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) {
+        next.delete(taskId);
+      } else {
+        next.add(taskId);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedTaskIds(new Set());
+  }, []);
+
+  const selectAllVisible = useCallback(() => {
+    setSelectedTaskIds(new Set(items.map((task) => task.id)));
+  }, [items]);
+
+  const handleBulkStatusChange = useCallback(
+    async (nextStatus: TaskStatus) => {
+      if (selectedTaskIds.size === 0) {
+        return;
+      }
+      setBulkUpdating(true);
+      try {
+        const ids = Array.from(selectedTaskIds);
+        const snapshot = items
+          .filter((task) => selectedTaskIds.has(task.id))
+          .map((task) => ({ id: task.id, title: task.title, status: task.status }));
+        const response = await fetch(`/api/projects/${projectId}/tasks/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ operation: 'set_status', taskIds: ids, status: nextStatus })
+        });
+        if (!response.ok) {
+          throw new Error('Не удалось обновить статусы');
+        }
+        toast(`Статусы обновлены для ${ids.length} задач`, 'success');
+        registerUndo({
+          label: `Изменён статус ${ids.length} задач`,
+          successMessage: 'Массовое изменение статусов отменено',
+          undo: async () => {
+            await Promise.all(
+              snapshot.map((task) =>
+                fetch(`/api/projects/${projectId}/tasks/${task.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ status: task.status })
+                })
+              )
+            );
+            await loadTasks();
+          }
+        });
+        setSelectedTaskIds(new Set());
+        await loadTasks();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      } finally {
+        setBulkUpdating(false);
+      }
+    },
+    [items, loadTasks, projectId, registerUndo, selectedTaskIds]
+  );
+
+  const handleBulkIterationChange = useCallback(
+    async (iterationId: string | null) => {
+      if (selectedTaskIds.size === 0) {
+        return;
+      }
+      setBulkUpdating(true);
+      try {
+        const ids = Array.from(selectedTaskIds);
+        const snapshot = items
+          .filter((task) => selectedTaskIds.has(task.id))
+          .map((task) => ({ id: task.id, iterationId: task.iterationId ?? null }));
+        const response = await fetch(`/api/projects/${projectId}/tasks/bulk`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ operation: 'set_iteration', taskIds: ids, iterationId })
+        });
+        if (!response.ok) {
+          throw new Error('Не удалось обновить итерацию');
+        }
+        toast(`Итерация обновлена для ${ids.length} задач`, 'success');
+        registerUndo({
+          label: `Изменена итерация ${ids.length} задач`,
+          successMessage: 'Массовое изменение итераций отменено',
+          undo: async () => {
+            await Promise.all(
+              snapshot.map((task) =>
+                fetch(`/api/projects/${projectId}/tasks/${task.id}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({ iterationId: task.iterationId })
+                })
+              )
+            );
+            await loadTasks();
+          }
+        });
+        setSelectedTaskIds(new Set());
+        await loadTasks();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      } finally {
+        setBulkUpdating(false);
+      }
+    },
+    [items, loadTasks, projectId, registerUndo, selectedTaskIds]
   );
 
   const grouped = useMemo(() => {
@@ -355,6 +597,7 @@ export default function ProjectTasksPageClient({
 
   const handleTaskUpdate = useCallback(
     async (taskId: string, payload: TaskUpdatePayload) => {
+      const before = items.find((task) => task.id === taskId);
       const response = await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
         method: 'PATCH',
         headers: {
@@ -366,9 +609,36 @@ export default function ProjectTasksPageClient({
         const message = await response.text().catch(() => '');
         throw new Error(message || 'Не удалось сохранить задачу');
       }
+      toast('Задача обновлена', 'success');
+      if (before) {
+        registerUndo({
+          label: `Обновлена задача «${before.title}»`,
+          successMessage: 'Изменения по задаче отменены',
+          undo: async () => {
+            await fetch(`/api/projects/${projectId}/tasks/${taskId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                title: before.title,
+                description: before.description ?? '',
+                status: before.status,
+                iterationId: before.iterationId ?? null,
+                assigneeId: before.assigneeId ?? null,
+                startAt: before.startAt ?? null,
+                dueAt: before.dueAt ?? null,
+                labels: before.labels ?? [],
+                priority: before.priority ?? null
+              })
+            });
+            await loadTasks();
+          }
+        });
+      }
       await loadTasks();
     },
-    [loadTasks, projectId]
+    [items, loadTasks, projectId, registerUndo]
   );
 
   const handleCreateIteration = useCallback(
@@ -404,19 +674,40 @@ export default function ProjectTasksPageClient({
                 view === option ? 'bg-indigo-500 text-white' : 'hover:text-white'
               }`}
             >
-              {option === 'kanban' ? 'Канбан' : option === 'list' ? 'Список' : option === 'calendar' ? 'Календарь' : 'Гантт'}
+              {option === 'kanban'
+                ? 'Канбан'
+                : option === 'list'
+                  ? 'Список'
+                  : option === 'calendar'
+                    ? 'Календарь'
+                    : option === 'gantt'
+                      ? 'Гантт'
+                      : 'Бэклог'}
             </button>
           ))}
         </div>
       }
       filters={
-        <>
+        <div className="flex flex-wrap gap-2">
           <input
             className="min-w-[200px] flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-            placeholder="Новая задача…"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Поиск по задачам"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
           />
+          <select
+            className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as TaskStatus | 'all')}
+            disabled={view === 'backlog'}
+          >
+            <option value="all">Все статусы</option>
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
           <select
             className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
             value={selectedIteration}
@@ -429,6 +720,18 @@ export default function ProjectTasksPageClient({
               </option>
             ))}
           </select>
+          <input
+            className="w-40 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+            placeholder="Метки"
+            value={labelsFilter}
+            onChange={(event) => setLabelsFilter(event.target.value)}
+          />
+          <input
+            className="w-36 rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+            placeholder="Исполнитель"
+            value={assigneeFilter}
+            onChange={(event) => setAssigneeFilter(event.target.value)}
+          />
           <button
             type="button"
             onClick={() => setIterationModalOpen(true)}
@@ -438,11 +741,10 @@ export default function ProjectTasksPageClient({
           </button>
           <button
             type="button"
-            onClick={handleAdd}
+            onClick={() => setNewTaskModalOpen(true)}
             className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-            disabled={isSubmitting || !title.trim()}
           >
-            {isSubmitting ? 'Добавление…' : 'Добавить'}
+            Новая задача
           </button>
           <button
             type="button"
@@ -451,11 +753,87 @@ export default function ProjectTasksPageClient({
           >
             Обновить
           </button>
-        </>
+        </div>
       }
       contentClassName="space-y-6"
     >
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
+
+      {selectedTaskIds.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-indigo-500/40 bg-indigo-500/10 p-4 text-xs text-indigo-100">
+          <span className="font-semibold">Выбрано задач: {selectedTaskIds.size}</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={selectAllVisible}
+              className="rounded-lg border border-indigo-400/60 px-3 py-1 text-indigo-100 transition hover:bg-indigo-500/20"
+              disabled={isBulkUpdating}
+            >
+              Все на странице
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="rounded-lg border border-indigo-400/60 px-3 py-1 text-indigo-100 transition hover:bg-indigo-500/20"
+              disabled={isBulkUpdating}
+            >
+              Снять выбор
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              className="rounded-lg border border-indigo-400/60 bg-transparent px-2 py-1 text-indigo-100 focus:border-indigo-300 focus:outline-none"
+              value={bulkStatusTarget}
+              onChange={(event) => setBulkStatusTarget(event.target.value as TaskStatus)}
+            >
+              {statuses.map((status) => (
+                <option key={status} value={status} className="text-neutral-900">
+                  {status}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void handleBulkStatusChange(bulkStatusTarget)}
+              className="rounded-lg bg-indigo-500 px-3 py-1 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
+              disabled={isBulkUpdating}
+            >
+              Применить статус
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              className="rounded-lg border border-indigo-400/60 bg-transparent px-2 py-1 text-indigo-100 focus:border-indigo-300 focus:outline-none"
+              value={bulkIterationTarget}
+              onChange={(event) => setBulkIterationTarget(event.target.value as 'none' | string)}
+            >
+              <option value="none" className="text-neutral-900">
+                Без изменений
+              </option>
+              <option value="" className="text-neutral-900">
+                Без итерации
+              </option>
+              {iterations.map((iter) => (
+                <option key={iter.id} value={iter.id} className="text-neutral-900">
+                  {iter.title}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() =>
+                void handleBulkIterationChange(
+                  bulkIterationTarget === 'none' ? null : bulkIterationTarget === '' ? null : bulkIterationTarget
+                )
+              }
+              className="rounded-lg bg-indigo-500 px-3 py-1 font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
+              disabled={isBulkUpdating}
+            >
+              Применить итерацию
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <section className="space-y-3">
         {isLoading ? (
@@ -493,10 +871,12 @@ export default function ProjectTasksPageClient({
                   <p className="text-xs text-neutral-500">{column.tasks.length} задач</p>
                 </div>
                 <div className="space-y-3">
-                  {column.tasks.map((task) => (
-                    <article
-                      key={task.id}
-                      draggable={isDndActive}
+                  {column.tasks.map((task) => {
+                    const isSelected = selectedTaskIds.has(task.id);
+                    return (
+                      <article
+                        key={task.id}
+                        draggable={isDndActive}
                       onDragStart={(event) => {
                         if (!isDndActive) {
                           return;
@@ -505,17 +885,31 @@ export default function ProjectTasksPageClient({
                         event.dataTransfer.setData('text/plain', task.id);
                       }}
                       onClick={() => handleTaskClick(task.id)}
-                      className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
+                      className={`space-y-2 rounded-xl border p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10 ${
+                        isSelected ? 'border-indigo-400 bg-indigo-500/10' : 'border-neutral-800 bg-neutral-900/70'
+                      }`}
                     >
-                      <h3 className="text-sm font-semibold text-white">{task.title}</h3>
-                      {task.iterationId ? (
-                        <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
-                          {iterationNames.get(task.iterationId) ?? task.iterationId}
-                        </span>
-                      ) : null}
-                      {renderStatusControls(task)}
-                    </article>
-                  ))}
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-white">{task.title}</h3>
+                        <input
+                          type="checkbox"
+                          className="mt-0.5 h-4 w-4 cursor-pointer accent-indigo-500"
+                          checked={isSelected}
+                          onChange={(event) => {
+                            event.stopPropagation();
+                            toggleTaskSelection(task.id);
+                          }}
+                        />
+                      </div>
+                        {task.iterationId ? (
+                          <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
+                            {iterationNames.get(task.iterationId) ?? task.iterationId}
+                          </span>
+                        ) : null}
+                        {renderStatusControls(task)}
+                      </article>
+                    );
+                  })}
                   {column.tasks.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-neutral-800 p-3 text-xs text-neutral-500">Нет задач</div>
                   ) : null}
@@ -525,29 +919,50 @@ export default function ProjectTasksPageClient({
           </div>
         ) : view === 'list' ? (
           <ul className="space-y-3">
-            {items.map((task) => (
-              <li
-                key={task.id}
-                onClick={() => handleTaskClick(task.id)}
-                className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-indigo-400"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{task.title}</div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
+            {items.map((task) => {
+              const isSelected = selectedTaskIds.has(task.id);
+              return (
+                <li
+                  key={task.id}
+                  onClick={() => handleTaskClick(task.id)}
+                  className={`space-y-2 rounded-2xl border p-4 transition hover:border-indigo-400 ${
+                    isSelected ? 'border-indigo-400 bg-indigo-500/10' : 'border-neutral-800 bg-neutral-950/80'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 cursor-pointer accent-indigo-500"
+                        checked={isSelected}
+                        onChange={(event) => {
+                          event.stopPropagation();
+                          toggleTaskSelection(task.id);
+                        }}
+                      />
+                      <div>
+                        <div className="text-sm font-semibold text-white">{task.title}</div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-neutral-400">
+                      {task.priority ? <span className="rounded-lg border border-neutral-800 px-2 py-1">Приоритет: {task.priority}</span> : null}
+                      {task.iterationId ? (
+                        <span className="rounded-lg border border-neutral-800 px-2 py-1 text-neutral-400">
+                          Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
-                  {task.iterationId ? (
-                    <span className="rounded-lg border border-neutral-800 px-2 py-1 text-xs text-neutral-400">
-                      Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
-                    </span>
-                  ) : null}
-                </div>
-                {renderStatusControls(task)}
-              </li>
-            ))}
+                  {renderStatusControls(task)}
+                </li>
+              );
+            })}
           </ul>
         ) : view === 'calendar' ? (
           <CalendarView tasks={items} />
+        ) : view === 'backlog' ? (
+          <BacklogView tasks={items} iterations={iterations} onSelect={handleTaskClick} onToggleSelection={toggleTaskSelection} selectedTaskIds={selectedTaskIds} />
         ) : (
           <GanttView tasks={items} />
         )}
@@ -560,6 +975,14 @@ export default function ProjectTasksPageClient({
         iterations={iterations}
         onClose={() => setDrawerOpen(false)}
         onSubmit={handleTaskUpdate}
+      />
+
+      <NewTaskModal
+        open={newTaskModalOpen}
+        statuses={statuses}
+        iterations={iterations}
+        onClose={() => setNewTaskModalOpen(false)}
+        onSubmit={handleCreateTask}
       />
 
       <IterationModal
@@ -579,15 +1002,29 @@ type TaskDrawerProps = {
   onSubmit: (taskId: string, payload: TaskUpdatePayload) => Promise<void>;
 };
 
+
+type TaskDrawerTab = 'comments' | 'files' | 'history' | 'hints';
+
+type CommentEntry = {
+  id: string;
+  author: string;
+  message: string;
+  createdAt: string;
+};
+
 function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: TaskDrawerProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TaskStatus | ''>('');
+  const [status, setStatus] = useState<TaskStatus>('new');
   const [iterationId, setIterationId] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
+  const [priority, setPriority] = useState<'low' | 'med' | 'high'>('med');
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [labels, setLabels] = useState('');
+  const [comments, setComments] = useState<CommentEntry[]>([]);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [activeTab, setActiveTab] = useState<TaskDrawerTab>('comments');
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -600,9 +1037,26 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
     setStatus(task.status ?? 'new');
     setIterationId(task.iterationId ?? '');
     setAssigneeId(task.assigneeId ?? '');
+    setPriority(task.priority ?? 'med');
     setStartAt(toInputDateTime(task.startAt));
     setDueAt(toInputDateTime(task.dueAt));
     setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
+    setComments([
+      {
+        id: `${task.id}-c1`,
+        author: 'Мария Петрова',
+        message: 'Проверьте критерии готовности перед переводом задачи в ревью.',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: `${task.id}-c2`,
+        author: 'Алексей Ким',
+        message: 'На созвоне обсуждали, что дедлайн можно сдвинуть на два дня.',
+        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString()
+      }
+    ]);
+    setCommentDraft('');
+    setActiveTab('comments');
     setError(null);
   }, [open, task]);
 
@@ -637,6 +1091,9 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
         if (assigneeId !== (task.assigneeId ?? '')) {
           payload.assigneeId = assigneeId ? assigneeId : null;
         }
+        if (priority !== (task.priority ?? 'med')) {
+          payload.priority = priority;
+        }
         const nextStart = fromInputDate(startAt);
         if (nextStart !== (task.startAt ?? null)) {
           payload.startAt = nextStart;
@@ -655,38 +1112,93 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
         }
 
         if (Object.keys(payload).length === 0) {
-          onClose();
+          setError('Изменений не обнаружено');
+          setSaving(false);
           return;
         }
 
         await onSubmit(task.id, payload);
-        onClose();
+        setError(null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось сохранить');
+        setError(err instanceof Error ? err.message : 'Не удалось сохранить изменения');
       } finally {
         setSaving(false);
       }
     },
-    [assigneeId, description, dueAt, iterationId, labels, onClose, onSubmit, startAt, status, task, title]
+    [assigneeId, description, dueAt, iterationId, labels, onSubmit, priority, startAt, status, task, title]
+  );
+
+  const handleCommentSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!commentDraft.trim() || !task) {
+        setError('Введите текст комментария');
+        return;
+      }
+      const entry: CommentEntry = {
+        id: `${task.id}-${Date.now()}`,
+        author: 'Вы',
+        message: commentDraft.trim(),
+        createdAt: new Date().toISOString()
+      };
+      setComments((prev) => [entry, ...prev]);
+      setCommentDraft('');
+      setError(null);
+      toast('Комментарий добавлен', 'success');
+    },
+    [commentDraft, task]
+  );
+
+  const files = useMemo(
+    () => [
+      { id: 'spec', name: 'Product-spec.pdf', size: '1.2 МБ' },
+      { id: 'brief', name: 'Design-brief.md', size: '8 КБ' }
+    ],
+    []
+  );
+
+  const historyItems = useMemo(() => {
+    if (!task) {
+      return [] as { id: string; title: string; ts: string }[];
+    }
+    return [
+      { id: 'created', title: 'Задача создана', ts: task.createdAt },
+      { id: 'updated', title: 'Последнее обновление', ts: task.updatedAt },
+      { id: 'status', title: `Статус: ${task.status}`, ts: new Date().toISOString() }
+    ];
+  }, [task]);
+
+  const hints = useMemo(
+    () => [
+      {
+        id: 'hint-1',
+        title: 'Проверьте дедлайн',
+        description: 'Синхронизируйтесь с командой, чтобы подтвердить актуальные сроки выполнения задачи.'
+      },
+      {
+        id: 'hint-2',
+        title: 'Добавьте чек-лист',
+        description: 'Разбейте задачу на подзадачи, чтобы ускорить ревью и приёмку.'
+      }
+    ],
+    []
   );
 
   return (
-    <Sheet open={open} onOpenChange={(next) => (!next ? handleClose() : undefined)}>
-      <SheetContent className="flex h-full flex-col bg-neutral-950/95" side="right">
-        <form className="flex h-full flex-col gap-4 p-6" onSubmit={handleSubmit}>
-          <SheetHeader>
-            <SheetTitle>Детали задачи</SheetTitle>
-            {task ? <p className="text-xs text-neutral-500">ID: {task.id}</p> : null}
-          </SheetHeader>
-          {task ? (
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
+    <Sheet open={open} onOpenChange={(value) => (!value ? handleClose() : undefined)}>
+      <SheetContent className="flex w-full flex-col gap-4 overflow-hidden sm:max-w-xl">
+        <SheetHeader>
+          <SheetTitle className="text-base font-semibold text-white">Карточка задачи</SheetTitle>
+        </SheetHeader>
+        {task ? (
+          <div className="flex h-full flex-col gap-4 overflow-hidden">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <label className="space-y-2 text-sm text-neutral-200">
                 <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Название</span>
                 <input
                   className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  required
                 />
               </label>
               <label className="space-y-2 text-sm text-neutral-200">
@@ -698,44 +1210,60 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
                   placeholder="Markdown или обычный текст"
                 />
               </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Статус</span>
-                <select
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as TaskStatus)}
-                >
-                  {statuses.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Итерация</span>
-                <select
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={iterationId}
-                  onChange={(event) => setIterationId(event.target.value)}
-                >
-                  <option value="">Без итерации</option>
-                  {iterations.map((iter) => (
-                    <option key={iter.id} value={iter.id}>
-                      {iter.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Исполнитель</span>
-                <input
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={assigneeId}
-                  onChange={(event) => setAssigneeId(event.target.value)}
-                  placeholder="user_id"
-                />
-              </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Статус</span>
+                  <select
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as TaskStatus)}
+                  >
+                    {statuses.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Приоритет</span>
+                  <select
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={priority}
+                    onChange={(event) => setPriority(event.target.value as 'low' | 'med' | 'high')}
+                  >
+                    <option value="low">Низкий</option>
+                    <option value="med">Средний</option>
+                    <option value="high">Высокий</option>
+                  </select>
+                </label>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Итерация</span>
+                  <select
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={iterationId}
+                    onChange={(event) => setIterationId(event.target.value)}
+                  >
+                    <option value="">Без итерации</option>
+                    {iterations.map((iter) => (
+                      <option key={iter.id} value={iter.id}>
+                        {iter.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Исполнитель</span>
+                  <input
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={assigneeId}
+                    onChange={(event) => setAssigneeId(event.target.value)}
+                    placeholder="user_id"
+                  />
+                </label>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm text-neutral-200">
                   <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Начало</span>
@@ -766,28 +1294,129 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
                 />
               </label>
               {error ? <p className="text-sm text-red-400">{error}</p> : null}
+              <div className="flex justify-between gap-3 border-t border-neutral-800 pt-4">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+                  disabled={isSaving}
+                >
+                  Закрыть
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Сохранение…' : 'Сохранить'}
+                </button>
+              </div>
+            </form>
+            <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+              <nav className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-1 text-[11px] uppercase tracking-[0.2em] text-neutral-400">
+                {([
+                  { id: 'comments', label: 'Комментарии' },
+                  { id: 'files', label: 'Файлы' },
+                  { id: 'history', label: 'История' },
+                  { id: 'hints', label: 'Подсказки' }
+                ] as { id: TaskDrawerTab; label: string }[]).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={clsx(
+                      'rounded-lg px-3 py-1 font-semibold transition',
+                      activeTab === tab.id ? 'bg-indigo-500 text-white' : 'hover:text-white'
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </nav>
+              <div className="flex-1 overflow-y-auto rounded-xl border border-neutral-800 bg-neutral-950/70 p-4 text-sm text-neutral-200">
+                {activeTab === 'comments' ? (
+                  <div className="space-y-4">
+                    <ul className="space-y-3">
+                      {comments.map((comment) => (
+                        <li key={comment.id} className="space-y-1 rounded-lg border border-neutral-800 bg-neutral-900/80 p-3">
+                          <div className="flex items-center justify-between text-xs text-neutral-400">
+                            <span className="font-semibold text-white">{comment.author}</span>
+                            <time>{new Date(comment.createdAt).toLocaleString('ru-RU')}</time>
+                          </div>
+                          <p className="text-sm text-neutral-200">{comment.message}</p>
+                        </li>
+                      ))}
+                      {comments.length === 0 ? <li className="text-xs text-neutral-500">Комментариев пока нет</li> : null}
+                    </ul>
+                    <form className="space-y-2" onSubmit={handleCommentSubmit}>
+                      <textarea
+                        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                        value={commentDraft}
+                        onChange={(event) => setCommentDraft(event.target.value)}
+                        placeholder="Оставьте заметку для команды"
+                      />
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-indigo-400"
+                        >
+                          Добавить комментарий
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                ) : activeTab === 'files' ? (
+                  <ul className="space-y-2">
+                    {files.map((file) => (
+                      <li key={file.id} className="flex items-center justify-between rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-2">
+                        <div>
+                          <p className="font-semibold text-white">{file.name}</p>
+                          <p className="text-xs text-neutral-500">{file.size}</p>
+                        </div>
+                        <button
+                          type="button"
+                          className="rounded-lg border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+                          onClick={() => toast(`Файл ${file.name} отправлен на скачивание`, 'info')}
+                        >
+                          Скачать
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : activeTab === 'history' ? (
+                  <ul className="space-y-2 text-xs text-neutral-400">
+                    {historyItems.map((item) => (
+                      <li key={item.id} className="rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-2">
+                        <p className="font-semibold text-white">{item.title}</p>
+                        <time className="block text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                          {new Date(item.ts).toLocaleString('ru-RU')}
+                        </time>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <ul className="space-y-3 text-sm text-neutral-200">
+                    {hints.map((hint) => (
+                      <li key={hint.id} className="space-y-2 rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-2">
+                        <p className="font-semibold text-white">{hint.title}</p>
+                        <p className="text-xs text-neutral-400">{hint.description}</p>
+                        <button
+                          type="button"
+                          className="rounded-lg border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+                          onClick={() => toast('Подсказка отмечена', 'info')}
+                        >
+                          Готово
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Задача не выбрана</div>
-          )}
-          <div className="flex justify-between gap-3 border-t border-neutral-800 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
-              disabled={isSaving}
-            >
-              Отменить
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
-              disabled={isSaving}
-            >
-              {isSaving ? 'Сохранение…' : 'Сохранить'}
-            </button>
           </div>
-        </form>
+        ) : (
+          <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Задача не выбрана</div>
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -797,6 +1426,219 @@ type IterationModalProps = {
   onClose: () => void;
   onSubmit: (payload: IterationPayload) => Promise<void>;
 };
+
+type NewTaskModalProps = {
+  open: boolean;
+  statuses: TaskStatus[];
+  iterations: IterationItem[];
+  onClose: () => void;
+  onSubmit: (payload: TaskCreateModalPayload) => Promise<void>;
+};
+
+function NewTaskModal({ open, statuses, iterations, onClose, onSubmit }: NewTaskModalProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<TaskStatus>('new');
+  const [iterationId, setIterationId] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [startAt, setStartAt] = useState('');
+  const [dueAt, setDueAt] = useState('');
+  const [labels, setLabels] = useState('');
+  const [priority, setPriority] = useState<'low' | 'med' | 'high'>('med');
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setTitle('');
+      setDescription('');
+      setStatus(statuses[0] ?? 'new');
+      setIterationId('');
+      setAssigneeId('');
+      setStartAt('');
+      setDueAt('');
+      setLabels('');
+      setPriority('med');
+      setError(null);
+    }
+  }, [open, statuses]);
+
+  if (!open) {
+    return null;
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!title.trim()) {
+      setError('Введите название задачи');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const payload: TaskCreateModalPayload = {
+        title: title.trim(),
+        description: description.trim() ? description.trim() : undefined,
+        status,
+        iterationId: iterationId || undefined,
+        assigneeId: assigneeId.trim() || undefined,
+        startAt: fromInputDate(startAt),
+        dueAt: fromInputDate(dueAt),
+        labels: labels
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean),
+        priority
+      };
+      if (!payload.labels?.length) {
+        delete payload.labels;
+      }
+      await onSubmit(payload);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось создать задачу');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/70 backdrop-blur-sm">
+      <form className="w-full max-w-2xl space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/95 p-6" onSubmit={handleSubmit}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-white">Новая задача</h2>
+            <p className="text-xs text-neutral-400">Заполните ключевые поля и выберите подходящий статус.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => (!isSaving ? onClose() : undefined)}
+            className="rounded-xl border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+            disabled={isSaving}
+          >
+            Закрыть
+          </button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="space-y-2 text-sm text-neutral-200 md:col-span-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Название</span>
+            <input
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Например: Подготовить презентацию"
+              required
+            />
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200 md:col-span-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Описание</span>
+            <textarea
+              className="min-h-[120px] w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Кратко опишите цель задачи"
+            />
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Статус</span>
+            <select
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={status}
+              onChange={(event) => setStatus(event.target.value as TaskStatus)}
+            >
+              {statuses.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Итерация</span>
+            <select
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={iterationId}
+              onChange={(event) => setIterationId(event.target.value)}
+            >
+              <option value="">Без итерации</option>
+              {iterations.map((iter) => (
+                <option key={iter.id} value={iter.id}>
+                  {iter.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Исполнитель</span>
+            <input
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={assigneeId}
+              onChange={(event) => setAssigneeId(event.target.value)}
+              placeholder="user_id"
+            />
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Приоритет</span>
+            <select
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={priority}
+              onChange={(event) => setPriority(event.target.value as 'low' | 'med' | 'high')}
+            >
+              <option value="low">Низкий</option>
+              <option value="med">Средний</option>
+              <option value="high">Высокий</option>
+            </select>
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Начало</span>
+            <input
+              type="datetime-local"
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={startAt}
+              onChange={(event) => setStartAt(event.target.value)}
+            />
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Дедлайн</span>
+            <input
+              type="datetime-local"
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={dueAt}
+              onChange={(event) => setDueAt(event.target.value)}
+            />
+          </label>
+          <label className="space-y-2 text-sm text-neutral-200 md:col-span-2">
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Метки</span>
+            <input
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              value={labels}
+              onChange={(event) => setLabels(event.target.value)}
+              placeholder="product, design, urgent"
+            />
+          </label>
+        </div>
+        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => (!isSaving ? onClose() : undefined)}
+            className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+            disabled={isSaving}
+          >
+            Отменить
+          </button>
+          <button
+            type="submit"
+            className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
+            disabled={isSaving}
+          >
+            {isSaving ? 'Создание…' : 'Создать'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 function IterationModal({ open, onClose, onSubmit }: IterationModalProps) {
   const [title, setTitle] = useState('');
@@ -904,6 +1746,106 @@ type TimelineTask = Pick<TaskItem, 'id' | 'title' | 'status' | 'startAt' | 'dueA
 type CalendarViewProps = {
   tasks: TimelineTask[];
 };
+
+type BacklogViewProps = {
+  tasks: TaskItem[];
+  iterations: IterationItem[];
+  selectedTaskIds: Set<string>;
+  onSelect: (taskId: string) => void;
+  onToggleSelection: (taskId: string) => void;
+};
+
+function BacklogView({ tasks, iterations, selectedTaskIds, onSelect, onToggleSelection }: BacklogViewProps) {
+  const iterationTitles = useMemo(() => {
+    const map = new Map<string, string>();
+    iterations.forEach((iter) => map.set(iter.id, iter.title));
+    return map;
+  }, [iterations]);
+
+  const groups = useMemo(() => {
+    const bucket = new Map<string | null, TaskItem[]>();
+    for (const task of tasks) {
+      const key = task.iterationId ?? null;
+      const list = bucket.get(key) ?? [];
+      list.push(task);
+      bucket.set(key, list);
+    }
+    const entries = Array.from(bucket.entries());
+    entries.sort((a, b) => {
+      if (a[0] === b[0]) {
+        return 0;
+      }
+      if (a[0] === null) {
+        return -1;
+      }
+      if (b[0] === null) {
+        return 1;
+      }
+      return (iterationTitles.get(a[0]!) ?? a[0]!).localeCompare(iterationTitles.get(b[0]!) ?? b[0]!);
+    });
+    return entries.map(([iterationId, bucketTasks]) => ({
+      iterationId,
+      title: iterationId ? iterationTitles.get(iterationId) ?? iterationId : 'Без итерации',
+      tasks: bucketTasks.sort((a, b) => a.title.localeCompare(b.title))
+    }));
+  }, [iterationTitles, tasks]);
+
+  if (groups.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-sm text-neutral-400">
+        Бэклог пуст. Добавьте задачи, чтобы начать планирование.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <section key={group.iterationId ?? 'none'} className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-white">{group.title}</h3>
+            <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">{group.tasks.length} задач</span>
+          </div>
+          <ul className="space-y-2">
+            {group.tasks.map((task) => {
+              const isSelected = selectedTaskIds.has(task.id);
+              return (
+                <li
+                  key={task.id}
+                  onClick={() => onSelect(task.id)}
+                  className={`rounded-xl border p-3 transition hover:border-indigo-400 ${
+                    isSelected ? 'border-indigo-400 bg-indigo-500/10' : 'border-neutral-800 bg-neutral-900/60'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 cursor-pointer accent-indigo-500"
+                        checked={isSelected}
+                        onChange={(event) => {
+                          event.stopPropagation();
+                          onToggleSelection(task.id);
+                        }}
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{task.title}</p>
+                        {task.description ? (
+                          <p className="mt-1 line-clamp-2 text-xs text-neutral-400">{task.description}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-indigo-200">{task.status}</div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
 
 function CalendarView({ tasks }: CalendarViewProps) {
   const now = new Date();

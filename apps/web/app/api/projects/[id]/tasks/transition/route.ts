@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { flags } from '@/lib/flags';
-import { memory } from '@/mocks/projects-memory';
 import type { TaskStatus } from '@/domain/projects/types';
+import { InvalidTaskStatusError, TaskNotFoundError, tasksService } from '@collabverse/api';
 
 const BodySchema = z.object({
   taskId: z.string().min(1),
@@ -20,22 +20,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const { taskId, toStatus } = parsed.data;
-  const idx = memory.TASKS.findIndex((task) => task.id === taskId && task.projectId === params.id);
-  if (idx === -1) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
 
-  const flow = memory.WORKFLOWS[params.id]?.statuses ?? ['new', 'in_progress', 'review', 'done'];
-  if (!flow.includes(toStatus)) {
-    return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+  try {
+    const task = tasksService.transition(params.id, taskId, toStatus);
+    return NextResponse.json(task);
+  } catch (err) {
+    if (err instanceof InvalidTaskStatusError) {
+      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
+    if (err instanceof TaskNotFoundError) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
   }
-
-  const task = memory.TASKS[idx];
-  if (!task) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-  task.status = toStatus;
-  task.updatedAt = new Date().toISOString();
-
-  return NextResponse.json(task);
 }
