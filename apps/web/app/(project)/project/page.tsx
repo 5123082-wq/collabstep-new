@@ -3,9 +3,8 @@ import { memory } from '@/mocks/projects-memory';
 
 export default function ProjectIndexPage() {
   const items = memory.PROJECTS ?? [];
-
   return (
-    <div className="space-y-6 px-6 py-10">
+    <div className="px-6 py-10 space-y-6">
       <header className="space-y-2">
         <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Проекты</p>
         <div className="flex items-center justify-between">
@@ -36,21 +35,15 @@ export default function ProjectIndexPage() {
         </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((project) => (
-            <li key={project.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-5">
-              <h3 className="font-semibold text-white">{project.title}</h3>
-              <p className="line-clamp-2 text-sm text-neutral-400">{project.description ?? '—'}</p>
+          {items.map((p) => (
+            <li key={p.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-5">
+              <h3 className="text-white font-semibold">{p.title}</h3>
+              <p className="text-sm text-neutral-400 line-clamp-2">{p.description ?? '—'}</p>
               <div className="mt-4 flex gap-2">
-                <Link
-                  href={`/project/${project.id}/tasks`}
-                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm"
-                >
+                <Link href={`/project/${p.id}/tasks`} className="rounded-xl border border-neutral-700 px-3 py-1 text-sm">
                   Задачи
                 </Link>
-                <Link
-                  href={`/project/${project.id}/settings`}
-                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm"
-                >
+                <Link href={`/project/${p.id}/settings`} className="rounded-xl border border-neutral-700 px-3 py-1 text-sm">
                   Настройки
                 </Link>
               </div>

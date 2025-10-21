@@ -1,6 +1,6 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 import { flags } from '@/lib/flags';
-import WorkflowEditorClient from '@/app/project/[id]/settings/workflow-editor-client';
+import WorkflowEditorClient from './workflow-editor-client';
 
 const GENERAL = [
   { id: 'name', label: 'Название проекта', value: 'Демо-проект' },

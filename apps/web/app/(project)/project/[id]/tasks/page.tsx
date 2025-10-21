@@ -1,4 +1,4 @@
-import ProjectTasksPageV1 from '@/app/project/[id]/tasks/project-tasks-page-v1';
+import ProjectTasksPageV1 from './project-tasks-page-v1';
 import { flags } from '@/lib/flags';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 

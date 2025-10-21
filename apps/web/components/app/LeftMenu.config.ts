@@ -48,7 +48,14 @@ export type LeftMenuSection = {
   children?: LeftMenuChild[];
 };
 
-const PROJECTS_HUB_PATH = '/project';
+export const PROJECTS_HUB_PATH = '/project';
+export const PROJECTS_MENU_SECTION: LeftMenuSection = {
+  id: 'projects',
+  label: 'Проекты',
+  icon: 'projects',
+  href: PROJECTS_HUB_PATH
+};
+
 const baseLeftMenuConfig: LeftMenuSection[] = [
   {
     id: 'dashboard',
@@ -56,12 +63,7 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     icon: 'dashboard',
     href: '/app/dashboard'
   },
-  {
-    id: 'projects',
-    label: 'Проекты',
-    icon: 'projects',
-    href: PROJECTS_HUB_PATH
-  },
+  PROJECTS_MENU_SECTION,
   {
     id: 'marketplace',
     label: 'Маркетплейс',
