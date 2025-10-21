@@ -1,18 +1,63 @@
-import { notFound } from 'next/navigation';
-import { flags } from '@/lib/flags';
-import ProjectsIndexPageClient from './projects-index-page-client';
+import Link from 'next/link';
+import { memory } from '@/mocks/projects-memory';
 
-export default function ProjectsIndexPage({
-  searchParams
-}: {
-  searchParams?: { tab?: string | string[] };
-}) {
-  if (!flags.PROJECTS_V1) {
-    notFound();
-  }
+export default function ProjectIndexPage() {
+  const items = memory.PROJECTS ?? [];
 
-  const tabParam = searchParams?.tab;
-  const initialTab = Array.isArray(tabParam) ? tabParam[0] : tabParam;
+  return (
+    <div className="space-y-6 px-6 py-10">
+      <header className="space-y-2">
+        <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Проекты</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold text-white">Список проектов</h1>
+          <Link
+            href="/project/new"
+            className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400"
+          >
+            + Новый проект
+          </Link>
+        </div>
+        <nav className="mt-4 flex gap-4 text-sm">
+          <Link href="/project?tab=my" className="hover:underline">
+            Мои проекты
+          </Link>
+          <Link href="/project?tab=templates" className="hover:underline">
+            Шаблоны
+          </Link>
+          <Link href="/project?tab=archive" className="hover:underline">
+            Архив
+          </Link>
+        </nav>
+      </header>
 
-  return <ProjectsIndexPageClient initialTab={initialTab ?? ''} />;
+      {items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-800 p-8 text-neutral-400">
+          Пока нет проектов. Нажмите «Новый проект».
+        </div>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((project) => (
+            <li key={project.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-5">
+              <h3 className="font-semibold text-white">{project.title}</h3>
+              <p className="line-clamp-2 text-sm text-neutral-400">{project.description ?? '—'}</p>
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/project/${project.id}/tasks`}
+                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm"
+                >
+                  Задачи
+                </Link>
+                <Link
+                  href={`/project/${project.id}/settings`}
+                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm"
+                >
+                  Настройки
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
