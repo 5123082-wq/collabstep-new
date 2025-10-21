@@ -49,7 +49,7 @@ export default function ProjectHeader({ name, stage, visibility, onOpenCreate }:
       <nav aria-label="Хлебные крошки">
         <ol className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">
           <li>
-            <Link href="/app/projects" className="rounded-md px-2 py-1 transition hover:bg-neutral-800 hover:text-neutral-200">
+            <Link href="/project" className="rounded-md px-2 py-1 transition hover:bg-neutral-800 hover:text-neutral-200">
               Мои проекты
             </Link>
           </li>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-export default function ProjectGroupNotFound() {
+export default function ProjectNotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center bg-neutral-950 px-6 text-neutral-100">
       <div className="max-w-lg text-center">
@@ -11,7 +11,7 @@ export default function ProjectGroupNotFound() {
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
           <Link
-            href="/app/projects"
+            href="/project"
             className="rounded-full border border-indigo-500/60 bg-indigo-500/15 px-4 py-2 text-sm font-semibold text-indigo-100 transition hover:bg-indigo-500/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           >
             К списку проектов

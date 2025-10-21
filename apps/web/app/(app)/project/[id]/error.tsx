@@ -34,7 +34,7 @@ export default function ProjectError({ reset }: RouteErrorProps) {
           reset={reset}
           onRetry={handleRetry}
           links={[
-            { href: '/app/projects', label: 'Список проектов' },
+            { href: '/project', label: 'Список проектов' },
             { href: '/app/dashboard', label: 'Рабочий стол' }
           ]}
         />
