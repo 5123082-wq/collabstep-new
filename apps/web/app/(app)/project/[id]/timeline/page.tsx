@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const EVENTS = [
@@ -13,7 +14,7 @@ const MILESTONES = [
 
 export default function ProjectTimelinePage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="timeline">
       <ProjectSection
         id="events"
         title="События"
@@ -53,6 +54,6 @@ export default function ProjectTimelinePage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

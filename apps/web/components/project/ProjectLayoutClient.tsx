@@ -12,6 +12,7 @@ import type { Project } from '@/lib/schemas/project';
 import type { UserRole } from '@/lib/auth/roles';
 import { getUserRoles } from '@/lib/auth/roles';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
+import { writeProjectState } from '@/lib/project/storage';
 
 type ProjectLayoutClientProps = {
   project: Project;
@@ -36,6 +37,20 @@ export default function ProjectLayoutClient({ project, children }: ProjectLayout
   useEffect(() => {
     setRoles(getUserRoles());
   }, []);
+
+  useEffect(() => {
+    if (!pathname) {
+      return;
+    }
+
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments[0] !== 'project' || segments[1] !== project.id) {
+      return;
+    }
+
+    const slug = segments[2] ?? 'overview';
+    writeProjectState(project.id, { lastTab: slug });
+  }, [pathname, project.id]);
 
   const contextValue = useMemo(
     () => ({

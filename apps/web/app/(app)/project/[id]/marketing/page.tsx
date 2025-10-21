@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const PERSONAS = [
@@ -19,7 +20,7 @@ const CALENDAR_ITEMS = [
 
 export default function ProjectMarketingPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="marketing">
       <ProjectSection
         id="personas"
         title="Персоны / JTBD"
@@ -72,6 +73,6 @@ export default function ProjectMarketingPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

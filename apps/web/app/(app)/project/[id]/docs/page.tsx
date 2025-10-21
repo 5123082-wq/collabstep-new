@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const NDA_LIST = [
@@ -18,7 +19,7 @@ const ACCESS = [
 
 export default function ProjectDocsPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="docs">
       <ProjectSection
         id="nda"
         title="NDA / Лицензии"
@@ -68,6 +69,6 @@ export default function ProjectDocsPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

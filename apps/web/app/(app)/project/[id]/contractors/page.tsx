@@ -1,3 +1,4 @@
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
 const CATALOG = [
@@ -19,7 +20,7 @@ const CONTRACTS = [
 
 export default function ProjectContractorsPage() {
   return (
-    <div className="space-y-8">
+    <ProjectPageFrame slug="contractors">
       <ProjectSection
         id="catalog"
         title="Каталог"
@@ -71,6 +72,6 @@ export default function ProjectContractorsPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
-    </div>
+    </ProjectPageFrame>
   );
 }

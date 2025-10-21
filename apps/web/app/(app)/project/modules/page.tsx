@@ -102,60 +102,52 @@ const MODULES = [
   }
 ];
 
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
+
 export default function ProjectModulesPage() {
   return (
-    <div className="space-y-10 px-6 py-10">
-      <header className="space-y-3">
-        <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">CRM-модули</p>
-        <h1 className="text-3xl font-semibold text-white">Конструктор управления проектами</h1>
-        <p className="max-w-2xl text-sm text-neutral-400">
-          Собрали карту ключевых разделов будущей CRM: от таск-трекинга до финансов, аналитики и клиентских коммуникаций.
-          Каждый модуль получит отдельный функционал и настраиваемые сценарии.
-        </p>
-      </header>
+    <ProjectPageFrame
+      slug="modules"
+      title="Конструктор управления проектами"
+      description="Собрали карту ключевых разделов будущей CRM: от таск-трекинга до финансов, аналитики и клиентских коммуникаций. Каждый модуль получит отдельный функционал и настраиваемые сценарии."
+    >
+      {MODULES.map((module) => (
+        <section
+          key={module.id}
+          id={module.id}
+          className="scroll-mt-24 rounded-3xl border border-neutral-900 bg-neutral-950/80 p-6 shadow-sm shadow-neutral-950/10"
+          aria-labelledby={`${module.id}-title`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-2">
+              <h2 id={`${module.id}-title`} className="text-xl font-semibold text-white">
+                {module.title}
+              </h2>
+              <p className="max-w-2xl text-sm text-neutral-400">{module.description}</p>
+            </div>
+            <span className="inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
+              В разработке
+            </span>
+          </div>
 
-      <div className="space-y-8">
-        {MODULES.map((module) => (
-          <section
-            key={module.id}
-            id={module.id}
-            className="scroll-mt-24 rounded-3xl border border-neutral-900 bg-neutral-950/80 p-6 shadow-sm shadow-neutral-950/10"
-            aria-labelledby={`${module.id}-title`}
-          >
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="space-y-2">
-                <h2 id={`${module.id}-title`} className="text-xl font-semibold text-white">
-                  {module.title}
-                </h2>
-                <p className="max-w-2xl text-sm text-neutral-400">{module.description}</p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {module.highlights.map((highlight) => (
+              <div key={highlight.id} className="rounded-2xl border border-neutral-900 bg-neutral-900/60 p-4">
+                <p className="text-sm font-semibold text-neutral-200">{highlight.title}</p>
+                <p className="mt-2 text-sm text-neutral-400">{highlight.description}</p>
               </div>
-              <span className="inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
-                В разработке
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            {module.chips.map((chip) => (
+              <span key={chip} className="rounded-full border border-neutral-800 bg-neutral-900/50 px-3 py-1 text-xs text-neutral-300">
+                {chip}
               </span>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {module.highlights.map((highlight) => (
-                <div key={highlight.id} className="rounded-2xl border border-neutral-900 bg-neutral-900/60 p-4">
-                  <p className="text-sm font-semibold text-neutral-200">{highlight.title}</p>
-                  <p className="mt-2 text-sm text-neutral-400">{highlight.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-2">
-              {module.chips.map((chip) => (
-                <span
-                  key={chip}
-                  className="rounded-full border border-neutral-800 bg-neutral-900/50 px-3 py-1 text-xs text-neutral-300"
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </ProjectPageFrame>
   );
 }

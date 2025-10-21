@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
 
 type TaskItem = Pick<
@@ -389,74 +390,71 @@ export default function ProjectTasksPageClient({
     [loadIterations, projectId]
   );
   return (
-    <div className="space-y-6 px-6 py-10">
-      <header className="space-y-2">
-        <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Задачи</p>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold text-white">{projectTitle}</h1>
-            <p className="text-sm text-neutral-400">Управляйте задачами проекта, статусами и итерациями.</p>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-1 text-xs text-neutral-300">
-            {availableViews.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => handleViewChange(option)}
-                className={`rounded-lg px-3 py-1 font-medium capitalize transition ${
-                  view === option ? 'bg-indigo-500 text-white' : 'hover:text-white'
-                }`}
-              >
-                {option === 'kanban' ? 'Канбан' : option === 'list' ? 'Список' : option === 'calendar' ? 'Календарь' : 'Гантт'}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4">
-        <input
-          className="min-w-[200px] flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-          placeholder="Новая задача…"
-          value={title}
-          onChange={(event) => setTitle(event.target.value)}
-        />
-        <select
-          className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-          value={selectedIteration}
-          onChange={(event) => setSelectedIteration(event.target.value as 'all' | string)}
-        >
-          <option value="all">Все итерации</option>
-          {iterations.map((iter) => (
-            <option key={iter.id} value={iter.id}>
-              {iter.title}
-            </option>
+    <ProjectPageFrame
+      slug="tasks"
+      title={projectTitle}
+      actions={
+        <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-1 text-xs text-neutral-300">
+          {availableViews.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => handleViewChange(option)}
+              className={`rounded-lg px-3 py-1 font-medium capitalize transition ${
+                view === option ? 'bg-indigo-500 text-white' : 'hover:text-white'
+              }`}
+            >
+              {option === 'kanban' ? 'Канбан' : option === 'list' ? 'Список' : option === 'calendar' ? 'Календарь' : 'Гантт'}
+            </button>
           ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => setIterationModalOpen(true)}
-          className="rounded-xl border border-dashed border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
-        >
-          + Итерация
-        </button>
-        <button
-          type="button"
-          onClick={handleAdd}
-          className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-          disabled={isSubmitting || !title.trim()}
-        >
-          {isSubmitting ? 'Добавление…' : 'Добавить'}
-        </button>
-        <button
-          type="button"
-          onClick={() => void refreshAll()}
-          className="rounded-xl border border-neutral-800 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
-        >
-          Обновить
-        </button>
-      </div>
-
+        </div>
+      }
+      filters={
+        <>
+          <input
+            className="min-w-[200px] flex-1 rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+            placeholder="Новая задача…"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+          />
+          <select
+            className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+            value={selectedIteration}
+            onChange={(event) => setSelectedIteration(event.target.value as 'all' | string)}
+          >
+            <option value="all">Все итерации</option>
+            {iterations.map((iter) => (
+              <option key={iter.id} value={iter.id}>
+                {iter.title}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={() => setIterationModalOpen(true)}
+            className="rounded-xl border border-dashed border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+          >
+            + Итерация
+          </button>
+          <button
+            type="button"
+            onClick={handleAdd}
+            className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            disabled={isSubmitting || !title.trim()}
+          >
+            {isSubmitting ? 'Добавление…' : 'Добавить'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void refreshAll()}
+            className="rounded-xl border border-neutral-800 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+          >
+            Обновить
+          </button>
+        </>
+      }
+      contentClassName="space-y-6"
+    >
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
       <section className="space-y-3">
@@ -569,7 +567,7 @@ export default function ProjectTasksPageClient({
         onClose={() => setIterationModalOpen(false)}
         onSubmit={handleCreateIteration}
       />
-    </div>
+    </ProjectPageFrame>
   );
 }
 type TaskDrawerProps = {
