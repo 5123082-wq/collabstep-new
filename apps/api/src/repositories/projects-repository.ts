@@ -1,0 +1,110 @@
+import { memory } from '../data/memory';
+import type { Project, ProjectStage } from '../types';
+
+function cloneProject(project: Project): Project {
+  return { ...project };
+}
+
+export class ProjectsRepository {
+  list(options: { archived?: boolean | null } = {}): Project[] {
+    const { archived = null } = options;
+    const items =
+      archived === null
+        ? memory.PROJECTS
+        : memory.PROJECTS.filter((project) => project.archived === archived);
+    return items.map(cloneProject);
+  }
+
+  findById(id: string): Project | null {
+    const project = memory.PROJECTS.find((item) => item.id === id);
+    return project ? cloneProject(project) : null;
+  }
+
+  create(payload: {
+    title: string;
+    description?: string;
+    ownerId: string;
+    stage?: ProjectStage;
+    deadline?: string;
+  }): Project {
+    const now = new Date().toISOString();
+    const project: Project = {
+      id: crypto.randomUUID(),
+      title: payload.title,
+      description: payload.description ?? '',
+      ownerId: payload.ownerId,
+      archived: false,
+      createdAt: now,
+      updatedAt: now,
+      ...(payload.stage ? { stage: payload.stage } : {}),
+      ...(payload.deadline ? { deadline: payload.deadline } : {})
+    };
+    memory.PROJECTS.push(project);
+    return cloneProject(project);
+  }
+
+  update(id: string, patch: Partial<Omit<Project, 'id' | 'ownerId' | 'createdAt'>>): Project | null {
+    const idx = memory.PROJECTS.findIndex((item) => item.id === id);
+    if (idx === -1) {
+      return null;
+    }
+    const current = memory.PROJECTS[idx];
+    if (!current) {
+      return null;
+    }
+
+    const next: Project = {
+      ...current,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (typeof patch.title === 'string' && patch.title.trim()) {
+      next.title = patch.title.trim();
+    }
+
+    if (typeof patch.description === 'string') {
+      next.description = patch.description;
+    }
+
+    if (typeof patch.stage === 'string' && patch.stage) {
+      next.stage = patch.stage as ProjectStage;
+    }
+
+    if (typeof patch.archived === 'boolean') {
+      next.archived = patch.archived;
+    }
+
+    if ('deadline' in patch) {
+      if (typeof patch.deadline === 'string' && patch.deadline) {
+        next.deadline = patch.deadline;
+      } else {
+        delete next.deadline;
+      }
+    }
+
+    memory.PROJECTS[idx] = next;
+    return cloneProject(next);
+  }
+
+  delete(id: string): boolean {
+    const idx = memory.PROJECTS.findIndex((item) => item.id === id);
+    if (idx === -1) {
+      return false;
+    }
+    memory.PROJECTS.splice(idx, 1);
+    memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
+    memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
+    delete memory.WORKFLOWS[id];
+    return true;
+  }
+
+  archive(id: string): Project | null {
+    return this.update(id, { archived: true });
+  }
+
+  unarchive(id: string): Project | null {
+    return this.update(id, { archived: false });
+  }
+}
+
+export const projectsRepository = new ProjectsRepository();

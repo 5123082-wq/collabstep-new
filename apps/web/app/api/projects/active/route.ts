@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { flags } from '@/lib/flags';
 import { projectCatalogService } from '@collabverse/api';
+import { flags } from '@/lib/flags';
 
 export async function GET() {
   if (!flags.PROJECTS_V1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ items: projectCatalogService.getTemplates() });
+  const items = projectCatalogService.getProjects({ archived: false });
+  return NextResponse.json({ items });
 }

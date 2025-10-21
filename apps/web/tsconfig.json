@@ -15,6 +15,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@collabverse/api": [
+        "../api/src/index.ts"
+      ],
+      "@collabverse/api/*": [
+        "../api/src/*"
       ]
     },
     "jsx": "preserve",
