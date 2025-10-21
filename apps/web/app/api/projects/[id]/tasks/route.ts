@@ -31,6 +31,7 @@ const TaskCreate = z.object({
   parentId: z.string().optional(),
   iterationId: z.string().optional(),
   assigneeId: z.string().optional(),
+  startAt: z.string().datetime().optional(),
   dueAt: z.string().datetime().optional(),
   priority: z.enum(['low', 'med', 'high']).optional(),
   labels: z.array(z.string()).optional()
@@ -65,6 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ...(b.parentId ? { parentId: b.parentId } : {}),
     ...(b.iterationId ? { iterationId: b.iterationId } : {}),
     ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
+    ...(b.startAt ? { startAt: b.startAt } : {}),
     ...(b.dueAt ? { dueAt: b.dueAt } : {}),
     ...(b.priority ? { priority: b.priority } : {}),
     ...(Array.isArray(b.labels) ? { labels: b.labels } : {})

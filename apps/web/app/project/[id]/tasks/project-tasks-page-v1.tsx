@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { memory } from '@/mocks/projects-memory';
+import { flags } from '@/lib/flags';
 import ProjectTasksPageClient from './project-tasks-page-client';
 
 type ProjectTasksPageV1Props = {
@@ -24,6 +25,7 @@ export function ProjectTasksPageV1({ params, searchParams }: ProjectTasksPageV1P
     <ProjectTasksPageClient
       projectId={project.id}
       projectTitle={project.title}
+      viewsEnabled={flags.PROJECTS_VIEWS}
       {...(initialView ? { initialView } : {})}
     />
   );
