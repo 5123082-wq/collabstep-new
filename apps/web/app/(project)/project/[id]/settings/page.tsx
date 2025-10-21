@@ -1,4 +1,6 @@
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
+import { flags } from '@/lib/flags';
+import WorkflowEditorClient from '@/app/project/[id]/settings/workflow-editor-client';
 
 const GENERAL = [
   { id: 'name', label: 'Название проекта', value: 'Демо-проект' },
@@ -17,7 +19,11 @@ const SECURITY = [
   { id: 'ip', title: 'IP фильтр', status: 'Черновик' }
 ];
 
-export default function ProjectSettingsPage() {
+type ProjectSettingsPageProps = {
+  params: { id: string };
+};
+
+export default function ProjectSettingsPage({ params }: ProjectSettingsPageProps) {
   return (
     <div className="space-y-8">
       <ProjectSection
@@ -68,6 +74,16 @@ export default function ProjectSettingsPage() {
           <ProjectStatePreview />
         </div>
       </ProjectSection>
+      {flags.PROJECTS_V1 && flags.PROJECTS_VIEWS ? (
+        <ProjectSection
+          id="workflow"
+          title="Workflow"
+          description="Настройка статусов задач и канбана."
+          actions={[]}
+        >
+          <WorkflowEditorClient projectId={params.id} />
+        </ProjectSection>
+      ) : null}
     </div>
   );
 }

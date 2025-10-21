@@ -41,6 +41,7 @@ export interface Task {
   status: TaskStatus;
   iterationId?: ID;
   assigneeId?: ID;
+  startAt?: string;
   dueAt?: string;
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
