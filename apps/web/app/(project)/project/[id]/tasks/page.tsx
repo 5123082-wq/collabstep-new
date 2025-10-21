@@ -21,9 +21,15 @@ const REPORTS = [
   { id: 'bugs', title: 'Defects', value: '4 открыто', trend: '+1' }
 ];
 
-export default function ProjectTasksPage({ params }: { params: { id: string } }) {
+export default function ProjectTasksPage({
+  params,
+  searchParams
+}: {
+  params: { id: string };
+  searchParams: { view?: string };
+}) {
   if (flags.PROJECTS_V1) {
-    return <ProjectTasksPageV1 params={params} />;
+    return <ProjectTasksPageV1 params={params} searchParams={searchParams} />;
   }
 
   return (
