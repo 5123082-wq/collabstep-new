@@ -12,7 +12,17 @@ export type LeftMenuIcon =
   | 'org'
   | 'support'
   | 'admin'
-  | 'performers';
+  | 'performers'
+  | 'overview'
+  | 'tasks'
+  | 'calendar'
+  | 'team'
+  | 'files'
+  | 'analytics'
+  | 'automations'
+  | 'modules'
+  | 'integrations'
+  | 'settings';
 
 type LeftMenuBaseRoles = (
   | 'FOUNDER'
@@ -48,174 +58,115 @@ export type LeftMenuSection = {
   children?: LeftMenuChild[];
 };
 
-export const PROJECTS_HUB_PATH = '/project';
-export const PROJECTS_MENU_SECTION: LeftMenuSection = {
-  id: 'projects',
-  label: 'Проекты',
-  icon: 'projects',
-  href: PROJECTS_HUB_PATH,
-  children: [
-    { id: 'projects-overview', label: 'Обзор проектов', href: PROJECTS_HUB_PATH },
-    { id: 'projects-my', label: 'Мои проекты', href: `${PROJECTS_HUB_PATH}?tab=my` },
-    { id: 'projects-templates', label: 'Шаблоны', href: `${PROJECTS_HUB_PATH}?tab=templates` },
-    { id: 'projects-archive', label: 'Архив', href: `${PROJECTS_HUB_PATH}?tab=archive` },
-    { id: 'projects-divider-management', type: 'divider' },
-    { id: 'projects-create', label: 'Создать проект', href: `${PROJECTS_HUB_PATH}/new` },
-    { id: 'projects-modules', label: 'CRM-модули', href: `${PROJECTS_HUB_PATH}/modules` },
-    { id: 'projects-modules-tasks', label: 'Задачи и дорожки', href: `${PROJECTS_HUB_PATH}/modules#tasks` },
-    { id: 'projects-modules-calendar', label: 'Календарь и планирование', href: `${PROJECTS_HUB_PATH}/modules#calendar` },
-    { id: 'projects-modules-team', label: 'Команда и роли', href: `${PROJECTS_HUB_PATH}/modules#team` },
-    { id: 'projects-modules-docs', label: 'Документы и файлы', href: `${PROJECTS_HUB_PATH}/modules#docs` },
-    { id: 'projects-modules-finance', label: 'Финансы и бюджеты', href: `${PROJECTS_HUB_PATH}/modules#finance` },
-    { id: 'projects-modules-analytics', label: 'Аналитика и отчёты', href: `${PROJECTS_HUB_PATH}/modules#analytics` },
-    { id: 'projects-modules-automations', label: 'Автоматизации', href: `${PROJECTS_HUB_PATH}/modules#automations` },
-    { id: 'projects-modules-risk', label: 'Риски и контроль качества', href: `${PROJECTS_HUB_PATH}/modules#risk` },
-    { id: 'projects-modules-clients', label: 'Клиентские отношения', href: `${PROJECTS_HUB_PATH}/modules#clients` },
-    { id: 'projects-modules-integrations', label: 'Интеграции', href: `${PROJECTS_HUB_PATH}/modules#integrations` }
-  ]
-};
-
-const baseLeftMenuConfig: LeftMenuSection[] = [
+export const leftMenuConfig: LeftMenuSection[] = [
   {
-    id: 'dashboard',
+    id: 'overview',
     label: 'Обзор',
-    icon: 'dashboard',
-    href: '/app/dashboard'
-  },
-  PROJECTS_MENU_SECTION,
-  {
-    id: 'marketplace',
-    label: 'Маркетплейс',
-    icon: 'marketplace',
-    href: '/market/templates',
+    icon: 'overview',
+    href: '/app/overview',
     children: [
-      { id: 'marketplace-templates', label: 'Каталог шаблонов', href: '/market/templates' },
-      { id: 'marketplace-projects', label: 'Готовые проекты', href: '/market/projects' },
-      { id: 'marketplace-services', label: 'Пакеты услуг', href: '/market/services' },
-      { id: 'marketplace-categories', label: 'Категории и подборки', href: '/market/categories' },
-      { id: 'marketplace-favorites', label: 'Избранное', href: '/market/favorites' },
-      { id: 'marketplace-cart', label: 'Корзина', href: '/market/cart' },
-      { id: 'marketplace-orders', label: 'Мои заказы', href: '/market/orders' },
-      { id: 'marketplace-divider', type: 'divider' },
-      { id: 'marketplace-publish', label: 'Опубликовать', href: '/market/publish' },
-      { id: 'marketplace-seller', label: 'Мои продажи', href: '/market/seller' }
+      { id: 'overview-summary', label: 'Сводка', href: '/app/overview' },
+      { id: 'overview-pulse', label: 'Пульс команды', href: '/app/overview?section=pulse' },
+      { id: 'overview-insights', label: 'Инсайты', href: '/app/overview?section=insights' }
     ]
   },
   {
-    id: 'performers',
-    label: 'Исполнители',
-    icon: 'performers',
-    href: '/app/performers/specialists',
+    id: 'tasks',
+    label: 'Задачи и дорожки',
+    icon: 'tasks',
+    href: '/app/tasks',
     children: [
-      { id: 'performers-specialists', label: 'Специалисты', href: '/app/performers/specialists' },
-      { id: 'performers-teams', label: 'Команды и подрядчики', href: '/app/performers/teams' },
-      { id: 'performers-vacancies', label: 'Вакансии и задачи', href: '/app/performers/vacancies' },
-      { id: 'performers-my-vacancies', label: 'Мои вакансии', href: '/app/performers/my-vacancies' },
-      { id: 'performers-responses', label: 'Отклики и приглашения', href: '/app/performers/responses' }
+      { id: 'tasks-board', label: 'Доска', href: '/app/tasks' },
+      { id: 'tasks-list', label: 'Список', href: '/app/tasks?view=list' },
+      { id: 'tasks-roadmap', label: 'Дорожки', href: '/app/tasks?view=roadmap' }
     ]
   },
   {
-    id: 'ai-hub',
-    label: 'AI-хаб',
-    icon: 'ai',
-    href: '/app/ai-hub/generations',
+    id: 'calendar',
+    label: 'Календарь',
+    icon: 'calendar',
+    href: '/app/calendar',
     children: [
-      { id: 'ai-generations', label: 'Генерации', href: '/app/ai-hub/generations' },
-      { id: 'ai-history', label: 'История', href: '/app/ai-hub/history' },
-      { id: 'ai-prompts', label: 'Промпты', href: '/app/ai-hub/prompts' },
-      { id: 'ai-agents', label: 'Агенты', href: '/app/ai-hub/agents' }
+      { id: 'calendar-agenda', label: 'Повестка дня', href: '/app/calendar' },
+      { id: 'calendar-timeline', label: 'Таймлайн', href: '/app/calendar?view=timeline' },
+      { id: 'calendar-workload', label: 'Нагрузка', href: '/app/calendar?view=workload' }
     ]
   },
   {
-    id: 'community',
-    label: 'Комьюнити',
-    icon: 'community',
-    href: '/app/community/pitch',
+    id: 'team',
+    label: 'Команда',
+    icon: 'team',
+    href: '/app/team',
     children: [
-      { id: 'community-pitch', label: 'Питч', href: '/app/community/pitch' },
-      { id: 'community-rooms', label: 'Комнаты', href: '/app/community/rooms' },
-      { id: 'community-events', label: 'События', href: '/app/community/events' },
-      { id: 'community-rating', label: 'Рейтинг', href: '/app/community/rating' }
+      { id: 'team-structure', label: 'Структура', href: '/app/team' },
+      { id: 'team-allocation', label: 'Нагрузка', href: '/app/team?view=allocation' },
+      { id: 'team-invitations', label: 'Приглашения', href: '/app/team?view=invitations' }
     ]
   },
   {
-    id: 'finance',
-    label: 'Финансы',
-    icon: 'finance',
-    roles: ['FOUNDER', 'PM', 'ADMIN'],
-    href: '/app/finance/wallet',
+    id: 'files',
+    label: 'Документы и файлы',
+    icon: 'files',
+    href: '/app/files',
     children: [
-      { id: 'finance-wallet', label: 'Кошелёк', href: '/app/finance/wallet', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-escrow', label: 'Эскроу', href: '/app/finance/escrow', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-invoices', label: 'Счета', href: '/app/finance/invoices', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-plans', label: 'Тарифы', href: '/app/finance/plans', roles: ['FOUNDER', 'PM', 'ADMIN'] },
-      { id: 'finance-disputes', label: 'Споры', href: '/app/finance/disputes', roles: ['FOUNDER', 'PM', 'ADMIN'] }
+      { id: 'files-library', label: 'Хранилище', href: '/app/files' },
+      { id: 'files-recent', label: 'Последние', href: '/app/files?view=recent' },
+      { id: 'files-templates', label: 'Шаблоны', href: '/app/files?view=templates' }
     ]
   },
   {
-    id: 'docs',
-    label: 'Документы',
-    icon: 'docs',
-    href: '/app/docs/files',
+    id: 'analytics',
+    label: 'Аналитика',
+    icon: 'analytics',
+    href: '/app/analytics',
     children: [
-      { id: 'docs-files', label: 'Файлы', href: '/app/docs/files' },
-      { id: 'docs-contracts', label: 'Контракты', href: '/app/docs/contracts' },
-      { id: 'docs-brand', label: 'Бренд-репозиторий', href: '/app/docs/brand-repo' }
+      { id: 'analytics-overview', label: 'Метрики', href: '/app/analytics' },
+      { id: 'analytics-dashboards', label: 'Дашборды', href: '/app/analytics?view=dashboards' },
+      { id: 'analytics-reports', label: 'Отчёты', href: '/app/analytics?view=reports' }
     ]
   },
   {
-    id: 'messages',
-    label: 'Сообщения',
-    icon: 'messages',
-    href: '/app/messages'
-  },
-  {
-    id: 'notifications',
-    label: 'Уведомления',
-    icon: 'notifications',
-    href: '/app/notifications'
-  },
-  {
-    id: 'profile',
-    label: 'Профиль',
-    icon: 'profile',
-    href: '/app/profile',
+    id: 'automations',
+    label: 'Автоматизации',
+    icon: 'automations',
+    href: '/app/automations',
     children: [
-      { id: 'profile-main', label: 'Мой профиль', href: '/app/profile' },
-      { id: 'profile-rating', label: 'Рейтинг', href: '/app/profile/rating' },
-      { id: 'profile-badges', label: 'Бейджи', href: '/app/profile/badges' },
-      { id: 'profile-card', label: 'Профиль-лендинг', href: '/app/profile/card' }
+      { id: 'automations-flows', label: 'Автопроцессы', href: '/app/automations' },
+      { id: 'automations-triggers', label: 'Триггеры', href: '/app/automations?view=triggers' },
+      { id: 'automations-logs', label: 'Логи', href: '/app/automations?view=logs' }
     ]
   },
   {
-    id: 'org',
-    label: 'Организация',
-    icon: 'org',
-    href: '/app/org/team',
+    id: 'modules',
+    label: 'Модули',
+    icon: 'modules',
+    href: '/app/modules',
     children: [
-      { id: 'org-team', label: 'Команда', href: '/app/org/team' },
-      { id: 'org-billing', label: 'Биллинг', href: '/app/org/billing' },
-      { id: 'org-templates', label: 'Процесс-шаблоны', href: '/app/org/process-templates' }
+      { id: 'modules-active', label: 'Активные', href: '/app/modules' },
+      { id: 'modules-risk', label: 'Зоны риска', href: '/app/modules?view=risk' },
+      { id: 'modules-roadmap', label: 'Обновления', href: '/app/modules?view=updates' }
     ]
   },
   {
-    id: 'support',
-    label: 'Поддержка',
-    icon: 'support',
-    href: '/app/support/help',
+    id: 'integrations',
+    label: 'Интеграции',
+    icon: 'integrations',
+    href: '/app/integrations',
     children: [
-      { id: 'support-help', label: 'База знаний', href: '/app/support/help' },
-      { id: 'support-tickets', label: 'Тикеты', href: '/app/support/tickets' },
-      { id: 'support-chat', label: 'Чат', href: '/app/support/chat' }
+      { id: 'integrations-connected', label: 'Подключено', href: '/app/integrations' },
+      { id: 'integrations-market', label: 'Каталог', href: '/app/integrations?view=market' },
+      { id: 'integrations-activity', label: 'Активность', href: '/app/integrations?view=activity' }
     ]
   },
   {
-    id: 'admin',
-    label: 'Админка',
-    icon: 'admin',
-    roles: ['ADMIN', 'MODERATOR'],
-    href: '/app/admin'
+    id: 'settings',
+    label: 'Настройки',
+    icon: 'settings',
+    href: '/app/settings',
+    children: [
+      { id: 'settings-general', label: 'Общие', href: '/app/settings' },
+      { id: 'settings-access', label: 'Доступы', href: '/app/settings?view=access' },
+      { id: 'settings-notifications', label: 'Уведомления', href: '/app/settings?view=notifications' }
+    ]
   }
 ];
-
-export const leftMenuConfig: LeftMenuSection[] = baseLeftMenuConfig;
