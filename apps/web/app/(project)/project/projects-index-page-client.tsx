@@ -189,14 +189,14 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
 
   const fetchProjects = useCallback(
     async (targetTab: CatalogTab, signal?: AbortSignal) => {
-      const archived = targetTab === 'archive' ? 'true' : 'false';
+      const endpoint = targetTab === 'archive' ? '/api/projects/archive' : '/api/projects/active';
       const init: RequestInit = {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store',
         ...(signal ? { signal } : {})
       };
-      const response = await fetch(`/api/projects?archived=${archived}`, init);
+      const response = await fetch(endpoint, init);
 
       if (!response.ok) {
         throw new Error('Не удалось загрузить проекты');
