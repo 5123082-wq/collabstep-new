@@ -1,7 +1,25 @@
 import Link from 'next/link';
+import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
+import ProjectsIndexPageClient from './projects-index-page-client';
 
-export default function ProjectIndexPage() {
+type ProjectIndexPageProps = {
+  searchParams?: { tab?: string };
+};
+
+export default function ProjectIndexPage({ searchParams }: ProjectIndexPageProps) {
+  if (flags.PROJECTS_V1) {
+    const tab = searchParams?.tab;
+    if (typeof tab === 'string') {
+      return <ProjectsIndexPageClient initialTab={tab} />;
+    }
+    return <ProjectsIndexPageClient />;
+  }
+
+  return <LegacyProjectIndexPage />;
+}
+
+function LegacyProjectIndexPage() {
   const items = memory.PROJECTS ?? [];
   return (
     <div className="px-6 py-10 space-y-6">
