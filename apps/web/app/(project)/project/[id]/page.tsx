@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import ProjectDashboardPageClient from '@/app/project/[id]/project-dashboard-page-client';
+import ProjectDashboardPageClient from './project-dashboard-page-client';
 import { flags } from '@/lib/flags';
 import { readProjectState } from '@/lib/project/storage';
 
