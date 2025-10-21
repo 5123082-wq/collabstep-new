@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import ProjectLayoutClient from '@/components/project/ProjectLayoutClient';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session';
 import { loadProjects } from '@/lib/mock/loaders';
 import type { Project } from '@/lib/schemas/project';
-import { redirect } from 'next/navigation';
 
 type ProjectLayoutProps = {
   children: ReactNode;
@@ -16,9 +15,7 @@ function findProject(projects: Project[], id: string): Project | null {
 }
 
 export default function ProjectLayout({ children, params }: ProjectLayoutProps) {
-  const session = getDemoSessionFromCookies();
-
-  if (!session) {
+  if (!getDemoSessionFromCookies()) {
     redirect('/login?toast=auth-required');
   }
 
@@ -29,9 +26,5 @@ export default function ProjectLayout({ children, params }: ProjectLayoutProps) 
     notFound();
   }
 
-  return (
-    <ProjectLayoutClient project={project} session={session}>
-      {children}
-    </ProjectLayoutClient>
-  );
+  return <ProjectLayoutClient project={project}>{children}</ProjectLayoutClient>;
 }

@@ -1,8 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { AppShellProvider } from '@/components/app/AppShellContext';
 import AppTopbar from '@/components/app/AppTopbar';
 import CommandPalette from '@/components/app/CommandPalette';
 import ContentContainer from '@/components/app/ContentContainer';
@@ -33,6 +34,14 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isLoggingOut, setLoggingOut] = useState(false);
   const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
   useQueryToast(TOAST_MESSAGES);
+
+  const openCreateMenu = useCallback(() => {
+    setCreateOpen(true);
+  }, []);
+
+  const openCommandPalette = useCallback(() => {
+    setPaletteOpen(true);
+  }, []);
 
   useEffect(() => {
     setUserRoles(roles);
@@ -93,13 +102,14 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   };
 
   return (
-    <div className="flex min-h-screen bg-transparent text-neutral-100">
+    <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
+      <div className="flex min-h-screen bg-transparent text-neutral-100">
       <Sidebar roles={roles} />
       <div className="flex min-h-screen flex-1 flex-col">
         <AppTopbar
           profile={{ email: session.email, role: session.role }}
-          onOpenCreate={() => setCreateOpen(true)}
-          onOpenPalette={() => setPaletteOpen(true)}
+          onOpenCreate={openCreateMenu}
+          onOpenPalette={openCommandPalette}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
         />
@@ -122,6 +132,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
       <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
       <ToastHub />
       {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
-    </div>
+      </div>
+    </AppShellProvider>
   );
 }

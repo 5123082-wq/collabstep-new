@@ -6,55 +6,35 @@ import { usePathname } from 'next/navigation';
 import ProjectHeader from '@/components/project/ProjectHeader';
 import ProjectSidebar from '@/components/project/ProjectSidebar';
 import { ProjectProvider } from '@/components/project/ProjectContext';
-import CreateMenu from '@/components/app/CreateMenu';
-import CommandPalette from '@/components/app/CommandPalette';
-import ToastHub from '@/components/app/ToastHub';
+import { useAppShell } from '@/components/app/AppShellContext';
 import { useUiStore } from '@/lib/state/ui-store';
 import type { Project } from '@/lib/schemas/project';
-import type { DemoSession } from '@/lib/auth/demo-session';
-import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
+import type { UserRole } from '@/lib/auth/roles';
+import { getUserRoles } from '@/lib/auth/roles';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
 
 type ProjectLayoutClientProps = {
   project: Project;
   children: ReactNode;
-  session: DemoSession;
 };
 
 const TOAST_MESSAGES: Record<string, { message: string; tone?: 'info' | 'success' | 'warning' }> = {
   forbidden: { message: 'Недостаточно прав', tone: 'warning' }
 };
 
-export default function ProjectLayoutClient({ project, children, session }: ProjectLayoutClientProps) {
+export default function ProjectLayoutClient({ project, children }: ProjectLayoutClientProps) {
   const pathname = usePathname();
-  const [isCreateOpen, setCreateOpen] = useState(false);
-  const [isPaletteOpen, setPaletteOpen] = useState(false);
+  const { openCreateMenu } = useAppShell();
   const setLastProjectId = useUiStore((state) => state.setLastProjectId);
-  const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
+  const [roles, setRoles] = useState<UserRole[]>(() => getUserRoles());
   useQueryToast(TOAST_MESSAGES);
-
-  useEffect(() => {
-    setUserRoles(roles);
-  }, [roles]);
 
   useEffect(() => {
     setLastProjectId(project.id);
   }, [project.id, setLastProjectId]);
 
   useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setPaletteOpen(true);
-      }
-      if (event.key === 'Escape') {
-        setCreateOpen(false);
-        setPaletteOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    setRoles(getUserRoles());
   }, []);
 
   const contextValue = useMemo(
@@ -69,24 +49,26 @@ export default function ProjectLayoutClient({ project, children, session }: Proj
 
   return (
     <ProjectProvider value={contextValue}>
-      <div className="flex min-h-screen bg-neutral-950 text-neutral-100">
-        <ProjectSidebar projectId={project.id} roles={roles} />
-        <div className="flex min-h-screen flex-1 flex-col">
+      <div className="project-workspace grid gap-6 text-neutral-100 xl:grid-cols-[280px,minmax(0,1fr)]">
+        <ProjectSidebar projectId={project.id} roles={roles} className="hidden xl:flex" />
+        <div className="flex min-h-[720px] flex-col overflow-hidden rounded-3xl border border-neutral-900 bg-neutral-950/70 shadow-[0_0_40px_rgba(0,0,0,0.35)]">
           <ProjectHeader
             name={project.name}
             stage={project.stage}
             visibility={project.visibility}
-            onOpenCreate={() => setCreateOpen(true)}
+            onOpenCreate={openCreateMenu}
           />
-          <main className="flex-1 overflow-y-auto bg-neutral-950/80">
-            <div className="project-content mx-auto w-full max-w-6xl px-6 py-8" data-testid="project-content" key={pathname}>
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div
+              className="project-content flex-1 overflow-y-auto px-6 py-8"
+              data-testid="project-content"
+              key={pathname}
+            >
               {children}
             </div>
-          </main>
+          </div>
         </div>
-        <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
-        <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
-        <ToastHub />
+        <ProjectSidebar projectId={project.id} roles={roles} className="xl:hidden" />
       </div>
     </ProjectProvider>
   );

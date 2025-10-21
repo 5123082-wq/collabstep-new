@@ -1,5 +1,6 @@
 'use client';
 
+import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
@@ -15,9 +16,10 @@ function isActive(pathname: string, projectId: string, item: ProjectMenuItem): b
 type ProjectSidebarProps = {
   projectId: string;
   roles: UserRole[];
+  className?: string;
 };
 
-export default function ProjectSidebar({ projectId, roles }: ProjectSidebarProps) {
+export default function ProjectSidebar({ projectId, roles, className }: ProjectSidebarProps) {
   const pathname = usePathname();
   const menu = useMemo(() => getProjectMenuForRoles(roles), [roles]);
 
@@ -32,12 +34,17 @@ export default function ProjectSidebar({ projectId, roles }: ProjectSidebarProps
   }, [activeEntry, projectId]);
 
   return (
-    <aside className="flex h-full min-h-screen w-[288px] flex-shrink-0 flex-col border-r border-neutral-900 bg-neutral-950/90 px-4 py-8">
+    <aside
+      className={clsx(
+        'project-sidebar flex h-full w-full flex-shrink-0 flex-col gap-6 rounded-3xl border border-neutral-900 bg-neutral-950/80 px-5 py-6 shadow-[0_0_30px_rgba(0,0,0,0.25)] xl:max-w-[288px]',
+        className
+      )}
+    >
       <div className="space-y-2 text-sm text-neutral-400">
         <p className="text-xs uppercase tracking-wide text-neutral-500">Проект</p>
         <p className="text-xs text-neutral-500">Навигация по рабочим модулям проекта.</p>
       </div>
-      <nav className="mt-6 space-y-4" aria-label="Навигация по проекту">
+      <nav className="space-y-4" aria-label="Навигация по проекту">
         {menu.map((item) => {
           const active = activeEntry?.id === item.id;
           return (

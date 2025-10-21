@@ -2,9 +2,9 @@
 
 ## Маршруты /app
 - `/app/dashboard`
-- `/app/projects`
-- `/app/projects/templates`
-- `/app/projects/archive`
+- `/project`
+- `/project?tab=templates`
+- `/project?tab=archive`
 - `/app/marketplace/projects`
 - `/app/marketplace/vacancies`
 - `/app/marketplace/specialists`

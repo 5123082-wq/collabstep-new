@@ -12,7 +12,7 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Созвон с командой', message: 'TODO: Созвон' }
     ]
   },
-  '/app/projects': {
+  '/project': {
     title: 'Проекты',
     actions: [
       { label: 'Новый проект', message: 'TODO: Новый проект' },
