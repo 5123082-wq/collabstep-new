@@ -1,0 +1,58 @@
+import Link from 'next/link';
+import { memory } from '@/mocks/projects-memory';
+import { flags } from '@/lib/flags';
+
+export const dynamic = 'force-static';
+
+export default function ProjectIndexPage() {
+  if (!flags.PROJECTS_V1) {
+    return <div className="p-10 text-neutral-400">Проектный модуль отключён.</div>;
+  }
+  const items = memory.PROJECTS ?? [];
+
+  return (
+    <div className="px-6 py-10 space-y-6">
+      <header className="space-y-2">
+        <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">Проекты</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold text-white">Список проектов</h1>
+          <Link
+            href="/project/new"
+            className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400"
+          >
+            + Новый проект
+          </Link>
+        </div>
+      </header>
+
+      {items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-neutral-800 p-8 text-neutral-400">
+          Пока нет проектов. Нажмите «Новый проект».
+        </div>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map(p => (
+            <li key={p.id} className="rounded-2xl border border-neutral-800 bg-neutral-950/80 p-5">
+              <h3 className="text-white font-semibold">{p.title}</h3>
+              <p className="text-sm text-neutral-400 line-clamp-2">{p.description ?? '—'}</p>
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href={`/project/${p.id}/tasks`}
+                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm text-neutral-200 hover:border-indigo-400 hover:text-white"
+                >
+                  Задачи
+                </Link>
+                <Link
+                  href={`/project/${p.id}/settings`}
+                  className="rounded-xl border border-neutral-700 px-3 py-1 text-sm text-neutral-200 hover:border-indigo-400 hover:text-white"
+                >
+                  Настройки
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

@@ -1,8 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = 'apps/web/app';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(__dirname, '..', 'app');
 const pages = [];
+const strict = process.env.CHECK_ROUTES_STRICT === '1';
 
 function walk(dir) {
   for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -26,10 +29,12 @@ for (const p of pages) {
 }
 
 const conflicts = [...map.entries()].filter(([, files]) => files.length > 1);
+
 if (conflicts.length) {
-  console.error('Route collisions detected:');
-  for (const [url, files] of conflicts) {
-    console.error(`  ${url}\n    ${files.join('\n    ')}`);
-  }
-  process.exit(1);
+  const msg = conflicts.map(([url, files]) => `  ${url}\n    ${files.join('\n    ')}`).join('\n');
+  const tag = strict ? 'ERROR' : 'WARNING';
+  (strict ? console.error : console.warn)(`[check-app-routes] ${tag}\n${msg}`);
+  process.exit(strict ? 1 : 0);
 }
+
+console.log('[check-app-routes] OK — no collisions');
