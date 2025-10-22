@@ -1,5 +1,5 @@
 import { memory } from '../data/memory';
-import type { Project, ProjectStage } from '../types';
+import type { Project, ProjectMember, ProjectStage } from '../types';
 
 function cloneProject(project: Project): Project {
   return { ...project };
@@ -18,6 +18,15 @@ export class ProjectsRepository {
   findById(id: string): Project | null {
     const project = memory.PROJECTS.find((item) => item.id === id);
     return project ? cloneProject(project) : null;
+  }
+
+  getMember(projectId: string, userId: string): ProjectMember | null {
+    const members = memory.PROJECT_MEMBERS[projectId] ?? [];
+    return members.find((member) => member.userId === userId) ?? null;
+  }
+
+  listMembers(projectId: string): ProjectMember[] {
+    return (memory.PROJECT_MEMBERS[projectId] ?? []).map((member) => ({ ...member }));
   }
 
   create(payload: {

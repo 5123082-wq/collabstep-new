@@ -1,0 +1,64 @@
+import { decodeDemoSession, DEMO_SESSION_COOKIE } from '@/lib/auth/demo-session';
+import { projectsRepository } from '@collabverse/api';
+
+export type FinanceRole = 'owner' | 'admin' | 'member' | 'viewer';
+
+export interface AuthContext {
+  userId: string;
+  email: string;
+  role: FinanceRole;
+}
+
+export function getAuthFromRequest(request: Request): AuthContext | null {
+  const cookieHeader = request.headers.get('cookie');
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookies = Object.fromEntries(
+    cookieHeader
+      .split(';')
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const [key, ...rest] = part.split('=');
+        return [key, rest.join('=')];
+      })
+  );
+
+  const sessionCookie = cookies[DEMO_SESSION_COOKIE];
+  if (!sessionCookie) {
+    return null;
+  }
+
+  const session = decodeDemoSession(sessionCookie);
+  if (!session) {
+    return null;
+  }
+
+  return {
+    userId: session.email,
+    email: session.email,
+    role: session.role === 'admin' ? 'owner' : 'member'
+  };
+}
+
+export function getProjectRole(projectId: string, userId: string): FinanceRole {
+  const member = projectsRepository.getMember(projectId, userId);
+  if (!member) {
+    return 'viewer';
+  }
+  if (member.role === 'coord') {
+    return 'admin';
+  }
+  if (member.role === 'owner' || member.role === 'admin' || member.role === 'member') {
+    return member.role;
+  }
+  return 'viewer';
+}
+
+export function assertProjectAccess(role: FinanceRole, allowed: FinanceRole[]): void {
+  if (!allowed.includes(role)) {
+    throw new Error('ACCESS_DENIED');
+  }
+}

@@ -104,6 +104,18 @@ const baseMenu: ProjectMenuItem[] = [
     ]
   },
   {
+    id: 'contractors',
+    label: 'Подрядчики',
+    slug: 'contractors',
+    description: 'Взаимодействие с подрядчиками и аутсорс-командами.',
+    roles: ['FOUNDER', 'PM', 'CONTRACTOR'],
+    tabs: [
+      { id: 'directory', label: 'Каталог подрядчиков' },
+      { id: 'assignments', label: 'Назначения' },
+      { id: 'contracts', label: 'Договоры' }
+    ]
+  },
+  {
     id: 'integrations',
     label: 'Интеграции',
     slug: 'integrations',
@@ -112,6 +124,18 @@ const baseMenu: ProjectMenuItem[] = [
       { id: 'connected', label: 'Подключённые' },
       { id: 'marketplace', label: 'Маркетплейс' },
       { id: 'api', label: 'API и ключи' }
+    ]
+  },
+  {
+    id: 'finance',
+    label: 'Финансы',
+    slug: 'finance',
+    description: 'Бюджеты, расходы и контроль платежей проекта.',
+    roles: ['FOUNDER', 'PM', 'ADMIN'],
+    tabs: [
+      { id: 'budget', label: 'Бюджет' },
+      { id: 'expenses', label: 'Расходы' },
+      { id: 'reports', label: 'Отчёты' }
     ]
   },
   {
