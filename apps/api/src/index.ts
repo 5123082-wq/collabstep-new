@@ -1,13 +1,18 @@
 export * from './types';
 export { memory } from './data/memory';
+export { DEFAULT_WORKSPACE_USER_ID } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
+export { UsersRepository, usersRepository } from './repositories/users-repository';
 export {
   ProjectCatalogService,
   projectCatalogService,
   type CatalogProjectItem,
-  type CatalogTemplateItem
+  type CatalogTemplateItem,
+  type ProjectCardItem,
+  type ProjectCardSort,
+  type ProjectCardTab
 } from './services/project-catalog-service';
 export {
   MemoryExpenseStore,

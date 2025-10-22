@@ -1,10 +1,45 @@
+import { DEFAULT_WORKSPACE_USER_ID } from '../data/memory';
 import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
-import type { CatalogProject, ProjectTemplate } from '../types';
+import { usersRepository } from '../repositories/users-repository';
+import type {
+  CatalogProject,
+  ProjectCard,
+  ProjectCardFilters,
+  ProjectCardMember,
+  ProjectCardOwner,
+  ProjectCardTaskStats,
+  ProjectMember,
+  ProjectStatus,
+  ProjectTemplate,
+  WorkspaceUser
+} from '../types';
 
 export type CatalogProjectItem = CatalogProject;
 export type CatalogTemplateItem = ProjectTemplate;
+export type ProjectCardItem = ProjectCard;
+
+export type ProjectCardTab = 'mine' | 'member';
+
+export type ProjectCardSort =
+  | 'updated-desc'
+  | 'updated-asc'
+  | 'deadline-asc'
+  | 'deadline-desc'
+  | 'progress-desc'
+  | 'progress-asc'
+  | 'alphabetical';
+
+interface InternalProjectCardFilters extends ProjectCardFilters {
+  status: 'all' | ProjectStatus;
+  ownerIds: string[];
+  memberIds: string[];
+  tags: string[];
+  dateField: 'createdAt' | 'deadline';
+  dateFrom: string | null;
+  dateTo: string | null;
+}
 
 function deduplicateLabels(values: string[] | undefined): string[] {
   if (!Array.isArray(values)) {
@@ -50,6 +85,262 @@ export class ProjectCatalogService {
 
   getTemplates(): CatalogTemplateItem[] {
     return templatesRepository.list();
+  }
+
+  getProjectCards(params: {
+    tab: ProjectCardTab;
+    currentUserId?: string;
+    query?: string | null;
+    sort?: ProjectCardSort | null;
+    filters?: ProjectCardFilters | null;
+    page?: number | null;
+    pageSize?: number | null;
+  }): { items: ProjectCardItem[]; total: number } {
+    const currentUserId = params.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
+    const filters: InternalProjectCardFilters = {
+      status: params.filters?.status ?? 'all',
+      ownerIds: Array.isArray(params.filters?.ownerIds) ? params.filters?.ownerIds.filter(Boolean) : [],
+      memberIds: Array.isArray(params.filters?.memberIds) ? params.filters?.memberIds.filter(Boolean) : [],
+      tags: Array.isArray(params.filters?.tags) ? params.filters?.tags.filter(Boolean) : [],
+      dateField: params.filters?.dateField === 'deadline' ? 'deadline' : 'createdAt',
+      dateFrom: params.filters?.dateFrom ?? null,
+      dateTo: params.filters?.dateTo ?? null
+    };
+
+    const projects = projectsRepository.list();
+    const tasksByProject = new Map<string, ProjectCardTaskStats & { labels: Set<string> }>();
+    const tasks = tasksRepository.list();
+    const now = Date.now();
+
+    for (const task of tasks) {
+      const entry = tasksByProject.get(task.projectId);
+      const overdue =
+        task.dueAt && task.status !== 'done' ? new Date(task.dueAt).getTime() < now : false;
+      const important = task.priority === 'high';
+      const completed = task.status === 'done';
+      const labels = deduplicateLabels(task.labels);
+
+      if (!entry) {
+        tasksByProject.set(task.projectId, {
+          total: 1,
+          overdue: overdue ? 1 : 0,
+          important: important ? 1 : 0,
+          completed: completed ? 1 : 0,
+          labels: new Set(labels)
+        });
+      } else {
+        entry.total += 1;
+        if (overdue) {
+          entry.overdue += 1;
+        }
+        if (important) {
+          entry.important += 1;
+        }
+        if (completed) {
+          entry.completed += 1;
+        }
+        for (const label of labels) {
+          entry.labels.add(label);
+        }
+      }
+    }
+
+    const membershipCache = new Map<string, ProjectCardMember[]>();
+
+    const resolveUser = (userId: string): WorkspaceUser => {
+      return (
+        usersRepository.findById(userId) ?? {
+          id: userId,
+          name: userId,
+          email: userId
+        }
+      );
+    };
+
+    const toMember = (userId: string, role: ProjectCardMember['role']): ProjectCardMember => {
+      const profile = resolveUser(userId);
+      return {
+        ...profile,
+        role
+      };
+    };
+
+    const buildMembers = (
+      projectId: string,
+      ownerId: string,
+      rawMembers?: ProjectMember[]
+    ): ProjectCardMember[] => {
+      const cached = membershipCache.get(projectId);
+      if (cached) {
+        return cached;
+      }
+      const source = rawMembers ?? projectsRepository.listMembers(projectId);
+      const members = source
+        .filter((member) => member.userId !== ownerId)
+        .map((member) => toMember(member.userId, member.role));
+      membershipCache.set(projectId, members);
+      return members;
+    };
+
+    const cards: ProjectCardItem[] = [];
+    for (const project of projects) {
+      const ownerProfile = resolveUser(project.ownerId);
+      const owner: ProjectCardOwner = { ...ownerProfile };
+      const rawMembers = projectsRepository.listMembers(project.id);
+      const members = buildMembers(project.id, project.ownerId, rawMembers);
+      const isOwner =
+        project.ownerId === currentUserId ||
+        rawMembers.some((member) => member.role === 'owner' && member.userId === currentUserId);
+      const isParticipant = rawMembers.some(
+        (member) => member.userId === currentUserId && member.role !== 'viewer'
+      );
+
+      if (params.tab === 'mine') {
+        if (!isOwner) {
+          continue;
+        }
+      } else if (params.tab === 'member') {
+        if (!isParticipant || isOwner) {
+          continue;
+        }
+      }
+
+      const stats = tasksByProject.get(project.id);
+      const total = stats?.total ?? 0;
+      const completed = stats?.completed ?? 0;
+      const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+      const tags = stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : [];
+      const status: ProjectStatus = project.archived ? 'archived' : 'active';
+
+      const card: ProjectCardItem = {
+        id: project.id,
+        title: project.title,
+        description: project.description ?? '',
+        status,
+        owner,
+        members,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        tags,
+        progress,
+        tasks: {
+          total,
+          overdue: stats?.overdue ?? 0,
+          important: stats?.important ?? 0,
+          completed
+        },
+        budget: { planned: null, spent: null },
+        permissions: {
+          canArchive: project.ownerId === currentUserId
+        }
+      };
+
+      if (project.deadline) {
+        card.deadline = project.deadline;
+      }
+
+      if (project.stage) {
+        card.stage = project.stage;
+      }
+
+      const matchesStatus =
+        filters.status === 'all' || (filters.status === 'archived' ? project.archived : !project.archived);
+      if (!matchesStatus) {
+        continue;
+      }
+
+      if (filters.ownerIds.length > 0 && !filters.ownerIds.includes(project.ownerId)) {
+        continue;
+      }
+
+      if (filters.memberIds.length > 0) {
+        const hasMember = members.some((member) => filters.memberIds.includes(member.id));
+        if (!hasMember) {
+          continue;
+        }
+      }
+
+      if (filters.tags.length > 0) {
+        const hasTag = filters.tags.some((tag) => card.tags.includes(tag));
+        if (!hasTag) {
+          continue;
+        }
+      }
+
+      if (filters.dateFrom || filters.dateTo) {
+        const targetDateRaw = filters.dateField === 'deadline' ? project.deadline : project.createdAt;
+        if (!targetDateRaw) {
+          continue;
+        }
+        const targetTime = new Date(targetDateRaw).getTime();
+        if (Number.isNaN(targetTime)) {
+          continue;
+        }
+        if (filters.dateFrom) {
+          const fromTime = new Date(filters.dateFrom).getTime();
+          if (!Number.isNaN(fromTime) && targetTime < fromTime) {
+            continue;
+          }
+        }
+        if (filters.dateTo) {
+          const toTime = new Date(filters.dateTo).getTime();
+          if (!Number.isNaN(toTime) && targetTime > toTime) {
+            continue;
+          }
+        }
+      }
+
+      if (params.query) {
+        const normalized = params.query.trim().toLowerCase();
+        if (normalized) {
+          const inTitle = project.title.toLowerCase().includes(normalized);
+          const inDescription = (project.description ?? '').toLowerCase().includes(normalized);
+          if (!inTitle && !inDescription) {
+            continue;
+          }
+        }
+      }
+
+      cards.push(card);
+    }
+
+    const sortKey: ProjectCardSort = params.sort ?? 'updated-desc';
+    const sorted = [...cards];
+
+    sorted.sort((a, b) => {
+      switch (sortKey) {
+        case 'updated-asc':
+          return a.updatedAt.localeCompare(b.updatedAt);
+        case 'deadline-asc': {
+          const aTime = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY;
+          const bTime = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY;
+          return aTime - bTime;
+        }
+        case 'deadline-desc': {
+          const aTime = a.deadline ? new Date(a.deadline).getTime() : Number.NEGATIVE_INFINITY;
+          const bTime = b.deadline ? new Date(b.deadline).getTime() : Number.NEGATIVE_INFINITY;
+          return bTime - aTime;
+        }
+        case 'progress-asc':
+          return a.progress - b.progress;
+        case 'progress-desc':
+          return b.progress - a.progress;
+        case 'alphabetical':
+          return a.title.localeCompare(b.title, 'ru');
+        case 'updated-desc':
+        default:
+          return b.updatedAt.localeCompare(a.updatedAt);
+      }
+    });
+
+    const pageSize = params.pageSize && params.pageSize > 0 ? params.pageSize : sorted.length || 1;
+    const page = params.page && params.page > 0 ? params.page : 1;
+    const offset = (page - 1) * pageSize;
+
+    return {
+      items: sorted.slice(offset, offset + pageSize),
+      total: sorted.length
+    };
   }
 }
 
