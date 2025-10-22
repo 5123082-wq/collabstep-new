@@ -23,8 +23,31 @@
 - `AUTH_DEV` — включает dev-авторизацию (on/off)
 - `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
 - `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
+- `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory`|`db`). Значение по умолчанию в dev — `memory`, в staging/prod (`NODE_ENV` или `VERCEL_ENV`) — `db`.
 - (опционально) `SKIP_VERCEL_BUILD=1` — отключает локальную симуляцию `vercel build` при отсутствии токена
 - На Vercel установите `NAV_V1=on`, `APP_LOCALE=ru`, `AUTH_DEV=on` и данные демо-аккаунтов.
+
+Пример `.env`:
+
+```
+NAV_V1=on
+APP_LOCALE=ru
+FEATURE_PROJECTS_V1=1
+AUTH_DEV=on
+FIN_EXPENSES_STORAGE=memory
+DEMO_ADMIN_EMAIL=admin.demo@collabverse.test
+DEMO_ADMIN_PASSWORD=demo-admin
+DEMO_USER_EMAIL=user.demo@collabverse.test
+DEMO_USER_PASSWORD=demo-user
+```
+
+### Finance Storage
+
+Флаг `FIN_EXPENSES_STORAGE` определяет, использовать ли in-memory или DB-хранилище для расходов. По умолчанию dev-окружение остаётся на `memory`, а staging/prod (в том числе Vercel `VERCEL_ENV=staging|production`) переключаются на `db`. Для QA можно принудительно задать `FIN_EXPENSES_STORAGE=db`, чтобы проверить интеграцию с базой.
+
+При инициализации выводится лог `console.info` вида `[ExpenseStoreFactory] selecting expense store` с выбранным драйвером; если зависимости для `db` недоступны, появляется `console.warn` о возврате к in-memory. Эти сообщения стоит отслеживать в телеметрии/логах окружения.
+
+На Vercel сборки `preview` останутся на `memory`, поэтому для прогонов, требующих БД, задайте `FIN_EXPENSES_STORAGE=db` вручную.
 
 ## Dev-авторизация и демо-аккаунты
 - Быстрый вход доступен на `/login` кнопками «Войти демо-пользователем» и «Войти демо-админом» — данные берутся из переменных `DEMO_*`.
