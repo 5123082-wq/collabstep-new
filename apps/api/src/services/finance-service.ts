@@ -267,7 +267,7 @@ export class FinanceService {
 
       const inserted = await this.expenseStore.create({
         expense,
-        attachments,
+        ...(attachments !== undefined ? { attachments } : {}),
         actorId: context.actorId
       });
 
@@ -355,7 +355,7 @@ export class FinanceService {
 
     const updated = await this.expenseStore.update(id, {
       patch: { ...updates, updatedAt: timestamp },
-      attachments: attachmentRecords
+      ...(attachmentRecords !== undefined ? { attachments: attachmentRecords } : {})
     });
 
     if (!updated) {

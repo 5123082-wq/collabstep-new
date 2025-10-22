@@ -6,20 +6,28 @@ const ORIGINAL_ENV = {
   VERCEL_ENV: process.env.VERCEL_ENV
 };
 
+function setEnv(key: string, value: string | undefined) {
+  if (value === undefined) {
+    Reflect.deleteProperty(process.env, key);
+    return;
+  }
+  Reflect.set(process.env, key, value);
+}
+
 async function importStoreFactory() {
   return import('@collabverse/api/stores/expense-store-factory');
 }
 
 describe('finance bootstrap', () => {
   afterEach(() => {
-    process.env.FIN_EXPENSES_STORAGE = ORIGINAL_ENV.FIN_EXPENSES_STORAGE;
-    process.env.NODE_ENV = ORIGINAL_ENV.NODE_ENV;
-    process.env.VERCEL_ENV = ORIGINAL_ENV.VERCEL_ENV;
+    setEnv('FIN_EXPENSES_STORAGE', ORIGINAL_ENV.FIN_EXPENSES_STORAGE);
+    setEnv('NODE_ENV', ORIGINAL_ENV.NODE_ENV);
+    setEnv('VERCEL_ENV', ORIGINAL_ENV.VERCEL_ENV);
   });
 
   it('configures db dependencies when driver resolves to db', async () => {
-    process.env.FIN_EXPENSES_STORAGE = 'db';
-    process.env.NODE_ENV = 'test';
+    setEnv('FIN_EXPENSES_STORAGE', 'db');
+    setEnv('NODE_ENV', 'test');
 
     jest.resetModules();
 
@@ -50,13 +58,13 @@ describe('finance bootstrap', () => {
       updatedAt: new Date().toISOString()
     };
 
-    const created = store.create({ expense, actorId: 'tester' });
+    const created = await store.create({ expense, actorId: 'tester' });
     expect(created).toEqual(expect.objectContaining({ id: expense.id, amount: expense.amount }));
 
-    const listed = store.list({ projectId: expense.projectId });
+    const listed = await store.list({ projectId: expense.projectId });
     expect(listed.map((item) => item.id)).toContain(expense.id);
 
-    const aggregated = store.aggregateByCategory({
+    const aggregated = await store.aggregateByCategory({
       projectId: expense.projectId,
       statuses: ['draft']
     });
@@ -64,9 +72,9 @@ describe('finance bootstrap', () => {
   });
 
   it('uses db driver by default in production builds', async () => {
-    delete process.env.FIN_EXPENSES_STORAGE;
-    process.env.NODE_ENV = 'production';
-    process.env.VERCEL_ENV = '';
+    setEnv('FIN_EXPENSES_STORAGE', undefined);
+    setEnv('NODE_ENV', 'production');
+    setEnv('VERCEL_ENV', '');
 
     jest.resetModules();
 
