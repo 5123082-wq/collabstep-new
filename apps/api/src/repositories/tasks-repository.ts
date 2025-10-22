@@ -220,6 +220,9 @@ export class TasksRepository {
         continue;
       }
       const current = memory.TASKS[idx];
+      if (!current) {
+        continue;
+      }
       const next: Task = { ...current, updatedAt: now };
 
       if (patch.status) {
