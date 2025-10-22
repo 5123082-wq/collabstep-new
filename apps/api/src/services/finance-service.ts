@@ -1,12 +1,11 @@
-import { memory } from '../data/memory';
 import { auditLogRepository } from '../repositories/audit-log-repository';
 import { domainEventsRepository } from '../repositories/domain-events-repository';
-import { expensesRepository, type ExpenseFilters } from '../repositories/expenses-repository';
+import type { ExpenseFilters, ExpenseUpdatePatch, ExpenseStore } from '../repositories/expense-store';
 import { projectBudgetsRepository } from '../repositories/project-budgets-repository';
+import { getExpenseStore } from '../stores/expense-store-factory';
 import type {
   AuditLogEntry,
   Expense,
-  ExpenseAttachment,
   ExpenseStatus,
   ProjectBudget,
   ProjectBudgetCategoryLimit,
@@ -202,27 +201,19 @@ function ensureBudgetCurrency(budget: ProjectBudget | null, expenseCurrency: str
 }
 
 export class FinanceService {
+  constructor(private readonly expenseStore: ExpenseStore = getExpenseStore()) {}
+
   listExpenses(filters: ExpenseFilters): FinanceListResult {
-    const items = expensesRepository.list(filters);
+    const items = this.expenseStore.list(filters);
     return { items, total: items.length };
   }
 
   findExpenseById(id: string): Expense | null {
-    return expensesRepository.findById(id);
+    return this.expenseStore.getById(id);
   }
 
   createExpense(input: CreateExpenseInput, context: OperationContext): Expense {
-    const idempotencyKey = context.idempotencyKey?.trim();
-    if (idempotencyKey) {
-      const existingId = memory.IDEMPOTENCY_KEYS.get(idempotencyKey);
-      if (existingId) {
-        const existing = expensesRepository.findById(existingId);
-        if (existing) {
-          return existing;
-        }
-      }
-    }
-
+    const idempotencyKey = context.idempotencyKey?.trim() ?? null;
     const amount = normalizeAmount(input.amount);
     ensurePositive(amount);
     const taxAmount = normalizeTaxAmount(input.taxAmount);
@@ -265,52 +256,44 @@ export class FinanceService {
       expense.taxAmount = taxAmount;
     }
 
-    const inserted = expensesRepository.insert(expense);
+    return this.expenseStore.withIdempotency(idempotencyKey, () => {
+      const attachments = input.attachments?.map((file) => ({
+        id: crypto.randomUUID(),
+        expenseId: expense.id,
+        filename: file.filename,
+        url: file.url,
+        uploadedAt: now
+      }));
 
-    if (input.attachments?.length) {
-      for (const file of input.attachments) {
-        const attachment: ExpenseAttachment = {
-          id: crypto.randomUUID(),
-          expenseId: inserted.id,
-          filename: file.filename,
-          url: file.url,
-          uploadedAt: now
-        };
-        expensesRepository.saveAttachment(attachment);
-      }
-    }
+      const inserted = this.expenseStore.create({
+        expense,
+        attachments,
+        actorId: context.actorId
+      });
 
-    if (idempotencyKey) {
-      memory.IDEMPOTENCY_KEYS.set(idempotencyKey, inserted.id);
-    }
+      createAuditEntry({
+        actorId: context.actorId,
+        action: 'expense.created',
+        projectId: inserted.projectId,
+        workspaceId: inserted.workspaceId,
+        entity: { type: 'expense', id: inserted.id },
+        after: inserted
+      });
+      emitEvent('expense.created', inserted.id, inserted);
 
-    createAuditEntry({
-      actorId: context.actorId,
-      action: 'expense.created',
-      projectId: inserted.projectId,
-      workspaceId: inserted.workspaceId,
-      entity: { type: 'expense', id: inserted.id },
-      after: inserted
+      this.recalculateBudget(inserted.projectId);
+
+      return inserted;
     });
-    emitEvent('expense.created', inserted.id, inserted);
-
-    this.recalculateBudget(inserted.projectId);
-
-    return inserted;
   }
 
   updateExpense(id: string, patch: UpdateExpenseInput, context: OperationContext): Expense {
-    const current = expensesRepository.findById(id);
+    const current = this.expenseStore.getById(id);
     if (!current) {
       throw new Error('EXPENSE_NOT_FOUND');
     }
 
-    const updates: Partial<
-      Omit<Expense, 'id' | 'createdAt' | 'createdBy' | 'workspaceId' | 'projectId' | 'taskId' | 'taxAmount'>
-    > & {
-      taxAmount?: string | null;
-      taskId?: string | null;
-    } = {};
+    const updates: ExpenseUpdatePatch = {};
     let shouldRecalculate = false;
 
     if (patch.taskId !== undefined) {
@@ -351,55 +334,62 @@ export class FinanceService {
       shouldRecalculate = true;
     }
 
+    let pendingStatus: ExpenseStatus | null = null;
     if (patch.status) {
       assertValidStatus(patch.status);
       assertStatusTransition(current.status, patch.status);
-      updates.status = patch.status;
-      shouldRecalculate = true;
+      if (patch.status !== current.status) {
+        pendingStatus = patch.status;
+        shouldRecalculate = true;
+      }
     }
 
-    const updated = expensesRepository.update(id, {
-      ...updates,
-      updatedAt: new Date().toISOString()
+    const timestamp = new Date().toISOString();
+    const attachmentRecords = patch.attachments?.map((file) => ({
+      id: crypto.randomUUID(),
+      expenseId: current.id,
+      filename: file.filename,
+      url: file.url,
+      uploadedAt: timestamp
+    }));
+
+    const updated = this.expenseStore.update(id, {
+      patch: { ...updates, updatedAt: timestamp },
+      attachments: attachmentRecords
     });
 
     if (!updated) {
       throw new Error('EXPENSE_NOT_FOUND');
     }
 
-    if (patch.attachments?.length) {
-      const timestamp = new Date().toISOString();
-      for (const file of patch.attachments) {
-        const attachment: ExpenseAttachment = {
-          id: crypto.randomUUID(),
-          expenseId: updated.id,
-          filename: file.filename,
-          url: file.url,
-          uploadedAt: timestamp
-        };
-        expensesRepository.saveAttachment(attachment);
+    let result = updated;
+    let statusChanged = false;
+
+    if (pendingStatus) {
+      const withStatus = this.expenseStore.changeStatus(id, pendingStatus, { actorId: context.actorId });
+      if (!withStatus) {
+        throw new Error('EXPENSE_NOT_FOUND');
       }
+      emitEvent('expense.status_changed', withStatus.id, { from: current.status, to: pendingStatus });
+      result = withStatus;
+      statusChanged = true;
     }
 
     createAuditEntry({
       actorId: context.actorId,
-      action: patch.status && patch.status !== current.status ? 'expense.status_changed' : 'expense.updated',
-      projectId: updated.projectId,
-      workspaceId: updated.workspaceId,
-      entity: { type: 'expense', id: updated.id },
+      action: statusChanged ? 'expense.status_changed' : 'expense.updated',
+      projectId: result.projectId,
+      workspaceId: result.workspaceId,
+      entity: { type: 'expense', id: result.id },
       before: current,
-      after: updated
+      after: result
     });
 
-    if (patch.status && patch.status !== current.status) {
-      emitEvent('expense.status_changed', updated.id, { from: current.status, to: patch.status });
+    if (statusChanged || shouldRecalculate) {
+      this.recalculateBudget(result.projectId);
     }
 
-    if (shouldRecalculate) {
-      this.recalculateBudget(updated.projectId);
-    }
-
-    return updated;
+    return result;
   }
 
   getBudget(projectId: string): ProjectBudgetSnapshot | null {
@@ -460,20 +450,17 @@ export class FinanceService {
   }
 
   private buildSnapshot(budget: ProjectBudget): ProjectBudgetSnapshot {
-    const expenses = expensesRepository.list({ projectId: budget.projectId });
-    const relevant = expenses.filter((expense) => FINAL_STATUSES.has(expense.status));
+    const aggregated = this.expenseStore.aggregateByCategory({
+      projectId: budget.projectId,
+      statuses: Array.from(FINAL_STATUSES)
+    });
 
     let spentTotal = 0n;
-    const spentPerCategory = new Map<string, bigint>();
-
-    for (const expense of relevant) {
-      const cents = amountToCents(expense.amount);
+    for (const cents of aggregated.values()) {
       spentTotal += cents;
-      const key = expense.category.toLowerCase();
-      spentPerCategory.set(key, (spentPerCategory.get(key) ?? 0n) + cents);
     }
 
-    const categoriesUsage = buildCategoriesUsage(budget.categories, spentPerCategory);
+    const categoriesUsage = buildCategoriesUsage(budget.categories, aggregated);
     const snapshot: ProjectBudgetSnapshot = {
       ...budget,
       spentTotal: centsToAmount(spentTotal),
@@ -498,4 +485,21 @@ export class FinanceService {
   }
 }
 
-export const financeService = new FinanceService();
+let financeServiceSingleton: FinanceService | null = null;
+
+export function createFinanceService(expenseStore?: ExpenseStore): FinanceService {
+  return new FinanceService(expenseStore ?? getExpenseStore());
+}
+
+export function getFinanceService(): FinanceService {
+  if (!financeServiceSingleton) {
+    financeServiceSingleton = createFinanceService();
+  }
+  return financeServiceSingleton;
+}
+
+export function resetFinanceService(): void {
+  financeServiceSingleton = null;
+}
+
+export const financeService = getFinanceService();

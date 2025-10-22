@@ -1,5 +1,6 @@
 import {
-  financeService,
+  createFinanceService,
+  getExpenseStore,
   projectsRepository,
   type CreateExpenseInput,
   type ExpenseFilters,
@@ -7,6 +8,9 @@ import {
 } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { assertProjectAccess, getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
+
+const expenseStore = getExpenseStore();
+const financeService = createFinanceService(expenseStore);
 
 function parsePagination(url: URL) {
   const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1);
