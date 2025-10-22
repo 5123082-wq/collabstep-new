@@ -175,7 +175,10 @@ export class MemoryExpenseStore implements ExpenseStore {
 
   async list(filters: ExpenseFilters = {}): Promise<Expense[]> {
     const normalizedSearch = filters.search?.trim().toLowerCase();
-    const normalizedFilters: ExpenseFilters = { ...filters, search: normalizedSearch };
+    const normalizedFilters: ExpenseFilters = {
+      ...filters,
+      ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
+    };
     return memory.EXPENSES.filter((expense) => matchesFilters(expense, normalizedFilters)).map(cloneExpense);
   }
 
@@ -257,7 +260,10 @@ export class MemoryExpenseStore implements ExpenseStore {
   async aggregateByCategory(filters: ExpenseAggregationFilters): Promise<Map<string, bigint>> {
     const statuses = filters.statuses && filters.statuses.length ? new Set(filters.statuses) : undefined;
     const normalizedSearch = filters.search?.trim().toLowerCase();
-    const normalizedFilters: ExpenseFilters = { ...filters, search: normalizedSearch };
+    const normalizedFilters: ExpenseFilters = {
+      ...filters,
+      ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
+    };
     const result = new Map<string, bigint>();
 
     for (const expense of memory.EXPENSES) {
@@ -299,7 +305,7 @@ export class MemoryExpenseStore implements ExpenseStore {
 export class DbExpenseStore implements ExpenseStore {
   private readonly expenses: ExpenseEntityRepository;
   private readonly idempotency: ExpenseIdempotencyRepository;
-  private readonly cache?: ExpenseStoreCache;
+  private readonly cache: ExpenseStoreCache | undefined;
   private readonly cacheTtlMs: number;
 
   constructor(dependencies: DbExpenseStoreDependencies) {
@@ -310,7 +316,10 @@ export class DbExpenseStore implements ExpenseStore {
   }
 
   async create(input: ExpenseCreateInput): Promise<Expense> {
-    const created = this.expenses.create({ data: input.expense, attachments: input.attachments });
+    const created = this.expenses.create({
+      data: input.expense,
+      ...(input.attachments !== undefined ? { attachments: input.attachments } : {})
+    });
     console.info('[DbExpenseStore] create', { expenseId: created.id, actorId: input.actorId });
     return created;
   }
@@ -324,7 +333,10 @@ export class DbExpenseStore implements ExpenseStore {
   }
 
   async update(id: string, input: ExpenseUpdateInput): Promise<Expense | null> {
-    return this.expenses.update(id, { data: input.patch, attachments: input.attachments });
+    return this.expenses.update(id, {
+      data: input.patch,
+      ...(input.attachments !== undefined ? { attachments: input.attachments } : {})
+    });
   }
 
   async changeStatus(

@@ -4,15 +4,11 @@ import type {
   ExpenseAggregationFilters,
   ExpenseAggregationRow,
   ExpenseEntityRepository,
+  ExpenseFilters,
   ExpenseIdempotencyRepository,
   ExpenseStoreCache
 } from '@collabverse/api/repositories/expense-store';
-import type {
-  Expense,
-  ExpenseAttachment,
-  ExpenseFilters,
-  ExpenseStatus
-} from '@collabverse/api/types';
+import type { Expense, ExpenseAttachment, ExpenseStatus } from '@collabverse/api/types';
 
 interface ExpenseRecord {
   expense: Expense;
@@ -117,9 +113,10 @@ function createExpenseRepository(db: FinanceDbState): ExpenseEntityRepository {
       return record ? cloneExpense(record.expense) : null;
     },
     list: (filters) => {
+      const normalizedSearch = normalizeSearch(filters.search);
       const normalizedFilters: ExpenseFilters = {
         ...filters,
-        search: normalizeSearch(filters.search)
+        ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
       };
       const results: Expense[] = [];
       for (const id of db.order) {
@@ -146,9 +143,10 @@ function createExpenseRepository(db: FinanceDbState): ExpenseEntityRepository {
       };
 
       const { taskId, taxAmount, ...rest } = data;
+      const mutableNext = next as unknown as Record<string, unknown>;
       for (const [key, value] of Object.entries(rest)) {
         if (value !== undefined) {
-          (next as Record<string, unknown>)[key] = value;
+          mutableNext[key] = value;
         }
       }
 
@@ -196,9 +194,10 @@ function createExpenseRepository(db: FinanceDbState): ExpenseEntityRepository {
       return cloneExpense(record.expense);
     },
     aggregateByCategory: (filters: ExpenseAggregationFilters) => {
+      const normalizedSearch = normalizeSearch(filters.search);
       const normalizedFilters: ExpenseFilters = {
         ...filters,
-        search: normalizeSearch(filters.search)
+        ...(normalizedSearch !== undefined ? { search: normalizedSearch } : {})
       };
       const statuses = filters.statuses?.length ? new Set(filters.statuses) : undefined;
       const totals = new Map<string, bigint>();
