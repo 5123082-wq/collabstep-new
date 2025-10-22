@@ -10,8 +10,46 @@ import type {
   ProjectMember,
   ProjectTemplate,
   ProjectWorkflow,
-  Task
+  Task,
+  WorkspaceUser
 } from '../types';
+
+export const DEFAULT_WORKSPACE_USER_ID = 'admin.demo@collabverse.test';
+
+const WORKSPACE_USERS: WorkspaceUser[] = [
+  {
+    id: DEFAULT_WORKSPACE_USER_ID,
+    name: 'Алина Админ',
+    email: 'admin.demo@collabverse.test',
+    title: 'Руководитель продукта',
+    department: 'Продукт',
+    location: 'Москва'
+  },
+  {
+    id: 'user.demo@collabverse.test',
+    name: 'Игорь Участник',
+    email: 'user.demo@collabverse.test',
+    title: 'Менеджер проектов',
+    department: 'Операции',
+    location: 'Санкт-Петербург'
+  },
+  {
+    id: 'finance.pm@collabverse.test',
+    name: 'Мария Финансы',
+    email: 'finance.pm@collabverse.test',
+    title: 'Финансовый контролёр',
+    department: 'Финансы',
+    location: 'Москва'
+  },
+  {
+    id: 'designer-1',
+    name: 'Диана Дизайн',
+    email: 'designer.demo@collabverse.test',
+    title: 'Ведущий дизайнер',
+    department: 'Дизайн',
+    location: 'Екатеринбург'
+  }
+];
 
 type GlobalMemoryScope = typeof globalThis & {
   __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
@@ -24,12 +62,13 @@ const globalIdempotencyKeys =
 globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = globalIdempotencyKeys;
 
 export const memory = {
+  WORKSPACE_USERS,
   PROJECTS: [
     {
       id: 'proj-admin-onboarding',
       title: 'Онбординг команды Collabstep',
       description: 'Первые шаги команды после запуска платформы.',
-      ownerId: 'admin',
+      ownerId: DEFAULT_WORKSPACE_USER_ID,
       stage: 'design',
       archived: false,
       createdAt: '2024-05-01T08:30:00.000Z',
@@ -39,7 +78,7 @@ export const memory = {
       id: 'proj-admin-landing-archive',
       title: 'Редизайн лендинга (архив)',
       description: 'Завершённая инициатива по обновлению главной страницы.',
-      ownerId: 'admin',
+      ownerId: DEFAULT_WORKSPACE_USER_ID,
       stage: 'launch',
       archived: true,
       createdAt: '2023-11-05T10:00:00.000Z',
@@ -53,7 +92,7 @@ export const memory = {
       title: 'Подготовить бриф и дорожную карту',
       description: 'Сформировать цели, KPI и ритуалы команды.',
       status: 'in_progress',
-      assigneeId: 'admin',
+      assigneeId: DEFAULT_WORKSPACE_USER_ID,
       labels: ['Стратегия', 'Команда'],
       createdAt: '2024-05-02T09:00:00.000Z',
       updatedAt: '2024-06-08T14:20:00.000Z'
