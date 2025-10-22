@@ -1,3 +1,4 @@
+import '@/lib/finance/bootstrap';
 import {
   createFinanceService,
   getExpenseStore,
