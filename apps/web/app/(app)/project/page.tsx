@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
 import ProjectsIndexPageClient from './projects-index-page-client';
@@ -9,6 +10,9 @@ type ProjectIndexPageProps = {
 
 export default function ProjectIndexPage({ searchParams }: ProjectIndexPageProps) {
   if (flags.PROJECTS_V1) {
+    if (typeof window === 'undefined') {
+      redirect('/app/projects');
+    }
     const tab = searchParams?.tab;
     if (typeof tab === 'string') {
       return <ProjectsIndexPageClient initialTab={tab} />;

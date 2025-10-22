@@ -74,13 +74,12 @@ function useSheetContext(component: string) {
   return context;
 }
 
-type SheetContentProps = {
+type SheetContentProps = React.HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
-  className?: string;
   side?: SheetSide;
 };
 
-export function SheetContent({ children, className, side }: SheetContentProps) {
+export function SheetContent({ children, className, side, ...props }: SheetContentProps) {
   const context = useSheetContext('SheetContent');
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -176,6 +175,7 @@ export function SheetContent({ children, className, side }: SheetContentProps) {
             translateClasses[actualSide],
             className
           )}
+          {...props}
         >
           {children}
         </div>

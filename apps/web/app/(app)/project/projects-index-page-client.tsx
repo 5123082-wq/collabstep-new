@@ -446,7 +446,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
         setMessage(err instanceof Error ? err.message : 'Не удалось архивировать проект');
       }
     },
-    [loadProjects, tab]
+    [loadProjects, setMessage, tab]
   );
 
   const handleUnarchive = useCallback(
@@ -466,7 +466,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
         setMessage(err instanceof Error ? err.message : 'Не удалось восстановить проект');
       }
     },
-    [loadProjects, tab]
+    [loadProjects, setMessage, tab]
   );
 
   const handleDelete = useCallback(
@@ -489,7 +489,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
         setMessage(err instanceof Error ? err.message : 'Не удалось удалить проект');
       }
     },
-    [loadProjects, tab]
+    [loadProjects, setMessage, tab]
   );
 
   const handleCreateFromTemplate = useCallback(async (template: CatalogTemplate) => {
@@ -517,7 +517,7 @@ export default function ProjectsIndexPageClient({ initialTab }: ProjectsIndexPag
       console.error(err);
       setMessage(err instanceof Error ? err.message : 'Не удалось создать проект из шаблона');
     }
-  }, [loadProjects, tab]);
+  }, [loadProjects, setMessage, tab]);
 
   const handleAttachTemplate = useCallback(async () => {
     if (!attachModal.open || !attachModal.template) {

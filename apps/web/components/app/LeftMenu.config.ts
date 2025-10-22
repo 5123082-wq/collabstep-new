@@ -48,7 +48,7 @@ export type LeftMenuSection = {
   children?: LeftMenuChild[];
 };
 
-export const PROJECTS_HUB_PATH = '/project';
+export const PROJECTS_HUB_PATH = '/app/projects';
 export const PROJECTS_MENU_SECTION: LeftMenuSection = {
   id: 'projects',
   label: 'Проекты',
@@ -56,12 +56,12 @@ export const PROJECTS_MENU_SECTION: LeftMenuSection = {
   href: PROJECTS_HUB_PATH,
   children: [
     { id: 'projects-overview', label: 'Обзор проектов', href: PROJECTS_HUB_PATH },
-    { id: 'projects-my', label: 'Мои проекты', href: `${PROJECTS_HUB_PATH}?tab=my` },
-    { id: 'projects-templates', label: 'Шаблоны', href: `${PROJECTS_HUB_PATH}?tab=templates` },
-    { id: 'projects-archive', label: 'Архив', href: `${PROJECTS_HUB_PATH}?tab=archive` },
+    { id: 'projects-my', label: 'Мои проекты', href: `${PROJECTS_HUB_PATH}/my` },
+    { id: 'projects-templates', label: 'Шаблоны', href: `${PROJECTS_HUB_PATH}/templates` },
+    { id: 'projects-archive', label: 'Архив', href: `${PROJECTS_HUB_PATH}/archive` },
     { id: 'projects-divider', type: 'divider' },
-    { id: 'projects-create', label: 'Создать проект', href: `${PROJECTS_HUB_PATH}/new` },
-    { id: 'projects-workspace', label: 'Рабочее пространство', href: `${PROJECTS_HUB_PATH}/modules` }
+    { id: 'projects-create', label: 'Создать проект', href: `${PROJECTS_HUB_PATH}/create` },
+    { id: 'projects-workspace', label: 'Рабочее пространство', href: `${PROJECTS_HUB_PATH}/workspace` }
   ]
 };
 
