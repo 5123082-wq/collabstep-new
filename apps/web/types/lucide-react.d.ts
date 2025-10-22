@@ -8,4 +8,8 @@ declare module 'lucide-react' {
   export const MessageSquare: LucideIcon;
   export const PlusCircle: LucideIcon;
   export const UserPlus: LucideIcon;
+  export const LayoutGrid: LucideIcon;
+  export const LayoutList: LucideIcon;
+  export const Loader2: LucideIcon;
+  export const RefreshCw: LucideIcon;
 }
