@@ -136,3 +136,61 @@ export interface DomainEvent<TPayload = unknown> {
   payload?: TPayload;
   createdAt: string;
 }
+
+export type ProjectStatus = 'active' | 'archived';
+
+export interface WorkspaceUser {
+  id: ID;
+  name: string;
+  email: string;
+  title?: string;
+  avatarUrl?: string;
+  department?: string;
+  location?: string;
+}
+
+export interface ProjectCardTaskStats {
+  total: number;
+  overdue: number;
+  important: number;
+  completed: number;
+}
+
+export interface ProjectCardOwner extends WorkspaceUser {}
+
+export interface ProjectCardMember extends WorkspaceUser {
+  role: ProjectMember['role'];
+}
+
+export interface ProjectCard {
+  id: ID;
+  title: string;
+  description: string;
+  status: ProjectStatus;
+  owner: ProjectCardOwner;
+  members: ProjectCardMember[];
+  createdAt: string;
+  updatedAt: string;
+  tags: string[];
+  progress: number;
+  tasks: ProjectCardTaskStats;
+  budget: {
+    planned: string | null;
+    spent: string | null;
+  };
+  permissions: {
+    canArchive: boolean;
+  };
+  deadline?: string;
+  stage?: ProjectStage;
+}
+
+export interface ProjectCardFilters {
+  status?: 'all' | ProjectStatus;
+  ownerIds?: ID[];
+  memberIds?: ID[];
+  tags?: string[];
+  dateField?: 'createdAt' | 'deadline';
+  dateFrom?: string | null;
+  dateTo?: string | null;
+}
