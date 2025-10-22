@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { memo, useMemo, type SVGProps } from 'react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { isActivePath, TOPBAR_LINKS, type ProjectsTopbarLink } from './projectsTopbar.config';
+import { isActivePath, TOPBAR_LINKS } from './projectsTopbar.config';
 
 const QUICK_FILTERS = [
   { id: 'stage-discovery', label: 'Discovery', disabled: true },
