@@ -1,3 +1,4 @@
+import '@/lib/finance/bootstrap';
 import { financeService } from '@collabverse/api';
 import { jsonError, jsonOk } from '@/lib/api/http';
 import { assertProjectAccess, getAuthFromRequest, getProjectRole } from '@/lib/api/finance-access';
