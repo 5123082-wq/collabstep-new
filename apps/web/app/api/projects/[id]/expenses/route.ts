@@ -61,7 +61,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     serviceFilters.search = search;
   }
 
-  const { items } = financeService.listExpenses(serviceFilters);
+  const { items } = await financeService.listExpenses(serviceFilters);
 
   const filtered = role === 'member' ? items.filter((expense) => expense.createdBy === auth.userId) : items;
   const { items: paginated, pagination } = applyPagination(filtered, page, pageSize);

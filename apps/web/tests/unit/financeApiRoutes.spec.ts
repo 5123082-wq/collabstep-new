@@ -16,9 +16,9 @@ describe('Finance API routes', () => {
     'content-type': 'application/json'
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetFinanceMemory();
-    financeService.upsertBudget(
+    await financeService.upsertBudget(
       projectId,
       { currency: 'USD', total: '2000', warnThreshold: 0.7 },
       { actorId: 'admin.demo@collabverse.test' }

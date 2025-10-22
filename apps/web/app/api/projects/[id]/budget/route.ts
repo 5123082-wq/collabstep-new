@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return jsonError('FORBIDDEN', { status: 403 });
   }
 
-  const budget = financeService.getBudget(params.id);
+  const budget = await financeService.getBudget(params.id);
   if (!budget) {
     return jsonOk(null, { status: 200 });
   }
@@ -55,7 +55,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 
   try {
-    const budget = financeService.upsertBudget(
+    const budget = await financeService.upsertBudget(
       params.id,
       {
         currency: body.currency,

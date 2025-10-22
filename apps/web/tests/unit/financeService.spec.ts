@@ -13,9 +13,9 @@ import {
 describe('financeService', () => {
   const projectId = projectsRepository.list()[0]?.id ?? 'proj-admin-onboarding';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetFinanceMemory();
-    financeService.upsertBudget(
+    await financeService.upsertBudget(
       projectId,
       {
         currency: 'USD',
@@ -27,8 +27,8 @@ describe('financeService', () => {
     );
   });
 
-  it('validates currency when creating expenses', () => {
-    expect(() =>
+  it('validates currency when creating expenses', async () => {
+    await expect(
       financeService.createExpense(
         {
           workspaceId: 'workspace',
@@ -40,11 +40,11 @@ describe('financeService', () => {
         },
         { actorId: 'admin.demo@collabverse.test' }
       )
-    ).toThrow('INVALID_CURRENCY');
+    ).rejects.toThrow('INVALID_CURRENCY');
   });
 
-  it('prevents skipping status transitions', () => {
-    const expense = financeService.createExpense(
+  it('prevents skipping status transitions', async () => {
+    const expense = await financeService.createExpense(
       {
         workspaceId: 'workspace',
         projectId,
@@ -56,7 +56,7 @@ describe('financeService', () => {
       { actorId: 'admin.demo@collabverse.test' }
     );
 
-    expect(() =>
+    await expect(
       financeService.updateExpense(
         expense.id,
         {
@@ -64,11 +64,11 @@ describe('financeService', () => {
         },
         { actorId: 'admin.demo@collabverse.test' }
       )
-    ).toThrow('INVALID_STATUS_TRANSITION');
+    ).rejects.toThrow('INVALID_STATUS_TRANSITION');
   });
 
-  it('recalculates budget usage for approved expenses', () => {
-    const expense = financeService.createExpense(
+  it('recalculates budget usage for approved expenses', async () => {
+    const expense = await financeService.createExpense(
       {
         workspaceId: 'workspace',
         projectId,
@@ -80,24 +80,24 @@ describe('financeService', () => {
       { actorId: 'admin.demo@collabverse.test' }
     );
 
-    financeService.updateExpense(
+    await financeService.updateExpense(
       expense.id,
       { status: 'pending' },
       { actorId: 'admin.demo@collabverse.test' }
     );
-    financeService.updateExpense(
+    await financeService.updateExpense(
       expense.id,
       { status: 'approved' },
       { actorId: 'admin.demo@collabverse.test' }
     );
 
-    const budget = financeService.getBudget(projectId);
+    const budget = await financeService.getBudget(projectId);
     expect(budget?.spentTotal).toBe('250.00');
     const design = budget?.categoriesUsage.find((item) => item.name === 'Design');
     expect(design?.spent).toBe('250.00');
   });
 
-  it('uses idempotency keys when memory store handles duplicates', () => {
+  it('uses idempotency keys when memory store handles duplicates', async () => {
     resetFinanceMemory();
     const store = new MemoryExpenseStore();
     const service = createFinanceService(store);
@@ -111,14 +111,14 @@ describe('financeService', () => {
       category: 'Design'
     } as const;
 
-    const first = service.createExpense({ ...payload }, context);
-    const second = service.createExpense({ ...payload, description: 'duplicate attempt' }, context);
+    const first = await service.createExpense({ ...payload }, context);
+    const second = await service.createExpense({ ...payload, description: 'duplicate attempt' }, context);
 
     expect(second.id).toBe(first.id);
-    expect(service.listExpenses({ projectId }).items).toHaveLength(1);
+    expect((await service.listExpenses({ projectId })).items).toHaveLength(1);
   });
 
-  it('uses idempotency keys when db store reports conflicts', () => {
+  it('uses idempotency keys when db store reports conflicts', async () => {
     resetFinanceMemory();
     const stored = new Map<string, Expense>();
     const repo: ExpenseEntityRepository = {
@@ -158,11 +158,11 @@ describe('financeService', () => {
       category: 'Design'
     } as const;
 
-    const first = service.createExpense({ ...payload }, context);
+    const first = await service.createExpense({ ...payload }, context);
     expect(first).toBeDefined();
     expect(repo.create).toHaveBeenCalledTimes(1);
 
-    const second = service.createExpense({ ...payload }, context);
+    const second = await service.createExpense({ ...payload }, context);
     expect(second.id).toBe(first.id);
     expect(repo.create).toHaveBeenCalledTimes(1);
     expect(idempotencyRepo.set).toHaveBeenCalledTimes(1);
