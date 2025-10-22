@@ -7,7 +7,7 @@ async function main() {
   const primaryProject = projects.find((project) => project.id === 'proj-admin-onboarding') ?? projects[0];
   const secondaryProject = projects.find((project) => project.id !== primaryProject.id) ?? primaryProject;
 
-  financeService.upsertBudget(
+  await financeService.upsertBudget(
     primaryProject.id,
     {
       currency: 'USD',
@@ -43,8 +43,9 @@ async function main() {
     const projectId = projectsToSeed[index];
     const config = statuses[index] ?? statuses[0];
 
-    config.forEach((item, position) => {
-      const expense = financeService.createExpense(
+    for (let position = 0; position < config.length; position += 1) {
+      const item = config[position];
+      const expense = await financeService.createExpense(
         {
           workspaceId: 'workspace-demo',
           projectId,
@@ -69,7 +70,7 @@ async function main() {
         };
 
         for (const status of flow[item.status]) {
-          financeService.updateExpense(
+          await financeService.updateExpense(
             expense.id,
             {
               status
@@ -78,12 +79,13 @@ async function main() {
           );
         }
       }
-    });
+    }
   }
 
   console.log('Finance seed complete.');
+  const { items } = await financeService.listExpenses({});
   console.table(
-    financeService.listExpenses({}).items.map((expense) => ({
+    items.map((expense) => ({
       id: expense.id,
       projectId: expense.projectId,
       status: expense.status,

@@ -28,27 +28,27 @@ describe('Expense stores smoke tests', () => {
     resetFinanceMemory();
   });
 
-  it('supports create/list/changeStatus/withIdempotency for MemoryExpenseStore', () => {
+  it('supports create/list/changeStatus/withIdempotency for MemoryExpenseStore', async () => {
     const store = new MemoryExpenseStore();
     const handler = jest.fn(() => store.create({ expense: { ...baseExpense }, actorId: 'tester' }));
 
-    const created = store.withIdempotency('key-1', handler);
+    const created = await store.withIdempotency('key-1', handler);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(created.status).toBe('draft');
 
-    const existing = store.withIdempotency('key-1', () => {
+    const existing = await store.withIdempotency('key-1', async () => {
       throw new Error('should not be called for duplicate idempotency key');
     });
     expect(existing.id).toBe(created.id);
 
-    const listed = store.list({ projectId: baseExpense.projectId } satisfies ExpenseFilters);
+    const listed = await store.list({ projectId: baseExpense.projectId } satisfies ExpenseFilters);
     expect(listed).toHaveLength(1);
 
-    const updated = store.changeStatus(created.id, 'pending', { actorId: 'tester' });
+    const updated = await store.changeStatus(created.id, 'pending', { actorId: 'tester' });
     expect(updated?.status).toBe('pending');
   });
 
-  it('supports create/list/changeStatus/withIdempotency for DbExpenseStore', () => {
+  it('supports create/list/changeStatus/withIdempotency for DbExpenseStore', async () => {
     const stored: Expense = { ...baseExpense };
     const approved: Expense = { ...stored, status: 'approved', updatedAt: new Date().toISOString() };
 
@@ -72,22 +72,22 @@ describe('Expense stores smoke tests', () => {
     const store = new DbExpenseStore({ expenses: expensesRepo, idempotency: idempotencyRepo });
     const handler = jest.fn(() => store.create({ expense: stored, actorId: 'tester' }));
 
-    const created = store.withIdempotency('db-key', handler);
+    const created = await store.withIdempotency('db-key', handler);
     expect(handler).toHaveBeenCalledTimes(1);
     expect(created.status).toBe('draft');
 
     expensesRepo.findById = jest.fn(() => ({ ...stored }));
-    const duplicate = store.withIdempotency('db-key', () => {
+    const duplicate = await store.withIdempotency('db-key', async () => {
       throw new Error('handler should be skipped for duplicate');
     });
     expect(duplicate.id).toBe(stored.id);
 
-    const listed = store.list({ projectId: stored.projectId });
+    const listed = await store.list({ projectId: stored.projectId });
     expect(listed).toHaveLength(1);
     expect(expensesRepo.list).toHaveBeenCalled();
 
     const status: ExpenseStatus = 'approved';
-    const changed = store.changeStatus(stored.id, status, { actorId: 'tester' });
+    const changed = await store.changeStatus(stored.id, status, { actorId: 'tester' });
     expect(changed?.status).toBe('approved');
     expect(expensesRepo.updateStatus).toHaveBeenCalledWith(stored.id, status);
   });

@@ -45,13 +45,13 @@ export interface ExpenseStatusChangeContext {
 }
 
 export interface ExpenseStore {
-  create(input: ExpenseCreateInput): Expense;
-  getById(id: string): Expense | null;
-  list(filters?: ExpenseFilters): Expense[];
-  update(id: string, input: ExpenseUpdateInput): Expense | null;
-  changeStatus(id: string, status: ExpenseStatus, context: ExpenseStatusChangeContext): Expense | null;
-  aggregateByCategory(filters: ExpenseAggregationFilters): Map<string, bigint>;
-  withIdempotency(key: string | null | undefined, handler: () => Expense): Expense;
+  create(input: ExpenseCreateInput): Promise<Expense>;
+  getById(id: string): Promise<Expense | null>;
+  list(filters?: ExpenseFilters): Promise<Expense[]>;
+  update(id: string, input: ExpenseUpdateInput): Promise<Expense | null>;
+  changeStatus(id: string, status: ExpenseStatus, context: ExpenseStatusChangeContext): Promise<Expense | null>;
+  aggregateByCategory(filters: ExpenseAggregationFilters): Promise<Map<string, bigint>>;
+  withIdempotency(key: string | null | undefined, handler: () => Promise<Expense>): Promise<Expense>;
 }
 
 export interface ExpenseAggregationRow {
@@ -154,7 +154,7 @@ export class MemoryExpenseStore implements ExpenseStore {
     return this.idempotencyKeys;
   }
 
-  create(input: ExpenseCreateInput): Expense {
+  async create(input: ExpenseCreateInput): Promise<Expense> {
     const stored = cloneExpense(input.expense);
     memory.EXPENSES.push(stored);
 
@@ -168,18 +168,18 @@ export class MemoryExpenseStore implements ExpenseStore {
     return cloneExpense(stored);
   }
 
-  getById(id: string): Expense | null {
+  async getById(id: string): Promise<Expense | null> {
     const expense = memory.EXPENSES.find((item) => item.id === id);
     return expense ? cloneExpense(expense) : null;
   }
 
-  list(filters: ExpenseFilters = {}): Expense[] {
+  async list(filters: ExpenseFilters = {}): Promise<Expense[]> {
     const normalizedSearch = filters.search?.trim().toLowerCase();
     const normalizedFilters: ExpenseFilters = { ...filters, search: normalizedSearch };
     return memory.EXPENSES.filter((expense) => matchesFilters(expense, normalizedFilters)).map(cloneExpense);
   }
 
-  update(id: string, input: ExpenseUpdateInput): Expense | null {
+  async update(id: string, input: ExpenseUpdateInput): Promise<Expense | null> {
     const index = memory.EXPENSES.findIndex((item) => item.id === id);
     if (index === -1) {
       return null;
@@ -226,7 +226,11 @@ export class MemoryExpenseStore implements ExpenseStore {
     return cloneExpense(next);
   }
 
-  changeStatus(id: string, status: ExpenseStatus, context: ExpenseStatusChangeContext): Expense | null {
+  async changeStatus(
+    id: string,
+    status: ExpenseStatus,
+    context: ExpenseStatusChangeContext
+  ): Promise<Expense | null> {
     const index = memory.EXPENSES.findIndex((item) => item.id === id);
     if (index === -1) {
       return null;
@@ -250,7 +254,7 @@ export class MemoryExpenseStore implements ExpenseStore {
     return cloneExpense(next);
   }
 
-  aggregateByCategory(filters: ExpenseAggregationFilters): Map<string, bigint> {
+  async aggregateByCategory(filters: ExpenseAggregationFilters): Promise<Map<string, bigint>> {
     const statuses = filters.statuses && filters.statuses.length ? new Set(filters.statuses) : undefined;
     const normalizedSearch = filters.search?.trim().toLowerCase();
     const normalizedFilters: ExpenseFilters = { ...filters, search: normalizedSearch };
@@ -268,7 +272,10 @@ export class MemoryExpenseStore implements ExpenseStore {
     return result;
   }
 
-  withIdempotency(key: string | null | undefined, handler: () => Expense): Expense {
+  async withIdempotency(
+    key: string | null | undefined,
+    handler: () => Promise<Expense>
+  ): Promise<Expense> {
     const normalizedKey = key?.trim();
     if (!normalizedKey) {
       return handler();
@@ -277,13 +284,13 @@ export class MemoryExpenseStore implements ExpenseStore {
     const store = this.ensureIdempotencyMap();
     const existingId = store.get(normalizedKey);
     if (existingId) {
-      const existing = this.getById(existingId);
+      const existing = await this.getById(existingId);
       if (existing) {
         return existing;
       }
     }
 
-    const created = handler();
+    const created = await handler();
     store.set(normalizedKey, created.id);
     return created;
   }
@@ -302,25 +309,29 @@ export class DbExpenseStore implements ExpenseStore {
     this.cacheTtlMs = dependencies.cacheTtlMs ?? 60_000;
   }
 
-  create(input: ExpenseCreateInput): Expense {
+  async create(input: ExpenseCreateInput): Promise<Expense> {
     const created = this.expenses.create({ data: input.expense, attachments: input.attachments });
     console.info('[DbExpenseStore] create', { expenseId: created.id, actorId: input.actorId });
     return created;
   }
 
-  getById(id: string): Expense | null {
+  async getById(id: string): Promise<Expense | null> {
     return this.expenses.findById(id);
   }
 
-  list(filters: ExpenseFilters = {}): Expense[] {
+  async list(filters: ExpenseFilters = {}): Promise<Expense[]> {
     return this.expenses.list(filters);
   }
 
-  update(id: string, input: ExpenseUpdateInput): Expense | null {
+  async update(id: string, input: ExpenseUpdateInput): Promise<Expense | null> {
     return this.expenses.update(id, { data: input.patch, attachments: input.attachments });
   }
 
-  changeStatus(id: string, status: ExpenseStatus, context: ExpenseStatusChangeContext): Expense | null {
+  async changeStatus(
+    id: string,
+    status: ExpenseStatus,
+    context: ExpenseStatusChangeContext
+  ): Promise<Expense | null> {
     const updated = this.expenses.updateStatus(id, status);
     if (updated) {
       console.info('[DbExpenseStore] changeStatus', { expenseId: id, actorId: context.actorId, status });
@@ -328,7 +339,7 @@ export class DbExpenseStore implements ExpenseStore {
     return updated;
   }
 
-  aggregateByCategory(filters: ExpenseAggregationFilters): Map<string, bigint> {
+  async aggregateByCategory(filters: ExpenseAggregationFilters): Promise<Map<string, bigint>> {
     const cacheKey = this.cache ? JSON.stringify({ filters }) : null;
     if (cacheKey && this.cache) {
       const cached = this.cache.get<Array<[string, string]>>(cacheKey);
@@ -352,7 +363,10 @@ export class DbExpenseStore implements ExpenseStore {
     return result;
   }
 
-  withIdempotency(key: string | null | undefined, handler: () => Expense): Expense {
+  async withIdempotency(
+    key: string | null | undefined,
+    handler: () => Promise<Expense>
+  ): Promise<Expense> {
     const normalizedKey = key?.trim();
     if (!normalizedKey) {
       return handler();
@@ -366,7 +380,7 @@ export class DbExpenseStore implements ExpenseStore {
       }
     }
 
-    const created = handler();
+    const created = await handler();
 
     try {
       this.idempotency.set(normalizedKey, created.id);

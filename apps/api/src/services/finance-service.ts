@@ -203,16 +203,16 @@ function ensureBudgetCurrency(budget: ProjectBudget | null, expenseCurrency: str
 export class FinanceService {
   constructor(private readonly expenseStore: ExpenseStore = getExpenseStore()) {}
 
-  listExpenses(filters: ExpenseFilters): FinanceListResult {
-    const items = this.expenseStore.list(filters);
+  async listExpenses(filters: ExpenseFilters): Promise<FinanceListResult> {
+    const items = await this.expenseStore.list(filters);
     return { items, total: items.length };
   }
 
-  findExpenseById(id: string): Expense | null {
+  findExpenseById(id: string): Promise<Expense | null> {
     return this.expenseStore.getById(id);
   }
 
-  createExpense(input: CreateExpenseInput, context: OperationContext): Expense {
+  async createExpense(input: CreateExpenseInput, context: OperationContext): Promise<Expense> {
     const idempotencyKey = context.idempotencyKey?.trim() ?? null;
     const amount = normalizeAmount(input.amount);
     ensurePositive(amount);
@@ -256,7 +256,7 @@ export class FinanceService {
       expense.taxAmount = taxAmount;
     }
 
-    return this.expenseStore.withIdempotency(idempotencyKey, () => {
+    return this.expenseStore.withIdempotency(idempotencyKey, async () => {
       const attachments = input.attachments?.map((file) => ({
         id: crypto.randomUUID(),
         expenseId: expense.id,
@@ -265,7 +265,7 @@ export class FinanceService {
         uploadedAt: now
       }));
 
-      const inserted = this.expenseStore.create({
+      const inserted = await this.expenseStore.create({
         expense,
         attachments,
         actorId: context.actorId
@@ -281,14 +281,14 @@ export class FinanceService {
       });
       emitEvent('expense.created', inserted.id, inserted);
 
-      this.recalculateBudget(inserted.projectId);
+      await this.recalculateBudget(inserted.projectId);
 
       return inserted;
     });
   }
 
-  updateExpense(id: string, patch: UpdateExpenseInput, context: OperationContext): Expense {
-    const current = this.expenseStore.getById(id);
+  async updateExpense(id: string, patch: UpdateExpenseInput, context: OperationContext): Promise<Expense> {
+    const current = await this.expenseStore.getById(id);
     if (!current) {
       throw new Error('EXPENSE_NOT_FOUND');
     }
@@ -353,7 +353,7 @@ export class FinanceService {
       uploadedAt: timestamp
     }));
 
-    const updated = this.expenseStore.update(id, {
+    const updated = await this.expenseStore.update(id, {
       patch: { ...updates, updatedAt: timestamp },
       attachments: attachmentRecords
     });
@@ -366,7 +366,7 @@ export class FinanceService {
     let statusChanged = false;
 
     if (pendingStatus) {
-      const withStatus = this.expenseStore.changeStatus(id, pendingStatus, { actorId: context.actorId });
+      const withStatus = await this.expenseStore.changeStatus(id, pendingStatus, { actorId: context.actorId });
       if (!withStatus) {
         throw new Error('EXPENSE_NOT_FOUND');
       }
@@ -386,13 +386,13 @@ export class FinanceService {
     });
 
     if (statusChanged || shouldRecalculate) {
-      this.recalculateBudget(result.projectId);
+      await this.recalculateBudget(result.projectId);
     }
 
     return result;
   }
 
-  getBudget(projectId: string): ProjectBudgetSnapshot | null {
+  async getBudget(projectId: string): Promise<ProjectBudgetSnapshot | null> {
     const budget = projectBudgetsRepository.find(projectId);
     if (!budget) {
       return null;
@@ -400,7 +400,11 @@ export class FinanceService {
     return this.buildSnapshot(budget);
   }
 
-  upsertBudget(projectId: string, input: CreateBudgetInput, context: OperationContext): ProjectBudgetSnapshot {
+  async upsertBudget(
+    projectId: string,
+    input: CreateBudgetInput,
+    context: OperationContext
+  ): Promise<ProjectBudgetSnapshot> {
     const currency = normalizeCurrency(input.currency);
     const total = input.total !== undefined ? normalizeAmount(input.total) : undefined;
     if (total !== undefined) {
@@ -444,13 +448,13 @@ export class FinanceService {
     });
     emitEvent('project_budget.updated', projectId, stored);
 
-    const snapshot = this.buildSnapshot(stored);
-    this.recalculateBudget(projectId);
+    const snapshot = await this.buildSnapshot(stored);
+    await this.recalculateBudget(projectId);
     return snapshot;
   }
 
-  private buildSnapshot(budget: ProjectBudget): ProjectBudgetSnapshot {
-    const aggregated = this.expenseStore.aggregateByCategory({
+  private async buildSnapshot(budget: ProjectBudget): Promise<ProjectBudgetSnapshot> {
+    const aggregated = await this.expenseStore.aggregateByCategory({
       projectId: budget.projectId,
       statuses: Array.from(FINAL_STATUSES)
     });
@@ -474,13 +478,13 @@ export class FinanceService {
     return snapshot;
   }
 
-  recalculateBudget(projectId: string): void {
+  async recalculateBudget(projectId: string): Promise<void> {
     const budget = projectBudgetsRepository.find(projectId);
     if (!budget) {
       return;
     }
 
-    const snapshot = this.buildSnapshot(budget);
+    const snapshot = await this.buildSnapshot(budget);
     projectBudgetsRepository.upsert(snapshot);
   }
 }

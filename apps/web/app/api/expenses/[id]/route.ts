@@ -45,7 +45,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     return jsonError('UNAUTHORIZED', { status: 401 });
   }
 
-  const current = financeService.findExpenseById(params.id);
+  const current = await financeService.findExpenseById(params.id);
   if (!current) {
     return jsonError('NOT_FOUND', { status: 404 });
   }
@@ -90,7 +90,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       updatePayload.attachments = attachments;
     }
 
-    const patch = financeService.updateExpense(params.id, updatePayload, { actorId: auth.userId });
+    const patch = await financeService.updateExpense(params.id, updatePayload, { actorId: auth.userId });
 
     return jsonOk(patch);
   } catch (error) {
