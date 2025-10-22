@@ -2,6 +2,12 @@ import { memory } from '../data/memory';
 import { amountToCents } from '../utils/money';
 import type { Expense, ExpenseAttachment, ExpenseStatus } from '../types';
 
+type GlobalIdempotencyScope = typeof globalThis & {
+  __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
+};
+
+const globalIdempotencyScope = globalThis as GlobalIdempotencyScope;
+
 export interface ExpenseFilters {
   workspaceId?: string;
   projectId?: string;
@@ -121,6 +127,33 @@ function matchesFilters(expense: Expense, filters: ExpenseFilters, statuses?: Se
 }
 
 export class MemoryExpenseStore implements ExpenseStore {
+  private idempotencyKeys: Map<string, string>;
+
+  constructor() {
+    this.idempotencyKeys =
+      globalIdempotencyScope.__collabverseFinanceIdempotencyKeys__ ?? memory.IDEMPOTENCY_KEYS;
+
+    globalIdempotencyScope.__collabverseFinanceIdempotencyKeys__ = this.idempotencyKeys;
+
+    if (memory.IDEMPOTENCY_KEYS !== this.idempotencyKeys) {
+      memory.IDEMPOTENCY_KEYS = this.idempotencyKeys;
+    }
+  }
+
+  private ensureIdempotencyMap(): Map<string, string> {
+    const globalMap = globalIdempotencyScope.__collabverseFinanceIdempotencyKeys__;
+    if (globalMap && globalMap !== this.idempotencyKeys) {
+      this.idempotencyKeys = globalMap;
+    }
+
+    if (memory.IDEMPOTENCY_KEYS !== this.idempotencyKeys) {
+      this.idempotencyKeys = memory.IDEMPOTENCY_KEYS;
+      globalIdempotencyScope.__collabverseFinanceIdempotencyKeys__ = this.idempotencyKeys;
+    }
+
+    return this.idempotencyKeys;
+  }
+
   create(input: ExpenseCreateInput): Expense {
     const stored = cloneExpense(input.expense);
     memory.EXPENSES.push(stored);
@@ -241,7 +274,8 @@ export class MemoryExpenseStore implements ExpenseStore {
       return handler();
     }
 
-    const existingId = memory.IDEMPOTENCY_KEYS.get(normalizedKey);
+    const store = this.ensureIdempotencyMap();
+    const existingId = store.get(normalizedKey);
     if (existingId) {
       const existing = this.getById(existingId);
       if (existing) {
@@ -250,7 +284,7 @@ export class MemoryExpenseStore implements ExpenseStore {
     }
 
     const created = handler();
-    memory.IDEMPOTENCY_KEYS.set(normalizedKey, created.id);
+    store.set(normalizedKey, created.id);
     return created;
   }
 }
@@ -333,7 +367,19 @@ export class DbExpenseStore implements ExpenseStore {
     }
 
     const created = handler();
-    this.idempotency.set(normalizedKey, created.id);
-    return created;
+
+    try {
+      this.idempotency.set(normalizedKey, created.id);
+      return created;
+    } catch (error) {
+      const existingIdOnConflict = this.idempotency.get(normalizedKey);
+      if (existingIdOnConflict) {
+        const existing = this.expenses.findById(existingIdOnConflict);
+        if (existing) {
+          return existing;
+        }
+      }
+      throw error;
+    }
   }
 }

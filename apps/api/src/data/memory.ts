@@ -13,6 +13,16 @@ import type {
   Task
 } from '../types';
 
+type GlobalMemoryScope = typeof globalThis & {
+  __collabverseFinanceIdempotencyKeys__?: Map<string, string>;
+};
+
+const globalMemoryScope = globalThis as GlobalMemoryScope;
+const globalIdempotencyKeys =
+  globalMemoryScope.__collabverseFinanceIdempotencyKeys__ ?? new Map<string, string>();
+
+globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = globalIdempotencyKeys;
+
 export const memory = {
   PROJECTS: [
     {
@@ -102,7 +112,7 @@ export const memory = {
   PROJECT_BUDGETS: [] as (ProjectBudget | ProjectBudgetSnapshot)[],
   AUDIT_LOG: [] as AuditLogEntry[],
   EVENTS: [] as DomainEvent[],
-  IDEMPOTENCY_KEYS: new Map<string, string>()
+  IDEMPOTENCY_KEYS: globalIdempotencyKeys
 };
 
 export function resetFinanceMemory(): void {
@@ -111,5 +121,7 @@ export function resetFinanceMemory(): void {
   memory.PROJECT_BUDGETS = [];
   memory.AUDIT_LOG = [];
   memory.EVENTS = [];
-  memory.IDEMPOTENCY_KEYS = new Map();
+  const freshKeys = new Map<string, string>();
+  memory.IDEMPOTENCY_KEYS = freshKeys;
+  globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = freshKeys;
 }

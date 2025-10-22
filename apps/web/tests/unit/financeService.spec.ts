@@ -1,4 +1,14 @@
-import { financeService, projectsRepository, resetFinanceMemory } from '@collabverse/api';
+import {
+  DbExpenseStore,
+  MemoryExpenseStore,
+  createFinanceService,
+  financeService,
+  projectsRepository,
+  resetFinanceMemory,
+  type Expense,
+  type ExpenseEntityRepository,
+  type ExpenseIdempotencyRepository
+} from '@collabverse/api';
 
 describe('financeService', () => {
   const projectId = projectsRepository.list()[0]?.id ?? 'proj-admin-onboarding';
@@ -85,5 +95,76 @@ describe('financeService', () => {
     expect(budget?.spentTotal).toBe('250.00');
     const design = budget?.categoriesUsage.find((item) => item.name === 'Design');
     expect(design?.spent).toBe('250.00');
+  });
+
+  it('uses idempotency keys when memory store handles duplicates', () => {
+    resetFinanceMemory();
+    const store = new MemoryExpenseStore();
+    const service = createFinanceService(store);
+    const context = { actorId: 'admin.demo@collabverse.test', idempotencyKey: 'mem-key' };
+    const payload = {
+      workspaceId: 'workspace',
+      projectId,
+      date: new Date().toISOString(),
+      amount: '150',
+      currency: 'USD',
+      category: 'Design'
+    } as const;
+
+    const first = service.createExpense({ ...payload }, context);
+    const second = service.createExpense({ ...payload, description: 'duplicate attempt' }, context);
+
+    expect(second.id).toBe(first.id);
+    expect(service.listExpenses({ projectId }).items).toHaveLength(1);
+  });
+
+  it('uses idempotency keys when db store reports conflicts', () => {
+    resetFinanceMemory();
+    const stored = new Map<string, Expense>();
+    const repo: ExpenseEntityRepository = {
+      create: jest.fn(({ data }) => {
+        stored.set(data.id, { ...data });
+        return { ...data };
+      }),
+      findById: jest.fn((id) => {
+        const existing = stored.get(id);
+        return existing ? { ...existing } : null;
+      }),
+      list: jest.fn(() => Array.from(stored.values()).map((item) => ({ ...item }))),
+      update: jest.fn(() => null),
+      updateStatus: jest.fn(() => null),
+      aggregateByCategory: jest.fn(() => [])
+    };
+
+    const idempotencyKeys = new Map<string, string>();
+    const idempotencyRepo: ExpenseIdempotencyRepository = {
+      get: jest.fn((key) => idempotencyKeys.get(key) ?? null),
+      set: jest.fn((key, value) => {
+        if (idempotencyKeys.has(key)) {
+          throw new Error('duplicate key');
+        }
+        idempotencyKeys.set(key, value);
+      })
+    };
+
+    const service = createFinanceService(new DbExpenseStore({ expenses: repo, idempotency: idempotencyRepo }));
+    const context = { actorId: 'admin.demo@collabverse.test', idempotencyKey: 'db-key' };
+    const payload = {
+      workspaceId: 'workspace',
+      projectId,
+      date: new Date().toISOString(),
+      amount: '175',
+      currency: 'USD',
+      category: 'Design'
+    } as const;
+
+    const first = service.createExpense({ ...payload }, context);
+    expect(first).toBeDefined();
+    expect(repo.create).toHaveBeenCalledTimes(1);
+
+    const second = service.createExpense({ ...payload }, context);
+    expect(second.id).toBe(first.id);
+    expect(repo.create).toHaveBeenCalledTimes(1);
+    expect(idempotencyRepo.set).toHaveBeenCalledTimes(1);
   });
 });
