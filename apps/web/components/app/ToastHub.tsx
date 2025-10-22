@@ -4,7 +4,14 @@ import clsx from 'clsx';
 import { useEffect, useRef, useState } from 'react';
 import { TOAST_EVENT, type ToastPayload } from '@/lib/ui/toast';
 
-type ToastItem = Required<Pick<ToastPayload, 'id' | 'message' | 'tone'>>;
+type ToastItem = {
+  id: string;
+  message: string;
+  tone: NonNullable<ToastPayload['tone']>;
+  actionLabel?: string;
+  onAction?: () => void | Promise<void>;
+  duration?: number;
+};
 
 const toneStyles: Record<ToastItem['tone'], string> = {
   info: 'border-sky-500/40 bg-sky-500/10 text-sky-100',
@@ -26,11 +33,22 @@ export default function ToastHub() {
 
       const id = detail.id ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const tone = detail.tone ?? 'info';
-      setToasts((items) => [...items, { id, message: detail.message, tone }]);
+      const duration = detail.duration ?? (detail.actionLabel ? 6000 : 3200);
+      setToasts((items) => [
+        ...items,
+        {
+          id,
+          message: detail.message,
+          tone,
+          actionLabel: detail.actionLabel,
+          onAction: detail.onAction,
+          duration
+        }
+      ]);
       timersMap[id] = window.setTimeout(() => {
         setToasts((items) => items.filter((item) => item.id !== id));
         delete timersMap[id];
-      }, 3200);
+      }, duration);
     };
 
     document.addEventListener(TOAST_EVENT, handler as EventListener);
@@ -55,7 +73,31 @@ export default function ToastHub() {
             toneStyles[toast.tone]
           )}
         >
-          {toast.message}
+          <div className="flex items-start justify-between gap-4">
+            <p className="leading-tight">{toast.message}</p>
+            {toast.actionLabel ? (
+              <button
+                type="button"
+                className="rounded-md border border-current px-2 py-1 text-xs uppercase tracking-[0.18em]"
+                onClick={async () => {
+                  if (toast.onAction) {
+                    try {
+                      await toast.onAction();
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }
+                  setToasts((items) => items.filter((item) => item.id !== toast.id));
+                  if (timersMap[toast.id]) {
+                    window.clearTimeout(timersMap[toast.id]!);
+                    delete timersMap[toast.id];
+                  }
+                }}
+              >
+                {toast.actionLabel}
+              </button>
+            ) : null}
+          </div>
         </div>
       ))}
     </div>

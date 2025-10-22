@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { flags } from '@/lib/flags';
-import type { Task, TaskStatus } from '@/domain/projects/types';
-import { memory } from '@/mocks/projects-memory';
+import type { TaskStatus } from '@/domain/projects/types';
+import { InvalidTaskStatusError, tasksService } from '@collabverse/api';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1) {
@@ -10,16 +10,23 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   const sp = req.nextUrl.searchParams;
-  const status = sp.get('status') as TaskStatus | null;
+  const statusParams = sp.getAll('status').flatMap((value) => value.split(','));
+  const statuses = statusParams
+    .map((value) => value.trim())
+    .filter((value): value is TaskStatus => ['new', 'in_progress', 'review', 'done', 'blocked'].includes(value as TaskStatus));
   const iterationId = sp.get('iterationId');
+  const assigneeId = sp.get('assignee');
+  const labelParams = sp.getAll('label').flatMap((value) => value.split(','));
+  const labels = labelParams.map((value) => value.trim()).filter(Boolean);
+  const query = sp.get('q');
 
-  let items = memory.TASKS.filter((task) => task.projectId === params.id);
-  if (status) {
-    items = items.filter((task) => task.status === status);
-  }
-  if (iterationId) {
-    items = items.filter((task) => task.iterationId === iterationId);
-  }
+  const items = tasksService.listByProject(params.id, {
+    statuses,
+    iterationId: iterationId ?? undefined,
+    assigneeId: assigneeId ?? undefined,
+    labels,
+    query: query ?? undefined
+  });
 
   return NextResponse.json({ items });
 }
@@ -48,31 +55,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 
   const b = parsed.data;
-  const now = new Date().toISOString();
-  const status: TaskStatus = b.status ?? 'new';
-
-  const base = {
-    id: crypto.randomUUID(),
-    projectId: params.id,
-    title: b.title ?? 'Новая задача',
-    description: b.description ?? '',
-    status,
-    createdAt: now,
-    updatedAt: now
-  };
-
-  const task: Task = {
-    ...base,
-    ...(b.parentId ? { parentId: b.parentId } : {}),
-    ...(b.iterationId ? { iterationId: b.iterationId } : {}),
-    ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
-    ...(b.startAt ? { startAt: b.startAt } : {}),
-    ...(b.dueAt ? { dueAt: b.dueAt } : {}),
-    ...(b.priority ? { priority: b.priority } : {}),
-    ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
-  } satisfies Task;
-
-  memory.TASKS.push(task);
-
-  return NextResponse.json(task, { status: 201 });
+  try {
+    const task = tasksService.create(params.id, {
+      title: b.title,
+      description: b.description,
+      status: b.status,
+      parentId: b.parentId,
+      iterationId: b.iterationId,
+      assigneeId: b.assigneeId,
+      startAt: b.startAt,
+      dueAt: b.dueAt,
+      priority: b.priority,
+      labels: b.labels
+    });
+    return NextResponse.json(task, { status: 201 });
+  } catch (err) {
+    if (err instanceof InvalidTaskStatusError) {
+      return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'server_error' }, { status: 500 });
+  }
 }
