@@ -1,4 +1,17 @@
-import type { Iteration, Project, ProjectTemplate, ProjectWorkflow, Task } from '../types';
+import type {
+  AuditLogEntry,
+  DomainEvent,
+  Expense,
+  ExpenseAttachment,
+  Iteration,
+  Project,
+  ProjectBudget,
+  ProjectBudgetSnapshot,
+  ProjectMember,
+  ProjectTemplate,
+  ProjectWorkflow,
+  Task
+} from '../types';
 
 export const memory = {
   PROJECTS: [
@@ -73,5 +86,30 @@ export const memory = {
     { id: 'tpl-landing', title: 'Лендинг', kind: 'landing', summary: 'Одностраничник с формой' },
     { id: 'tpl-mkt', title: 'Маркетинг', kind: 'marketing', summary: 'Кампания + контент-план' },
     { id: 'tpl-product', title: 'Digital-продукт', kind: 'product', summary: 'MVP флоу + бэклог' }
-  ] as ProjectTemplate[]
+  ] as ProjectTemplate[],
+  PROJECT_MEMBERS: {
+    'proj-admin-onboarding': [
+      { userId: 'admin.demo@collabverse.test', role: 'owner' },
+      { userId: 'user.demo@collabverse.test', role: 'member' }
+    ],
+    'proj-admin-landing-archive': [
+      { userId: 'admin.demo@collabverse.test', role: 'owner' },
+      { userId: 'finance.pm@collabverse.test', role: 'admin' }
+    ]
+  } as Record<string, ProjectMember[]>,
+  EXPENSES: [] as Expense[],
+  EXPENSE_ATTACHMENTS: [] as ExpenseAttachment[],
+  PROJECT_BUDGETS: [] as (ProjectBudget | ProjectBudgetSnapshot)[],
+  AUDIT_LOG: [] as AuditLogEntry[],
+  EVENTS: [] as DomainEvent[],
+  IDEMPOTENCY_KEYS: new Map<string, string>()
 };
+
+export function resetFinanceMemory(): void {
+  memory.EXPENSES = [];
+  memory.EXPENSE_ATTACHMENTS = [];
+  memory.PROJECT_BUDGETS = [];
+  memory.AUDIT_LOG = [];
+  memory.EVENTS = [];
+  memory.IDEMPOTENCY_KEYS = new Map();
+}
