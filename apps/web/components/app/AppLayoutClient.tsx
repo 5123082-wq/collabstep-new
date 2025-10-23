@@ -102,9 +102,9 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   return (
     <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-      <div className="flex min-h-screen bg-transparent text-neutral-100">
+      <div className="flex h-screen overflow-hidden bg-transparent text-neutral-100">
       <Sidebar roles={roles} />
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex h-screen flex-1 flex-col overflow-hidden">
         <AppTopbar
           profile={{ email: session.email, role: session.role }}
           onOpenCreate={openCreateMenu}
