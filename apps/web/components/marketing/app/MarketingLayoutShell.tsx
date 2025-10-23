@@ -1,12 +1,7 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import clsx from 'clsx';
 import { MARKETING_HUB_PATH } from '@/components/app/LeftMenu.config';
 
-const marketingTabs = [
+export const marketingNavigation = [
   {
     id: 'overview',
     label: 'Обзор',
@@ -40,47 +35,5 @@ const marketingTabs = [
 ] as const;
 
 export default function MarketingLayoutShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-
-  return (
-    <div className="space-y-8">
-      <nav
-        aria-label="Подразделы маркетинга"
-        className="overflow-x-auto rounded-3xl border border-neutral-900 bg-neutral-950/70 p-4 shadow-[0_0_24px_rgba(0,0,0,0.2)]"
-      >
-        <div className="pb-3">
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Маркетинг</p>
-          <h1 className="mt-2 text-2xl font-semibold text-white">Рабочие пространства</h1>
-          <p className="mt-2 max-w-2xl text-xs text-neutral-500">
-            Переключайтесь между обзором, кампаниями, исследованиями, контентом и аналитикой.
-          </p>
-        </div>
-        <ul className="flex min-w-full gap-3 pt-1">
-          {marketingTabs.map((tab) => {
-            const active = pathname.startsWith(tab.href);
-            return (
-              <li key={tab.id}>
-                <Link
-                  href={tab.href}
-                  className={clsx(
-                    'flex min-w-[220px] flex-col gap-1 rounded-2xl border px-4 py-3 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                    active
-                      ? 'border-indigo-500/60 bg-indigo-500/15 text-white'
-                      : 'border-neutral-800 bg-neutral-900/60 text-neutral-300 hover:border-indigo-500/40 hover:text-white'
-                  )}
-                  aria-current={active ? 'page' : undefined}
-                >
-                  <span className="text-sm font-semibold">{tab.label}</span>
-                  <span className="text-xs text-neutral-500">{tab.description}</span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-      <div className="space-y-8">{children}</div>
-    </div>
-  );
+  return <div className="space-y-8">{children}</div>;
 }
-
-export const marketingNavigation = marketingTabs.map(({ id, label, href }) => ({ id, label, href }));
