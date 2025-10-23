@@ -1,4 +1,4 @@
-import FeatureComingSoon from '@/components/app/FeatureComingSoon';
+import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
 import { isFeatureEnabled } from '@/lib/utils';
 import ProjectsOverviewPlaceholder from './projects-overview-placeholder';
 
@@ -8,7 +8,7 @@ export default function ProjectsOverviewPage() {
   if (!featureEnabled) {
     return (
       <FeatureComingSoon
-        title="Обзор проектов скоро откроется"
+        title="Обзор проектов"
         description="Мы собираем данные о проектах и готовим новый интерфейс. Как только раздел будет готов, здесь появится полный список инициатив."
       />
     );
