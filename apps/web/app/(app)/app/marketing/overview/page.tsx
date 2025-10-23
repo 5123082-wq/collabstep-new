@@ -43,6 +43,44 @@ const metrics: MarketingMetric[] = [
   }
 ];
 
+const connectedWorkspaces = [
+  {
+    id: 'projects',
+    title: 'Проекты',
+    description: 'Создавайте кампании и исследования напрямую из дорожек проекта и отслеживайте их как deliverables.',
+    link: PROJECTS_HUB_PATH,
+    linkLabel: 'Открыть проекты'
+  },
+  {
+    id: 'finance',
+    title: 'Финансы',
+    description: 'Сверяйте бюджеты и факт расходов, чтобы считать ROI кампаний и планировать закупки.',
+    link: '/app/finance/expenses',
+    linkLabel: 'Перейти к бюджету'
+  }
+];
+
+const hubSignals = [
+  {
+    id: 'okr',
+    label: 'OKR & цели',
+    value: '4 активных',
+    helper: '2 цели ждут апдейта этой недели'
+  },
+  {
+    id: 'integrations',
+    label: 'Интеграции',
+    value: '8 источников',
+    helper: 'CRM синхронизирована 2 часа назад'
+  },
+  {
+    id: 'pipeline',
+    label: 'Лид-стрим',
+    value: '64 SQL',
+    helper: 'в работе у команды продаж'
+  }
+];
+
 const okrGoals = [
   {
     id: 'okr-awareness',
@@ -131,6 +169,50 @@ const upcomingTasks = [
 export default function MarketingOverviewPage() {
   return (
     <div className="space-y-8">
+      <section className="space-y-6 rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="max-w-2xl space-y-3">
+            <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Маркетинговый хаб</p>
+            <h1 className="text-3xl font-semibold text-white">Обзор маркетинга проекта</h1>
+            <p className="text-sm text-neutral-400">
+              Дашборд объединяет ключевые метрики маркетинга и связи с проектами и финансами. Из одной точки запускайте
+              кампании, исследования и отслеживайте возврат инвестиций.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 text-xs text-neutral-300">
+            {hubSignals.map((signal) => (
+              <div
+                key={signal.id}
+                className="rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-3 shadow-[0_0_12px_rgba(0,0,0,0.12)]"
+              >
+                <p className="text-[0.65rem] uppercase tracking-[0.3em] text-neutral-500">{signal.label}</p>
+                <p className="mt-2 text-lg font-semibold text-white">{signal.value}</p>
+                <p className="mt-1 text-xs text-neutral-400">{signal.helper}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {connectedWorkspaces.map((workspace) => (
+            <div
+              key={workspace.id}
+              className="flex flex-col justify-between gap-4 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 sm:flex-row sm:items-center"
+            >
+              <div className="max-w-md space-y-2">
+                <p className="text-sm font-semibold text-white">{workspace.title}</p>
+                <p className="text-xs text-neutral-400">{workspace.description}</p>
+              </div>
+              <Link
+                href={workspace.link}
+                className="inline-flex items-center justify-center rounded-2xl border border-indigo-500/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-indigo-100 transition hover:border-indigo-300 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+              >
+                {workspace.linkLabel}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <MarketingHeader
         title="Маркетинговый обзор"
         description="Единый дашборд целей, кампаний и лидов проекта. Позволяет сверять маркетинг со стадиями проекта и бюджетом."
