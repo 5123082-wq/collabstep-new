@@ -536,6 +536,10 @@ export default function FinanceExpensesPageClient({
         const report: ImportReport = { processed: rows.length, created: 0, errors: [] };
         for (let index = 0; index < rows.length; index += 1) {
           const row = rows[index];
+          if (!row) {
+            report.errors.push({ row: index + 2, reason: 'Некорректная строка импорта' });
+            continue;
+          }
           const projectId = resolveProjectId(row.project);
           if (!projectId) {
             report.errors.push({ row: index + 2, reason: 'Проект не найден' });
