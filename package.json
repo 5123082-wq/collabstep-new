@@ -12,6 +12,7 @@
     "test": "jest -u",
     "test:e2e": "pnpm --filter @collabverse/web build && playwright test",
     "verify:routes": "node apps/web/scripts/verify-routes.mjs",
+    "verify:preflight": "node scripts/verify-preflight.mjs",
     "ensure-env": "node scripts/ensure-env.mjs",
     "verify": "pnpm ensure-env && pnpm -w lint && pnpm --filter @collabverse/web typecheck && pnpm --filter @collabverse/web build && pnpm -w --filter @collabverse/web run check:routes && pnpm test && pnpm exec playwright install --with-deps && pnpm test:e2e && pnpm verify:routes && node scripts/run-vercel-build.mjs",
     "seed:finance": "tsx scripts/seed-finance.ts",

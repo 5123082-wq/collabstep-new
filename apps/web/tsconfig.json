@@ -51,6 +51,10 @@
     "**/*.tsx"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "app/(app)/app/**/_wip/**",
+    "app/(app)/app/**/__drafts__/**",
+    "app/(app)/project/**/_wip/**",
+    "app/(app)/project/**/__drafts__/**"
   ]
 }
