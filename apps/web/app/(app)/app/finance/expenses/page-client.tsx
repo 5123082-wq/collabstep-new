@@ -88,7 +88,7 @@ function getPresetRange(preset: PeriodPresetId): { dateFrom?: string; dateTo?: s
       return { dateFrom: formatDateInput(from), dateTo: formatDateInput(to) };
     }
     default:
-      return { dateFrom: undefined, dateTo: undefined };
+      return {};
   }
 }
 
