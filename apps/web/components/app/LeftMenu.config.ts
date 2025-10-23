@@ -2,6 +2,7 @@ export type LeftMenuIcon =
   | 'dashboard'
   | 'projects'
   | 'marketplace'
+  | 'marketing'
   | 'ai'
   | 'community'
   | 'finance'
@@ -49,6 +50,7 @@ export type LeftMenuSection = {
 };
 
 export const PROJECTS_HUB_PATH = '/app/projects';
+export const MARKETING_HUB_PATH = '/app/marketing';
 export const PROJECTS_MENU_SECTION: LeftMenuSection = {
   id: 'projects',
   label: 'Проекты',
@@ -102,6 +104,19 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
       { id: 'performers-vacancies', label: 'Вакансии и задачи', href: '/app/performers/vacancies' },
       { id: 'performers-my-vacancies', label: 'Мои вакансии', href: '/app/performers/my-vacancies' },
       { id: 'performers-responses', label: 'Отклики и приглашения', href: '/app/performers/responses' }
+    ]
+  },
+  {
+    id: 'marketing',
+    label: 'Маркетинг',
+    icon: 'marketing',
+    href: `${MARKETING_HUB_PATH}/overview`,
+    children: [
+      { id: 'marketing-overview', label: 'Обзор', href: `${MARKETING_HUB_PATH}/overview` },
+      { id: 'marketing-campaigns', label: 'Кампании & Реклама', href: `${MARKETING_HUB_PATH}/campaigns` },
+      { id: 'marketing-research', label: 'Исследования', href: `${MARKETING_HUB_PATH}/research` },
+      { id: 'marketing-content-seo', label: 'Контент & SEO', href: `${MARKETING_HUB_PATH}/content-seo` },
+      { id: 'marketing-analytics', label: 'Аналитика & Интеграции', href: `${MARKETING_HUB_PATH}/analytics` }
     ]
   },
   {
