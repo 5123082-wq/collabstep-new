@@ -16,7 +16,7 @@ import type {
 
 export const DEFAULT_WORKSPACE_USER_ID = 'admin.demo@collabverse.test';
 
-const WORKSPACE_USERS: WorkspaceUser[] = [
+export const WORKSPACE_USERS: WorkspaceUser[] = [
   {
     id: DEFAULT_WORKSPACE_USER_ID,
     name: 'Алина Админ',
