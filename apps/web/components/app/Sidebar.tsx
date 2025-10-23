@@ -50,7 +50,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   }));
 
   return (
-    <aside className="hidden h-full w-[288px] flex-col border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
+    <aside className="hidden h-full w-[288px] flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
       <div className="px-2">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
       </div>
