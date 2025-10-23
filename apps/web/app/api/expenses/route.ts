@@ -1,5 +1,7 @@
 import '@/lib/finance/bootstrap';
 import {
+  amountToCents,
+  centsToAmount,
   createFinanceService,
   getExpenseStore,
   projectsRepository,
@@ -112,6 +114,25 @@ function filterByAccess(
   });
 }
 
+function summarizeExpenses(expenses: Expense[]) {
+  const totals = new Map<string, bigint>();
+  for (const expense of expenses) {
+    try {
+      const cents = amountToCents(expense.amount);
+      totals.set(expense.currency, (totals.get(expense.currency) ?? 0n) + cents);
+    } catch (err) {
+      console.error('Failed to aggregate expense amount', { expenseId: expense.id, error: err });
+    }
+  }
+  return {
+    totalCount: expenses.length,
+    totalsByCurrency: Array.from(totals.entries()).map(([currency, cents]) => ({
+      currency,
+      amount: centsToAmount(cents)
+    }))
+  };
+}
+
 export async function GET(request: Request) {
   const auth = getAuthFromRequest(request);
   if (!auth) {
@@ -156,7 +177,7 @@ export async function GET(request: Request) {
   const filtered = filterByAccess(items, accessMap, auth.userId);
   const { items: paginated, pagination } = applyPagination(filtered, page, pageSize);
 
-  return jsonOk({ items: paginated, pagination });
+  return jsonOk({ items: paginated, pagination, summary: summarizeExpenses(filtered) });
 }
 
 export async function POST(request: Request) {

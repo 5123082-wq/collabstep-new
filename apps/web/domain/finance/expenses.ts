@@ -32,10 +32,21 @@ export function normalizeExpense(raw: Expense): Expense {
   };
 }
 
+export type ExpenseSummary = {
+  totalCount: number;
+  totalsByCurrency: Array<{ currency: string; amount: string }>;
+};
+
 export type ExpensesResponse = {
   items: Expense[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  summary: ExpenseSummary;
 };
+
+export function formatAttachmentCount(attachments?: ExpenseAttachment[]): string {
+  const count = Array.isArray(attachments) ? attachments.length : 0;
+  return count > 0 ? `${count} файл(ов)` : '—';
+}
 
 export type AuditEvent = {
   id: string;
@@ -71,7 +82,10 @@ export const STATUS_NEXT: Record<ExpenseStatus, ExpenseStatus | null> = {
 export const PAGE_SIZE_OPTIONS = [10, 20, 50];
 export const DEMO_WORKSPACE_ID = 'ws-demo';
 
-export type ExpenseDraft = Partial<Expense> & { attachments?: ExpenseAttachment[] };
+export type ExpenseDraft = Omit<Partial<Expense>, 'projectId'> & {
+  projectId?: string | null;
+  attachments?: ExpenseAttachment[];
+};
 
 export type DrawerState = {
   open: boolean;

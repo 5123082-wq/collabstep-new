@@ -20,16 +20,19 @@ import {
   drawerReducer,
   formatExpenseAmount,
   normalizeExpense,
+  formatAttachmentCount,
   type AuditEvent,
   type DrawerState,
   type Expense,
   type ExpensesResponse,
+  type ExpenseSummary,
   type ExpenseStatus,
   type FinanceRole
 } from '@/domain/finance/expenses';
-import { parseExpensesCsv } from '@/lib/finance/csv-import';
+import { parseExpensesCsv, type CsvParseError } from '@/lib/finance/csv-import';
 import { buildExpenseFilterParams, parseExpenseFilters, type ExpenseListFilters } from '@/lib/finance/filters';
 import { formatMoney, parseAmountInput } from '@/lib/finance/format-money';
+import { getExpensePermissions } from '@/lib/finance/permissions';
 import { cn } from '@/lib/utils';
 
 const PERIOD_PRESETS = [
@@ -46,7 +49,7 @@ type ProjectOption = ExpenseProjectOption & { role: FinanceRole };
 type ImportReport = {
   processed: number;
   created: number;
-  errors: Array<{ row: number; reason: string }>;
+  errors: CsvParseError[];
 };
 
 type ImportState = {
@@ -140,6 +143,7 @@ export default function FinanceExpensesPageClient({
     return parseExpenseFilters(params);
   });
   const [items, setItems] = useState<Expense[]>([]);
+  const [summary, setSummary] = useState<ExpenseSummary>({ totalCount: 0, totalsByCurrency: [] });
   const [pagination, setPagination] = useState({ page: filters.page, pageSize: filters.pageSize, total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +166,8 @@ export default function FinanceExpensesPageClient({
   useEffect(() => {
     setFilters(parseExpenseFilters(liveSearchParams));
   }, [liveSearchParams]);
+
+  const permissions = useMemo(() => getExpensePermissions(role), [role]);
 
   const queryKey = useMemo(() => {
     const params = new URLSearchParams();
@@ -240,13 +246,26 @@ export default function FinanceExpensesPageClient({
         if (!controller.signal.aborted) {
           const normalizedItems = (payload.items ?? []).map((item) => normalizeExpense(item));
           setItems(normalizedItems);
-          setPagination(payload.pagination ?? { page: filters.page, pageSize: filters.pageSize, total: payload.items.length, totalPages: 1 });
+          const nextSummary =
+            payload.summary ??
+            ({
+              totalCount: normalizedItems.length,
+              totalsByCurrency: []
+            } satisfies ExpenseSummary);
+          setSummary(nextSummary);
+          if (payload.pagination) {
+            setPagination({ ...payload.pagination, total: nextSummary.totalCount });
+          } else {
+            const totalPages = Math.max(1, Math.ceil(nextSummary.totalCount / filters.pageSize));
+            setPagination({ page: filters.page, pageSize: filters.pageSize, total: nextSummary.totalCount, totalPages });
+          }
         }
       } catch (err) {
         if (!controller.signal.aborted) {
           console.error(err);
           setError('Не удалось загрузить расходы');
           setItems([]);
+          setSummary({ totalCount: 0, totalsByCurrency: [] });
           setPagination({ page: filters.page, pageSize: filters.pageSize, total: 0, totalPages: 1 });
         }
       } finally {
@@ -294,13 +313,13 @@ export default function FinanceExpensesPageClient({
   }, [availableProjectOptions, drawerState.draft.projectId, projects]);
 
   const openCreate = useCallback(() => {
-    if (role === 'viewer') return;
+    if (!permissions.canCreate) return;
     dispatchDrawer({ type: 'open-create', payload: { currency: 'RUB' } });
     const preferredProject = filters.projectId ?? availableProjectOptions[0]?.id;
     if (preferredProject) {
       dispatchDrawer({ type: 'update', payload: { projectId: preferredProject } });
     }
-  }, [availableProjectOptions, filters.projectId, role]);
+  }, [availableProjectOptions, filters.projectId, permissions.canCreate]);
 
   const openExpense = useCallback(
     (expense: Expense) => {
@@ -316,7 +335,7 @@ export default function FinanceExpensesPageClient({
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (role === 'viewer') {
+    if (!permissions.canEdit) {
       return;
     }
     if (!drawerState.draft.projectId) {
@@ -358,11 +377,11 @@ export default function FinanceExpensesPageClient({
     } finally {
       dispatchDrawer({ type: 'set-saving', payload: false });
     }
-  }, [closeDrawer, drawerState.draft, drawerState.expense, filters.page, role, updateQuery]);
+  }, [closeDrawer, drawerState.draft, drawerState.expense, filters.page, permissions.canEdit, updateQuery]);
 
   const handleStatusChange = useCallback(
     async (status: ExpenseStatus) => {
-      if (!drawerState.expense || role === 'viewer') return;
+      if (!drawerState.expense || !permissions.canChangeStatus) return;
       dispatchDrawer({ type: 'set-saving', payload: true });
       dispatchDrawer({ type: 'set-error', payload: null });
       try {
@@ -383,7 +402,7 @@ export default function FinanceExpensesPageClient({
         dispatchDrawer({ type: 'set-saving', payload: false });
       }
     },
-    [closeDrawer, drawerState.expense, filters.page, role, updateQuery]
+    [closeDrawer, drawerState.expense, filters.page, permissions.canChangeStatus, updateQuery]
   );
 
   const loadHistory = useCallback(
@@ -410,16 +429,7 @@ export default function FinanceExpensesPageClient({
     }
   }, [drawerState.open, drawerState.expense, drawerState.tab, drawerState.history.length, loadHistory]);
 
-  const totalsByCurrency = useMemo(() => {
-    const map = new Map<string, number>();
-    items.forEach((item) => {
-      const amount = Number(item.amount ?? 0);
-      if (Number.isFinite(amount)) {
-        map.set(item.currency, (map.get(item.currency) ?? 0) + amount);
-      }
-    });
-    return Array.from(map.entries());
-  }, [items]);
+  const totalsByCurrency = summary.totalsByCurrency;
 
   const categories = useMemo(() => {
     const list = new Set<string>();
@@ -459,6 +469,9 @@ export default function FinanceExpensesPageClient({
   );
 
   const handleExportCsv = useCallback(async () => {
+    if (!permissions.canExport) {
+      return;
+    }
     try {
       setExporting(true);
       const params = new URLSearchParams(queryKey);
@@ -511,7 +524,7 @@ export default function FinanceExpensesPageClient({
     } finally {
       setExporting(false);
     }
-  }, [queryKey]);
+  }, [permissions.canExport, queryKey]);
 
   const resolveProjectId = useCallback(
     (value: string): string | null => {
@@ -531,12 +544,15 @@ export default function FinanceExpensesPageClient({
 
   const handleImportFile = useCallback(
     async (file: File) => {
+      if (!permissions.canImport) {
+        return;
+      }
       setImportState((state) => ({ ...state, loading: true, report: null, fileName: file.name }));
       try {
         const text = await file.text();
-        const rows = parseExpensesCsv(text);
-        const report: ImportReport = { processed: rows.length, created: 0, errors: [] };
-        for (const row of rows) {
+        const { records, errors: validationErrors, processed } = parseExpensesCsv(text);
+        const report: ImportReport = { processed, created: 0, errors: [...validationErrors] };
+        for (const row of records) {
           const rowNumber = row.rowNumber;
           const projectId = resolveProjectId(row.project);
           if (!projectId) {
@@ -585,7 +601,7 @@ export default function FinanceExpensesPageClient({
         }));
       }
     },
-    [projects, resolveProjectId, updateQuery]
+    [permissions.canImport, projects, resolveProjectId, updateQuery]
   );
 
   const presetButtons = PERIOD_PRESETS.map((preset) => {
@@ -613,49 +629,51 @@ export default function FinanceExpensesPageClient({
           <p className="text-sm text-neutral-400">Глобальный журнал расходов по всем проектам.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={openCreate}
-            disabled={role === 'viewer' || (!availableProjectOptions.length && !filters.projectId)}
-            className={cn(
-              'rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition',
-              role === 'viewer' || (!availableProjectOptions.length && !filters.projectId)
-                ? 'opacity-40'
-                : 'hover:bg-indigo-400'
-            )}
-          >
-            Новая трата
-          </button>
-          <button
-            type="button"
-            onClick={() => setImportState((state) => ({ ...state, open: true, report: null }))}
-            disabled={role === 'viewer'}
-            className={cn(
-              'rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition',
-              role === 'viewer' ? 'opacity-40' : 'hover:border-indigo-400/60 hover:text-white'
-            )}
-          >
-            Импорт CSV
-          </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={exporting || !items.length}
-            className={cn(
-              'rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition',
-              exporting || !items.length ? 'opacity-40' : 'hover:border-indigo-400/60 hover:text-white'
-            )}
-          >
-            {exporting ? 'Экспорт...' : 'Экспорт CSV'}
-          </button>
-          <button
-            type="button"
-            className="rounded-full border border-neutral-800 px-4 py-2 text-sm text-neutral-400"
-            disabled
-            title="Скоро"
-          >
-            Экспорт XLSX
-          </button>
+          {permissions.canCreate ? (
+            <button
+              type="button"
+              onClick={openCreate}
+              disabled={!availableProjectOptions.length && !filters.projectId}
+              className={cn(
+                'rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition',
+                !availableProjectOptions.length && !filters.projectId ? 'opacity-40' : 'hover:bg-indigo-400'
+              )}
+            >
+              Новая трата
+            </button>
+          ) : null}
+          {permissions.canImport ? (
+            <button
+              type="button"
+              onClick={() => setImportState((state) => ({ ...state, open: true, report: null }))}
+              className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition hover:border-indigo-400/60 hover:text-white"
+            >
+              Импорт CSV
+            </button>
+          ) : null}
+          {permissions.canExport ? (
+            <>
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                disabled={exporting || !items.length}
+                className={cn(
+                  'rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition',
+                  exporting || !items.length ? 'opacity-40' : 'hover:border-indigo-400/60 hover:text-white'
+                )}
+              >
+                {exporting ? 'Экспорт...' : 'Экспорт CSV'}
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-neutral-800 px-4 py-2 text-sm text-neutral-400"
+                disabled
+                title="Скоро"
+              >
+                Экспорт XLSX
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 
@@ -765,13 +783,13 @@ export default function FinanceExpensesPageClient({
       <div className="rounded-3xl border border-neutral-900 bg-neutral-950/60 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-neutral-400">
           <div className="flex flex-wrap items-center gap-4">
-            <span>Записей: {pagination.total}</span>
+            <span>Записей: {summary.totalCount}</span>
             <span className="flex items-center gap-2">
               Итого:
               {totalsByCurrency.length ? (
-                totalsByCurrency.map(([currency, amount]) => (
+                totalsByCurrency.map(({ currency, amount }) => (
                   <span key={currency} className="font-semibold text-white">
-                    {formatExpenseAmount(amount.toFixed(2), currency, 'ru-RU')}
+                    {formatExpenseAmount(amount, currency, 'ru-RU')}
                   </span>
                 ))
               ) : (
@@ -831,14 +849,12 @@ export default function FinanceExpensesPageClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-900 text-sm text-neutral-300">
-                  {items.map((item) => {
-                    const attachmentCount = Array.isArray(item.attachments) ? item.attachments.length : 0;
-                    return (
-                      <tr
-                        key={item.id}
-                        className="cursor-pointer transition hover:bg-neutral-900/60"
-                        onClick={() => openExpense(item)}
-                      >
+                  {items.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="cursor-pointer transition hover:bg-neutral-900/60"
+                      onClick={() => openExpense(item)}
+                    >
                       <td className="px-4 py-3 align-top text-sm text-neutral-100">
                         {new Date(item.date).toLocaleDateString('ru-RU')}
                       </td>
@@ -852,12 +868,11 @@ export default function FinanceExpensesPageClient({
                       <td className="px-4 py-3 align-top">
                         <Badge className={cn('px-2 py-1 text-xs', STATUS_COLORS[item.status])}>{STATUS_LABELS[item.status]}</Badge>
                       </td>
-                        <td className="px-4 py-3 align-top text-sm text-neutral-300">
-                          {attachmentCount ? `${attachmentCount} файл(ов)` : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      <td className="px-4 py-3 align-top text-sm text-neutral-300">
+                        {formatAttachmentCount(item.attachments)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

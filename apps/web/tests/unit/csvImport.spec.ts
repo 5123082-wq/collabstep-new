@@ -3,9 +3,11 @@ import { parseExpensesCsv } from '@/lib/finance/csv-import';
 describe('parseExpensesCsv', () => {
   it('parses basic csv', () => {
     const csv = `Date,Amount,Currency,Category,Description,Vendor,Project\n2024-01-01,1000,RUB,Маркетинг,Кампания,Agency,proj-1`;
-    const rows = parseExpensesCsv(csv);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toEqual({
+    const result = parseExpensesCsv(csv);
+    expect(result.processed).toBe(1);
+    expect(result.errors).toHaveLength(0);
+    expect(result.records).toHaveLength(1);
+    expect(result.records[0]).toEqual({
       date: '2024-01-01',
       amount: '1000',
       currency: 'RUB',
@@ -19,9 +21,11 @@ describe('parseExpensesCsv', () => {
 
   it('supports quoted values and project name header', () => {
     const csv = `Date,Amount,Currency,Category,Description,Vendor,Project(name|id)\n2024-02-15,"1,500",USD,"R&D","Прототип, этап 1","Lab","Prototype"`;
-    const rows = parseExpensesCsv(csv);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toEqual({
+    const result = parseExpensesCsv(csv);
+    expect(result.processed).toBe(1);
+    expect(result.errors).toHaveLength(0);
+    expect(result.records).toHaveLength(1);
+    expect(result.records[0]).toEqual({
       date: '2024-02-15',
       amount: '1,500',
       currency: 'USD',
@@ -35,5 +39,13 @@ describe('parseExpensesCsv', () => {
 
   it('throws when required columns are missing', () => {
     expect(() => parseExpensesCsv('Date,Amount\n2024-01-01,100')).toThrow('CSV_HEADER_MISSING_CURRENCY_PROJECT');
+  });
+
+  it('returns validation errors for malformed rows', () => {
+    const csv = `Date,Amount,Currency,Project\n2024-01-01,1000,RUB,proj-1\n2024-02-01,,USD,`;
+    const result = parseExpensesCsv(csv);
+    expect(result.processed).toBe(2);
+    expect(result.records).toHaveLength(1);
+    expect(result.errors).toEqual([{ row: 3, reason: expect.stringContaining('Missing') }]);
   });
 });

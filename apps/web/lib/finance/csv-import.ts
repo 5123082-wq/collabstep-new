@@ -9,6 +9,14 @@ export type CsvExpenseRecord = {
   rowNumber: number;
 };
 
+export type CsvParseError = { row: number; reason: string };
+
+export type CsvParseResult = {
+  records: CsvExpenseRecord[];
+  errors: CsvParseError[];
+  processed: number;
+};
+
 function splitCsvLine(line: string): string[] {
   const cells: string[] = [];
   let current = '';
@@ -45,17 +53,14 @@ function normalizeHeader(value: string): string {
 
 const REQUIRED_FIELDS = ['date', 'amount', 'currency', 'project'] as const;
 
-export function parseExpensesCsv(input: string): CsvExpenseRecord[] {
-  const lines = input
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-
+export function parseExpensesCsv(input: string): CsvParseResult {
+  const lines = input.split(/\r?\n/);
   if (!lines.length) {
-    return [];
+    return { records: [], errors: [], processed: 0 };
   }
 
-  const headerCells = splitCsvLine(lines[0]).map(normalizeHeader);
+  const headerLine = lines[0] ?? '';
+  const headerCells = splitCsvLine(headerLine).map(normalizeHeader);
   const indexMap = new Map<string, number>();
   headerCells.forEach((cell, index) => {
     if (!indexMap.has(cell)) {
@@ -69,38 +74,61 @@ export function parseExpensesCsv(input: string): CsvExpenseRecord[] {
   }
 
   const records: CsvExpenseRecord[] = [];
+  const errors: CsvParseError[] = [];
+
   for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
     const raw = lines[lineIndex];
-    if (!raw.trim()) {
+    const rowNumber = lineIndex + 1;
+    if (!raw || !raw.trim()) {
       continue;
     }
     const cells = splitCsvLine(raw).map((cell) => cell.trim());
     const get = (field: string) => {
       const idx = indexMap.get(field);
-      if (idx === undefined) return '';
+      if (idx === undefined) {
+        return '';
+      }
       return cells[idx] ?? '';
     };
-    const record: CsvExpenseRecord = {
+
+    const record = {
       date: get('date').trim(),
       amount: get('amount').trim(),
       currency: get('currency').trim(),
-      category: get('category').trim() || undefined,
-      description: get('description').trim() || undefined,
-      vendor: get('vendor').trim() || undefined,
-      project: get('project').trim(),
-      rowNumber: lineIndex + 1
+      category: get('category').trim(),
+      description: get('description').trim(),
+      vendor: get('vendor').trim(),
+      project: get('project').trim()
     };
+
     if (!record.date && !record.amount && !record.project) {
       continue;
     }
-    if (!record.date || !record.amount || !record.currency || !record.project) {
+
+    const missingFields = REQUIRED_FIELDS.filter((field) => !record[field as keyof typeof record]);
+    if (missingFields.length) {
+      errors.push({ row: rowNumber, reason: `Missing ${missingFields.join(', ')}` });
       continue;
     }
-    records.push({
-      ...record,
-      currency: record.currency.toUpperCase()
-    });
+
+    const nextRecord: CsvExpenseRecord = {
+      date: record.date,
+      amount: record.amount,
+      currency: record.currency.toUpperCase(),
+      project: record.project,
+      rowNumber
+    };
+    if (record.category) {
+      nextRecord.category = record.category;
+    }
+    if (record.description) {
+      nextRecord.description = record.description;
+    }
+    if (record.vendor) {
+      nextRecord.vendor = record.vendor;
+    }
+    records.push(nextRecord);
   }
 
-  return records;
+  return { records, errors, processed: records.length + errors.length };
 }

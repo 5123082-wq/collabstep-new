@@ -41,17 +41,46 @@ export function parseExpenseFilters(
   searchParams: URLSearchParams,
   defaults: ExpenseListFilters = DEFAULT_EXPENSE_FILTERS
 ): ExpenseListFilters {
-  return {
-    projectId: searchParams.get('projectId') ?? undefined,
-    status: normalizeStatus(searchParams.get('status')),
-    category: searchParams.get('category') ?? undefined,
-    vendor: searchParams.get('vendor') ?? undefined,
-    q: searchParams.get('q') ?? undefined,
-    dateFrom: searchParams.get('dateFrom') ?? undefined,
-    dateTo: searchParams.get('dateTo') ?? undefined,
-    page: toNumber(searchParams.get('page'), defaults.page),
-    pageSize: toNumber(searchParams.get('pageSize'), defaults.pageSize)
-  };
+  const page = toNumber(searchParams.get('page'), defaults.page);
+  const pageSize = toNumber(searchParams.get('pageSize'), defaults.pageSize);
+  const result: ExpenseListFilters = { page, pageSize };
+
+  const projectId = searchParams.get('projectId');
+  if (projectId) {
+    result.projectId = projectId;
+  }
+
+  const status = normalizeStatus(searchParams.get('status'));
+  if (status) {
+    result.status = status;
+  }
+
+  const category = searchParams.get('category');
+  if (category) {
+    result.category = category;
+  }
+
+  const vendor = searchParams.get('vendor');
+  if (vendor) {
+    result.vendor = vendor;
+  }
+
+  const query = searchParams.get('q');
+  if (query) {
+    result.q = query;
+  }
+
+  const dateFrom = searchParams.get('dateFrom');
+  if (dateFrom) {
+    result.dateFrom = dateFrom;
+  }
+
+  const dateTo = searchParams.get('dateTo');
+  if (dateTo) {
+    result.dateTo = dateTo;
+  }
+
+  return result;
 }
 
 export function buildExpenseFilterParams(
