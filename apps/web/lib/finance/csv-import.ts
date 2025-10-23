@@ -6,6 +6,7 @@ export type CsvExpenseRecord = {
   description?: string;
   vendor?: string;
   project: string;
+  rowNumber: number;
 };
 
 function splitCsvLine(line: string): string[] {
@@ -80,18 +81,25 @@ export function parseExpensesCsv(input: string): CsvExpenseRecord[] {
       return cells[idx] ?? '';
     };
     const record: CsvExpenseRecord = {
-      date: get('date'),
-      amount: get('amount'),
-      currency: get('currency'),
-      category: get('category') || undefined,
-      description: get('description') || undefined,
-      vendor: get('vendor') || undefined,
-      project: get('project')
+      date: get('date').trim(),
+      amount: get('amount').trim(),
+      currency: get('currency').trim(),
+      category: get('category').trim() || undefined,
+      description: get('description').trim() || undefined,
+      vendor: get('vendor').trim() || undefined,
+      project: get('project').trim(),
+      rowNumber: lineIndex + 1
     };
     if (!record.date && !record.amount && !record.project) {
       continue;
     }
-    records.push(record);
+    if (!record.date || !record.amount || !record.currency || !record.project) {
+      continue;
+    }
+    records.push({
+      ...record,
+      currency: record.currency.toUpperCase()
+    });
   }
 
   return records;

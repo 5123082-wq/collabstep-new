@@ -19,6 +19,7 @@ import {
   createDraft,
   drawerReducer,
   formatExpenseAmount,
+  normalizeExpense,
   type AuditEvent,
   type DrawerState,
   type Expense,
@@ -237,7 +238,8 @@ export default function FinanceExpensesPageClient({
         }
         const payload = (await response.json()) as ExpensesResponse;
         if (!controller.signal.aborted) {
-          setItems(payload.items ?? []);
+          const normalizedItems = (payload.items ?? []).map((item) => normalizeExpense(item));
+          setItems(normalizedItems);
           setPagination(payload.pagination ?? { page: filters.page, pageSize: filters.pageSize, total: payload.items.length, totalPages: 1 });
         }
       } catch (err) {
@@ -534,20 +536,16 @@ export default function FinanceExpensesPageClient({
         const text = await file.text();
         const rows = parseExpensesCsv(text);
         const report: ImportReport = { processed: rows.length, created: 0, errors: [] };
-        for (let index = 0; index < rows.length; index += 1) {
-          const row = rows[index];
-          if (!row) {
-            report.errors.push({ row: index + 2, reason: 'Некорректная строка импорта' });
-            continue;
-          }
+        for (const row of rows) {
+          const rowNumber = row.rowNumber;
           const projectId = resolveProjectId(row.project);
           if (!projectId) {
-            report.errors.push({ row: index + 2, reason: 'Проект не найден' });
+            report.errors.push({ row: rowNumber, reason: 'Проект не найден' });
             continue;
           }
           const projectRole = projects.find((project) => project.id === projectId)?.role ?? 'viewer';
           if (projectRole === 'viewer') {
-            report.errors.push({ row: index + 2, reason: 'Недостаточно прав для проекта' });
+            report.errors.push({ row: rowNumber, reason: 'Недостаточно прав для проекта' });
             continue;
           }
           const payload = {
@@ -555,7 +553,7 @@ export default function FinanceExpensesPageClient({
             projectId,
             date: row.date || new Date().toISOString().slice(0, 10),
             amount: parseAmountInput(row.amount || '0'),
-            currency: row.currency ? row.currency.toUpperCase() : 'RUB',
+            currency: row.currency || 'RUB',
             category: row.category || 'Uncategorized',
             description: row.description || undefined,
             vendor: row.vendor || undefined,
@@ -573,7 +571,7 @@ export default function FinanceExpensesPageClient({
             report.created += 1;
           } catch (err) {
             console.error(err);
-            report.errors.push({ row: index + 2, reason: 'Ошибка создания' });
+            report.errors.push({ row: rowNumber, reason: 'Ошибка создания' });
           }
         }
         setImportState((state) => ({ ...state, loading: false, report }));
@@ -833,12 +831,14 @@ export default function FinanceExpensesPageClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-900 text-sm text-neutral-300">
-                  {items.map((item) => (
-                    <tr
-                      key={item.id}
-                      className="cursor-pointer transition hover:bg-neutral-900/60"
-                      onClick={() => openExpense(item)}
-                    >
+                  {items.map((item) => {
+                    const attachmentCount = Array.isArray(item.attachments) ? item.attachments.length : 0;
+                    return (
+                      <tr
+                        key={item.id}
+                        className="cursor-pointer transition hover:bg-neutral-900/60"
+                        onClick={() => openExpense(item)}
+                      >
                       <td className="px-4 py-3 align-top text-sm text-neutral-100">
                         {new Date(item.date).toLocaleDateString('ru-RU')}
                       </td>
@@ -852,11 +852,12 @@ export default function FinanceExpensesPageClient({
                       <td className="px-4 py-3 align-top">
                         <Badge className={cn('px-2 py-1 text-xs', STATUS_COLORS[item.status])}>{STATUS_LABELS[item.status]}</Badge>
                       </td>
-                      <td className="px-4 py-3 align-top text-sm text-neutral-300">
-                        {(item.attachments ?? []).length ? `${item.attachments.length} файл(ов)` : '—'}
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-4 py-3 align-top text-sm text-neutral-300">
+                          {attachmentCount ? `${attachmentCount} файл(ов)` : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

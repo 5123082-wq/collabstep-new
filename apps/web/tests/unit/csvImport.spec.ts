@@ -12,7 +12,8 @@ describe('parseExpensesCsv', () => {
       category: 'Маркетинг',
       description: 'Кампания',
       vendor: 'Agency',
-      project: 'proj-1'
+      project: 'proj-1',
+      rowNumber: 2
     });
   });
 
@@ -27,7 +28,8 @@ describe('parseExpensesCsv', () => {
       category: 'R&D',
       description: 'Прототип, этап 1',
       vendor: 'Lab',
-      project: 'Prototype'
+      project: 'Prototype',
+      rowNumber: 2
     });
   });
 

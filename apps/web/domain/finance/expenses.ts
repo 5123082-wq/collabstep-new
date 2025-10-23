@@ -25,6 +25,13 @@ export type Expense = {
   attachments?: ExpenseAttachment[];
 };
 
+export function normalizeExpense(raw: Expense): Expense {
+  return {
+    ...raw,
+    attachments: Array.isArray(raw.attachments) ? raw.attachments : []
+  };
+}
+
 export type ExpensesResponse = {
   items: Expense[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
