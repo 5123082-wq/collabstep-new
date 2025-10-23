@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { LayoutGrid, LayoutList, Loader2, RefreshCw } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -94,11 +95,14 @@ function Avatar({
 }) {
   if (avatarUrl) {
     return (
-      <img
+      <Image
         src={avatarUrl}
         alt={name || email || 'avatar'}
+        width={size}
+        height={size}
         className="rounded-full border border-neutral-900 object-cover"
         style={{ width: size, height: size }}
+        unoptimized
       />
     );
   }
@@ -499,7 +503,11 @@ export default function ProjectsOverviewPageClient() {
 
   const [state, setState] = useState<ProjectsOverviewState>(() => {
     const params = searchParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
-    return parseStateFromSearchParams(params);
+    const parsed = parseStateFromSearchParams(params);
+    if (params.has('sort')) {
+      return parsed;
+    }
+    return { ...parsed, sort: DEFAULT_SORT };
   });
   const stateRef = useRef(state);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -537,9 +545,10 @@ export default function ProjectsOverviewPageClient() {
   useEffect(() => {
     const params = searchParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
     const nextState = parseStateFromSearchParams(params);
-    if (!isStateEqual(stateRef.current, nextState)) {
-      stateRef.current = nextState;
-      setState(nextState);
+    const normalizedState = params.has('sort') ? nextState : { ...nextState, sort: DEFAULT_SORT };
+    if (!isStateEqual(stateRef.current, normalizedState)) {
+      stateRef.current = normalizedState;
+      setState(normalizedState);
     }
   }, [searchParams]);
 
