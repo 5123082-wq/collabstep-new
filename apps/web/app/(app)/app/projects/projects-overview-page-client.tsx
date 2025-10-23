@@ -62,8 +62,11 @@ function formatProgress(progress: number): string {
   return `${Math.max(0, Math.min(100, progress))}%`;
 }
 
-function formatBudgetAmount(value?: number | null): string {
-  if (typeof value !== 'number' || Number.isNaN(value)) {
+function formatBudgetAmount(value?: number | string | null): string {
+  const numericValue =
+    typeof value === 'string' && value.trim().length > 0 ? Number(value) : value;
+
+  if (typeof numericValue !== 'number' || Number.isNaN(numericValue)) {
     return '—';
   }
   try {
@@ -71,7 +74,7 @@ function formatBudgetAmount(value?: number | null): string {
       style: 'currency',
       currency: 'RUB',
       maximumFractionDigits: 0
-    }).format(value);
+    }).format(numericValue);
   } catch (err) {
     console.warn('[projects-overview] failed to format budget amount', err);
     return '—';
