@@ -36,6 +36,14 @@ const routeActions: Record<string, { title: string; actions: { label: string; me
       { label: 'Просмотреть отклики', message: 'TODO: Открыть отклики исполнителей' }
     ]
   },
+  '/app/marketing': {
+    title: 'Маркетинг',
+    actions: [
+      { label: 'Создать кампанию', message: 'TODO: Мастер создания кампании' },
+      { label: 'Добавить исследование', message: 'TODO: Создать исследование аудитории' },
+      { label: 'Подключить источник данных', message: 'TODO: Настроить интеграцию аналитики' }
+    ]
+  },
   '/app/ai-hub': {
     title: 'AI-хаб',
     actions: [

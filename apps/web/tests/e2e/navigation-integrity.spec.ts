@@ -6,6 +6,7 @@ const appOrigin = 'http://localhost:3000';
 const REQUIRED_SECTIONS = [
   'Маркетплейс',
   'Исполнители',
+  'Маркетинг',
   'AI-хаб',
   'Комьюнити',
   'Финансы',

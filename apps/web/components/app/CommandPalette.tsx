@@ -49,6 +49,27 @@ const COMMAND_ITEMS: SearchItem[] = [
     subtitle: 'Актуальные запросы на специалистов',
     tags: ['performers', 'vacancies'],
     ref: '/app/performers/vacancies'
+  },
+  {
+    type: 'command',
+    title: 'Открыть маркетинговый обзор',
+    subtitle: 'Цели, кампании и лиды',
+    tags: ['marketing', 'overview'],
+    ref: '/app/marketing/overview'
+  },
+  {
+    type: 'command',
+    title: 'Управление кампаниями',
+    subtitle: 'Перейти к разделу «Кампании & Реклама»',
+    tags: ['marketing', 'campaigns'],
+    ref: '/app/marketing/campaigns'
+  },
+  {
+    type: 'command',
+    title: 'Контент и SEO',
+    subtitle: 'Открыть контент-план и SEO-кластеры',
+    tags: ['marketing', 'content'],
+    ref: '/app/marketing/content-seo'
   }
 ];
 
