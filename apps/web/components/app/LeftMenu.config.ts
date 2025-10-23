@@ -133,8 +133,9 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     label: 'Финансы',
     icon: 'finance',
     roles: ['FOUNDER', 'PM', 'ADMIN'],
-    href: '/app/finance/wallet',
+    href: '/app/finance/expenses',
     children: [
+      { id: 'finance-expenses', label: 'Расходы', href: '/app/finance/expenses', roles: ['FOUNDER', 'PM', 'ADMIN'] },
       { id: 'finance-wallet', label: 'Кошелёк', href: '/app/finance/wallet', roles: ['FOUNDER', 'PM', 'ADMIN'] },
       { id: 'finance-escrow', label: 'Эскроу', href: '/app/finance/escrow', roles: ['FOUNDER', 'PM', 'ADMIN'] },
       { id: 'finance-invoices', label: 'Счета', href: '/app/finance/invoices', roles: ['FOUNDER', 'PM', 'ADMIN'] },
