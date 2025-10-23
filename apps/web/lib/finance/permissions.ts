@@ -20,11 +20,11 @@ const PERMISSIONS: Record<FinanceRole, ExpensePermissions> = {
   },
   member: {
     canCreate: true,
-    canImport: true,
+    canImport: false,
     canExport: true,
     canEdit: true,
     canManageAttachments: true,
-    canChangeStatus: true
+    canChangeStatus: false
   },
   admin: {
     canCreate: true,
@@ -46,4 +46,14 @@ const PERMISSIONS: Record<FinanceRole, ExpensePermissions> = {
 
 export function getExpensePermissions(role: FinanceRole): ExpensePermissions {
   return PERMISSIONS[role];
+}
+
+export function mergeExpensePermissions(
+  base: ExpensePermissions,
+  overrides?: Partial<ExpensePermissions>
+): ExpensePermissions {
+  if (!overrides) {
+    return base;
+  }
+  return { ...base, ...overrides } satisfies ExpensePermissions;
 }

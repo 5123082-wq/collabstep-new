@@ -19,12 +19,11 @@ import {
   createDraft,
   drawerReducer,
   formatExpenseAmount,
-  normalizeExpense,
   formatAttachmentCount,
+  normalizeExpensesResponse,
   type AuditEvent,
   type DrawerState,
   type Expense,
-  type ExpensesResponse,
   type ExpenseSummary,
   type ExpenseStatus,
   type FinanceRole
@@ -59,14 +58,46 @@ type ImportState = {
   fileName?: string;
 };
 
-function mapDemoRole(role: string | null): FinanceRole {
-  if (role === 'admin') {
-    return 'owner';
+const FINANCE_ROLES: FinanceRole[] = ['owner', 'admin', 'member', 'viewer'];
+
+const EXPENSES_UPDATED_EVENT = 'finance:expenses-updated';
+
+function normalizeFinanceRole(role: string | null): FinanceRole {
+  if (!role) {
+    return 'viewer';
   }
-  if (role === 'user') {
+  const normalized = role.trim().toLowerCase();
+  if (normalized === 'user') {
     return 'member';
   }
+  if (normalized === 'admin') {
+    return 'owner';
+  }
+  if (FINANCE_ROLES.includes(normalized as FinanceRole)) {
+    return normalized as FinanceRole;
+  }
   return 'viewer';
+}
+
+function normalizeProjectOptionRaw(option: unknown): ProjectOption | null {
+  if (!option || typeof option !== 'object') {
+    return null;
+  }
+  const raw = option as Partial<{ id: string; name: string; role: string }>;
+  const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+  if (!id) {
+    return null;
+  }
+  const name = typeof raw.name === 'string' && raw.name.trim().length ? raw.name.trim() : 'Без названия';
+  const role = normalizeFinanceRole(raw.role ?? null);
+  return { id, name, role } satisfies ProjectOption;
+}
+
+function broadcastExpensesUpdated(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(EXPENSES_UPDATED_EVENT));
 }
 
 function formatDateInput(date: Date): string {
@@ -149,8 +180,10 @@ export default function FinanceExpensesPageClient({
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [role, setRole] = useState<FinanceRole>('viewer');
+  const [viewerEmail, setViewerEmail] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [importState, setImportState] = useState<ImportState>({ open: false, loading: false, report: null });
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const [drawerState, dispatchDrawer] = useReducer(drawerReducer, {
     open: false,
@@ -167,7 +200,20 @@ export default function FinanceExpensesPageClient({
     setFilters(parseExpenseFilters(liveSearchParams));
   }, [liveSearchParams]);
 
-  const permissions = useMemo(() => getExpensePermissions(role), [role]);
+  const basePermissions = useMemo(() => getExpensePermissions(role), [role]);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshToken((token) => token + 1);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handler = () => triggerRefresh();
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handler);
+    return () => window.removeEventListener(EXPENSES_UPDATED_EVENT, handler);
+  }, [triggerRefresh]);
 
   const queryKey = useMemo(() => {
     const params = new URLSearchParams();
@@ -188,9 +234,14 @@ export default function FinanceExpensesPageClient({
     async function loadRole() {
       try {
         const response = await fetch('/api/auth/me', { headers: { 'cache-control': 'no-store' } });
-        const payload = (await response.json()) as { authenticated?: boolean; role?: string };
-        if (!cancelled && payload.authenticated) {
-          setRole(mapDemoRole(payload.role ?? null));
+        const payload = (await response.json()) as { authenticated?: boolean; role?: string; email?: string };
+        if (cancelled) return;
+        if (payload.authenticated) {
+          setRole(normalizeFinanceRole(payload.role ?? null));
+          setViewerEmail(typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : null);
+        } else {
+          setRole('viewer');
+          setViewerEmail(null);
         }
       } catch (err) {
         console.error(err);
@@ -210,9 +261,15 @@ export default function FinanceExpensesPageClient({
         if (!response.ok) {
           throw new Error('FAILED');
         }
-        const payload = (await response.json()) as { items: Array<{ id: string; name: string; role: FinanceRole }> };
+        const payload = (await response.json()) as { items?: unknown[] };
         if (!cancelled) {
-          setProjects(payload.items ?? []);
+          const normalized = Array.isArray(payload.items)
+            ? payload.items
+                .map((item) => normalizeProjectOptionRaw(item))
+                .filter((item): item is ProjectOption => Boolean(item))
+                .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+            : [];
+          setProjects(normalized);
         }
       } catch (err) {
         if (!cancelled) {
@@ -242,24 +299,14 @@ export default function FinanceExpensesPageClient({
         if (!response.ok) {
           throw new Error('FAILED');
         }
-        const payload = (await response.json()) as ExpensesResponse;
-        if (!controller.signal.aborted) {
-          const normalizedItems = (payload.items ?? []).map((item) => normalizeExpense(item));
-          setItems(normalizedItems);
-          const nextSummary =
-            payload.summary ??
-            ({
-              totalCount: normalizedItems.length,
-              totalsByCurrency: []
-            } satisfies ExpenseSummary);
-          setSummary(nextSummary);
-          if (payload.pagination) {
-            setPagination({ ...payload.pagination, total: nextSummary.totalCount });
-          } else {
-            const totalPages = Math.max(1, Math.ceil(nextSummary.totalCount / filters.pageSize));
-            setPagination({ page: filters.page, pageSize: filters.pageSize, total: nextSummary.totalCount, totalPages });
-          }
+        const payload = await response.json();
+        if (controller.signal.aborted) {
+          return;
         }
+        const normalized = normalizeExpensesResponse(payload, { page: filters.page, pageSize: filters.pageSize });
+        setItems(normalized.items);
+        setSummary(normalized.summary);
+        setPagination(normalized.pagination);
       } catch (err) {
         if (!controller.signal.aborted) {
           console.error(err);
@@ -276,7 +323,7 @@ export default function FinanceExpensesPageClient({
     }
     void loadExpenses();
     return () => controller.abort();
-  }, [filters.page, filters.pageSize, queryKey]);
+  }, [filters.page, filters.pageSize, queryKey, refreshToken]);
 
   const updateQuery = useCallback(
     (patch: Partial<ExpenseListFilters>) => {
@@ -312,14 +359,68 @@ export default function FinanceExpensesPageClient({
     return current ? [...availableProjectOptions, current] : availableProjectOptions;
   }, [availableProjectOptions, drawerState.draft.projectId, projects]);
 
+  const canManageExpense = useCallback(
+    (expense: Expense | null) => {
+      if (!expense) {
+        return basePermissions.canCreate;
+      }
+      if (role === 'owner' || role === 'admin') {
+        return true;
+      }
+      if (role === 'member') {
+        if (!viewerEmail) {
+          return false;
+        }
+        return expense.createdBy.trim().toLowerCase() === viewerEmail;
+      }
+      return false;
+    },
+    [basePermissions.canCreate, role, viewerEmail]
+  );
+
+  const drawerPermissionOverrides = useMemo(() => {
+    if (!drawerState.expense) {
+      if (role === 'member') {
+        return { canChangeStatus: false };
+      }
+      if (role === 'viewer') {
+        return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+      }
+      return undefined;
+    }
+    if (role === 'viewer') {
+      return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+    }
+    if (role === 'member' && !canManageExpense(drawerState.expense)) {
+      return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+    }
+    if (role === 'member') {
+      return { canChangeStatus: false };
+    }
+    return undefined;
+  }, [canManageExpense, drawerState.expense, role]);
+
+  const drawerReadOnlyMessage = useMemo(() => {
+    if (!drawerState.expense) {
+      return null;
+    }
+    if (role === 'viewer') {
+      return 'У вас только доступ на чтение.';
+    }
+    if (role === 'member' && viewerEmail && drawerState.expense.createdBy.trim().toLowerCase() !== viewerEmail) {
+      return 'Редактирование доступно только автору и администраторам.';
+    }
+    return null;
+  }, [drawerState.expense, role, viewerEmail]);
+
   const openCreate = useCallback(() => {
-    if (!permissions.canCreate) return;
+    if (!basePermissions.canCreate) return;
     dispatchDrawer({ type: 'open-create', payload: { currency: 'RUB' } });
     const preferredProject = filters.projectId ?? availableProjectOptions[0]?.id;
     if (preferredProject) {
       dispatchDrawer({ type: 'update', payload: { projectId: preferredProject } });
     }
-  }, [availableProjectOptions, filters.projectId, permissions.canCreate]);
+  }, [availableProjectOptions, basePermissions.canCreate, filters.projectId]);
 
   const openExpense = useCallback(
     (expense: Expense) => {
@@ -335,29 +436,55 @@ export default function FinanceExpensesPageClient({
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (!permissions.canEdit) {
+    if (drawerState.expense) {
+      if (!canManageExpense(drawerState.expense)) {
+        dispatchDrawer({ type: 'set-error', payload: 'Недостаточно прав для редактирования' });
+        return;
+      }
+    } else if (!basePermissions.canCreate) {
       return;
     }
-    if (!drawerState.draft.projectId) {
+
+    const projectId = drawerState.draft.projectId?.trim();
+    if (!projectId) {
       dispatchDrawer({ type: 'set-error', payload: 'Выберите проект' });
       return;
     }
+
     dispatchDrawer({ type: 'set-saving', payload: true });
     dispatchDrawer({ type: 'set-error', payload: null });
+
+    const sanitizeText = (value: unknown) => (typeof value === 'string' && value.trim().length ? value.trim() : undefined);
+    const currencyRaw = sanitizeText(drawerState.draft.currency) ?? 'RUB';
+    const currency = /^[A-Z]{3}$/.test(currencyRaw.toUpperCase()) ? currencyRaw.toUpperCase() : 'RUB';
+    const attachments = Array.isArray(drawerState.draft.attachments)
+      ? drawerState.draft.attachments
+          .map((attachment) => {
+            const filename = sanitizeText(attachment?.filename) ?? 'Файл';
+            const url = sanitizeText(attachment?.url);
+            if (!url) {
+              return null;
+            }
+            return { filename, url };
+          })
+          .filter((item): item is { filename: string; url: string } => Boolean(item))
+      : [];
+
     const payload = {
       workspaceId: drawerState.draft.workspaceId ?? DEMO_WORKSPACE_ID,
-      projectId: drawerState.draft.projectId,
-      date: drawerState.draft.date ?? new Date().toISOString().slice(0, 10),
+      projectId,
+      date: sanitizeText(drawerState.draft.date) ?? new Date().toISOString().slice(0, 10),
       amount: parseAmountInput(String(drawerState.draft.amount ?? '0')),
-      currency: drawerState.draft.currency ?? 'RUB',
-      category: drawerState.draft.category ?? 'Uncategorized',
-      description: drawerState.draft.description,
-      vendor: drawerState.draft.vendor,
-      paymentMethod: drawerState.draft.paymentMethod,
-      taxAmount: drawerState.draft.taxAmount,
+      currency,
+      category: sanitizeText(drawerState.draft.category) ?? 'Uncategorized',
+      description: sanitizeText(drawerState.draft.description),
+      vendor: sanitizeText(drawerState.draft.vendor),
+      paymentMethod: sanitizeText(drawerState.draft.paymentMethod),
+      taxAmount: sanitizeText(drawerState.draft.taxAmount),
       status: drawerState.draft.status ?? 'draft',
-      attachments: drawerState.draft.attachments ?? []
+      attachments
     };
+
     try {
       const endpoint = drawerState.expense ? `/api/expenses/${drawerState.expense.id}` : '/api/expenses';
       const method = drawerState.expense ? 'PATCH' : 'POST';
@@ -370,18 +497,30 @@ export default function FinanceExpensesPageClient({
         throw new Error('SAVE_ERROR');
       }
       closeDrawer();
-      updateQuery({ page: filters.page });
+      triggerRefresh();
+      broadcastExpensesUpdated();
     } catch (err) {
       console.error(err);
       dispatchDrawer({ type: 'set-error', payload: 'Не удалось сохранить трату' });
     } finally {
       dispatchDrawer({ type: 'set-saving', payload: false });
     }
-  }, [closeDrawer, drawerState.draft, drawerState.expense, filters.page, permissions.canEdit, updateQuery]);
+  }, [
+    basePermissions.canCreate,
+    canManageExpense,
+    closeDrawer,
+    drawerState.draft,
+    drawerState.expense,
+    triggerRefresh
+  ]);
 
   const handleStatusChange = useCallback(
     async (status: ExpenseStatus) => {
-      if (!drawerState.expense || !permissions.canChangeStatus) return;
+      if (!drawerState.expense || !basePermissions.canChangeStatus) return;
+      if (!canManageExpense(drawerState.expense)) {
+        dispatchDrawer({ type: 'set-error', payload: 'Недостаточно прав для изменения статуса' });
+        return;
+      }
       dispatchDrawer({ type: 'set-saving', payload: true });
       dispatchDrawer({ type: 'set-error', payload: null });
       try {
@@ -394,7 +533,8 @@ export default function FinanceExpensesPageClient({
           throw new Error('STATUS_ERROR');
         }
         closeDrawer();
-        updateQuery({ page: filters.page });
+        triggerRefresh();
+        broadcastExpensesUpdated();
       } catch (err) {
         console.error(err);
         dispatchDrawer({ type: 'set-error', payload: 'Не удалось обновить статус' });
@@ -402,7 +542,7 @@ export default function FinanceExpensesPageClient({
         dispatchDrawer({ type: 'set-saving', payload: false });
       }
     },
-    [closeDrawer, drawerState.expense, filters.page, permissions.canChangeStatus, updateQuery]
+    [basePermissions.canChangeStatus, canManageExpense, closeDrawer, drawerState.expense, triggerRefresh]
   );
 
   const loadHistory = useCallback(
@@ -438,7 +578,7 @@ export default function FinanceExpensesPageClient({
         list.add(item.category);
       }
     });
-    return Array.from(list.values());
+    return Array.from(list.values()).sort((a, b) => a.localeCompare(b, 'ru'));
   }, [items]);
 
   const vendors = useMemo(() => {
@@ -448,7 +588,7 @@ export default function FinanceExpensesPageClient({
         list.add(item.vendor);
       }
     });
-    return Array.from(list.values());
+    return Array.from(list.values()).sort((a, b) => a.localeCompare(b, 'ru'));
   }, [items]);
 
   const presetId = useMemo(() => detectPreset(filters), [filters]);
@@ -469,7 +609,7 @@ export default function FinanceExpensesPageClient({
   );
 
   const handleExportCsv = useCallback(async () => {
-    if (!permissions.canExport) {
+    if (!basePermissions.canExport) {
       return;
     }
     try {
@@ -484,9 +624,13 @@ export default function FinanceExpensesPageClient({
         if (!response.ok) {
           throw new Error('EXPORT_ERROR');
         }
-        const payload = (await response.json()) as ExpensesResponse;
-        all.push(...(payload.items ?? []));
-        const totalPages = payload.pagination?.totalPages ?? 1;
+        const payload = await response.json();
+        const normalized = normalizeExpensesResponse(payload, {
+          page,
+          pageSize: Number.parseInt(params.get('pageSize') ?? '100', 10) || 100
+        });
+        all.push(...normalized.items);
+        const totalPages = normalized.pagination.totalPages ?? 1;
         if (page >= totalPages) {
           break;
         }
@@ -524,7 +668,7 @@ export default function FinanceExpensesPageClient({
     } finally {
       setExporting(false);
     }
-  }, [permissions.canExport, queryKey]);
+  }, [basePermissions.canExport, queryKey]);
 
   const resolveProjectId = useCallback(
     (value: string): string | null => {
@@ -544,7 +688,7 @@ export default function FinanceExpensesPageClient({
 
   const handleImportFile = useCallback(
     async (file: File) => {
-      if (!permissions.canImport) {
+      if (!basePermissions.canImport) {
         return;
       }
       setImportState((state) => ({ ...state, loading: true, report: null, fileName: file.name }));
@@ -552,6 +696,7 @@ export default function FinanceExpensesPageClient({
         const text = await file.text();
         const { records, errors: validationErrors, processed } = parseExpensesCsv(text);
         const report: ImportReport = { processed, created: 0, errors: [...validationErrors] };
+        const sanitize = (value?: string) => (value && value.trim().length ? value.trim() : undefined);
         for (const row of records) {
           const rowNumber = row.rowNumber;
           const projectId = resolveProjectId(row.project);
@@ -569,10 +714,10 @@ export default function FinanceExpensesPageClient({
             projectId,
             date: row.date || new Date().toISOString().slice(0, 10),
             amount: parseAmountInput(row.amount || '0'),
-            currency: row.currency || 'RUB',
-            category: row.category || 'Uncategorized',
-            description: row.description || undefined,
-            vendor: row.vendor || undefined,
+            currency: (row.currency || 'RUB').toUpperCase(),
+            category: sanitize(row.category) ?? 'Uncategorized',
+            description: sanitize(row.description),
+            vendor: sanitize(row.vendor),
             status: 'draft' as ExpenseStatus
           };
           try {
@@ -591,7 +736,8 @@ export default function FinanceExpensesPageClient({
           }
         }
         setImportState((state) => ({ ...state, loading: false, report }));
-        updateQuery({ page: 1 });
+        triggerRefresh();
+        broadcastExpensesUpdated();
       } catch (err) {
         console.error(err);
         setImportState((state) => ({
@@ -601,7 +747,7 @@ export default function FinanceExpensesPageClient({
         }));
       }
     },
-    [permissions.canImport, projects, resolveProjectId, updateQuery]
+    [basePermissions.canImport, projects, resolveProjectId, triggerRefresh]
   );
 
   const presetButtons = PERIOD_PRESETS.map((preset) => {
@@ -629,7 +775,7 @@ export default function FinanceExpensesPageClient({
           <p className="text-sm text-neutral-400">Глобальный журнал расходов по всем проектам.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {permissions.canCreate ? (
+          {basePermissions.canCreate ? (
             <button
               type="button"
               onClick={openCreate}
@@ -642,7 +788,7 @@ export default function FinanceExpensesPageClient({
               Новая трата
             </button>
           ) : null}
-          {permissions.canImport ? (
+          {basePermissions.canImport ? (
             <button
               type="button"
               onClick={() => setImportState((state) => ({ ...state, open: true, report: null }))}
@@ -651,7 +797,7 @@ export default function FinanceExpensesPageClient({
               Импорт CSV
             </button>
           ) : null}
-          {permissions.canExport ? (
+          {basePermissions.canExport ? (
             <>
               <button
                 type="button"
@@ -911,6 +1057,8 @@ export default function FinanceExpensesPageClient({
         onTabChange={(tab) => dispatchDrawer({ type: 'switch-tab', payload: tab })}
         projectOptions={drawerProjects}
         projectSelectionDisabled={Boolean(drawerState.expense)}
+        permissionOverrides={drawerPermissionOverrides}
+        readOnlyMessage={drawerReadOnlyMessage}
       />
 
       <Sheet

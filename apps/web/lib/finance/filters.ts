@@ -1,4 +1,4 @@
-import type { ExpenseStatus } from '@/domain/finance/expenses';
+import { PAGE_SIZE_OPTIONS, type ExpenseStatus } from '@/domain/finance/expenses';
 
 export type ExpenseListFilters = {
   projectId?: string;
@@ -17,6 +17,8 @@ export const DEFAULT_EXPENSE_FILTERS: ExpenseListFilters = {
   pageSize: 20
 };
 
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 function normalizeStatus(value: string | null): ExpenseStatus | undefined {
   if (!value) {
     return undefined;
@@ -24,6 +26,32 @@ function normalizeStatus(value: string | null): ExpenseStatus | undefined {
   const normalized = value.trim().toLowerCase();
   const allowed: ExpenseStatus[] = ['draft', 'pending', 'approved', 'payable', 'closed'];
   return allowed.includes(normalized as ExpenseStatus) ? (normalized as ExpenseStatus) : undefined;
+}
+
+function normalizeDate(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (ISO_DATE_RE.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function normalizeText(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
 }
 
 function toNumber(value: string | null, fallback: number): number {
@@ -43,9 +71,10 @@ export function parseExpenseFilters(
 ): ExpenseListFilters {
   const page = toNumber(searchParams.get('page'), defaults.page);
   const pageSize = toNumber(searchParams.get('pageSize'), defaults.pageSize);
-  const result: ExpenseListFilters = { page, pageSize };
+  const normalizedPageSize = PAGE_SIZE_OPTIONS.includes(pageSize) ? pageSize : defaults.pageSize;
+  const result: ExpenseListFilters = { page, pageSize: normalizedPageSize };
 
-  const projectId = searchParams.get('projectId');
+  const projectId = normalizeText(searchParams.get('projectId'));
   if (projectId) {
     result.projectId = projectId;
   }
@@ -55,27 +84,27 @@ export function parseExpenseFilters(
     result.status = status;
   }
 
-  const category = searchParams.get('category');
+  const category = normalizeText(searchParams.get('category'));
   if (category) {
     result.category = category;
   }
 
-  const vendor = searchParams.get('vendor');
+  const vendor = normalizeText(searchParams.get('vendor'));
   if (vendor) {
     result.vendor = vendor;
   }
 
-  const query = searchParams.get('q');
+  const query = normalizeText(searchParams.get('q'));
   if (query) {
     result.q = query;
   }
 
-  const dateFrom = searchParams.get('dateFrom');
+  const dateFrom = normalizeDate(searchParams.get('dateFrom'));
   if (dateFrom) {
     result.dateFrom = dateFrom;
   }
 
-  const dateTo = searchParams.get('dateTo');
+  const dateTo = normalizeDate(searchParams.get('dateTo'));
   if (dateTo) {
     result.dateTo = dateTo;
   }

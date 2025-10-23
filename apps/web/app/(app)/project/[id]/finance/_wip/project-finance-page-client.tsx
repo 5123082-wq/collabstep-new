@@ -18,16 +18,17 @@ import {
   STATUS_LABELS,
   createDraft,
   drawerReducer,
+  normalizeExpensesResponse,
   type AuditEvent,
   type DrawerState,
   type Expense,
-  type ExpensesResponse,
   type ExpenseStatus,
   type FinanceRole
 } from '@/domain/finance/expenses';
 import { cn } from '@/lib/utils';
 import { formatMoney, parseAmountInput } from '@/lib/finance/format-money';
 import { useCurrency } from '@/lib/finance/useCurrency';
+import { getExpensePermissions } from '@/lib/finance/permissions';
 
 type FinanceFilters = {
   status?: ExpenseStatus;
@@ -47,17 +48,73 @@ const DEFAULT_FILTERS: FinanceFilters = {
   tab: 'list'
 };
 
+const FINANCE_ROLES: FinanceRole[] = ['owner', 'admin', 'member', 'viewer'];
+
+const EXPENSES_UPDATED_EVENT = 'finance:expenses-updated';
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeFinanceRole(role: string | null): FinanceRole {
+  if (!role) {
+    return 'viewer';
+  }
+  const normalized = role.trim().toLowerCase();
+  if (normalized === 'user') {
+    return 'member';
+  }
+  if (normalized === 'admin') {
+    return 'owner';
+  }
+  if (FINANCE_ROLES.includes(normalized as FinanceRole)) {
+    return normalized as FinanceRole;
+  }
+  return 'viewer';
+}
+
+function normalizeDate(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  if (ISO_DATE_RE.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return undefined;
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function normalizeText(value: string | null): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+}
+
+function broadcastExpensesUpdated(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(EXPENSES_UPDATED_EVENT));
+}
+
 function parseFilters(search: URLSearchParams): FinanceFilters {
   const filters: FinanceFilters = { ...DEFAULT_FILTERS };
   const status = search.get('status');
   const page = Number(search.get('page') ?? '1');
   const pageSize = Number(search.get('pageSize') ?? `${DEFAULT_FILTERS.pageSize}`);
   const tab = search.get('tab');
-  const category = search.get('category');
-  const vendor = search.get('vendor');
-  const q = search.get('q');
-  const dateFrom = search.get('dateFrom');
-  const dateTo = search.get('dateTo');
+  const category = normalizeText(search.get('category'));
+  const vendor = normalizeText(search.get('vendor'));
+  const q = normalizeText(search.get('q'));
+  const dateFrom = normalizeDate(search.get('dateFrom'));
+  const dateTo = normalizeDate(search.get('dateTo'));
 
   if (status && (Object.keys(STATUS_LABELS) as ExpenseStatus[]).includes(status as ExpenseStatus)) {
     filters.status = status as ExpenseStatus;
@@ -117,16 +174,6 @@ function buildParams(current: URLSearchParams, patch: Partial<FinanceFilters>): 
   return params;
 }
 
-function mapDemoRole(role: string | null): FinanceRole {
-  if (role === 'admin') {
-    return 'owner';
-  }
-  if (role === 'user') {
-    return 'member';
-  }
-  return 'viewer';
-}
-
 type ProjectFinancePageClientProps = {
   projectId: string;
   searchParams: Record<string, string | string[] | undefined>;
@@ -152,8 +199,10 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [role, setRole] = useState<FinanceRole>('viewer');
+  const [viewerEmail, setViewerEmail] = useState<string | null>(null);
   const { currency, locale } = useCurrency(projectId);
   const [exporting, setExporting] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   const [drawerState, dispatchDrawer] = useReducer(drawerReducer, {
     open: false,
@@ -169,6 +218,21 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
   useEffect(() => {
     setFilters(parseFilters(liveSearchParams));
   }, [liveSearchParams]);
+
+  const basePermissions = useMemo(() => getExpensePermissions(role), [role]);
+
+  const triggerRefresh = useCallback(() => {
+    setRefreshToken((token) => token + 1);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handler = () => triggerRefresh();
+    window.addEventListener(EXPENSES_UPDATED_EVENT, handler);
+    return () => window.removeEventListener(EXPENSES_UPDATED_EVENT, handler);
+  }, [triggerRefresh]);
 
   const queryKey = useMemo(() => {
     const params = new URLSearchParams();
@@ -191,7 +255,11 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         const payload = (await response.json()) as { authenticated?: boolean; email?: string; role?: string };
         if (cancelled) return;
         if (payload.authenticated) {
-          setRole(mapDemoRole(payload.role ?? null));
+          setRole(normalizeFinanceRole(payload.role ?? null));
+          setViewerEmail(typeof payload.email === 'string' ? payload.email.trim().toLowerCase() : null);
+        } else {
+          setRole('viewer');
+          setViewerEmail(null);
         }
       } catch (error) {
         console.error(error);
@@ -216,20 +284,23 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         if (!response.ok) {
           if (response.status === 403) {
             setRole('viewer');
+            setViewerEmail(null);
           }
           throw new Error('FAILED');
         }
-        const payload = (await response.json()) as ExpensesResponse;
+        const payload = await response.json();
         if (controller.signal.aborted) {
           return;
         }
-        setItems(payload.items ?? []);
-        setPagination(payload.pagination ?? { page: filters.page, pageSize: filters.pageSize, total: payload.items.length, totalPages: 1 });
+        const normalized = normalizeExpensesResponse(payload, { page: filters.page, pageSize: filters.pageSize });
+        setItems(normalized.items);
+        setPagination(normalized.pagination);
       } catch (err) {
         if (!controller.signal.aborted) {
           console.error(err);
           setError('Не удалось загрузить расходы');
           setItems([]);
+          setPagination({ page: filters.page, pageSize: filters.pageSize, total: 0, totalPages: 1 });
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -239,17 +310,25 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
     }
     void loadExpenses();
     return () => controller.abort();
-  }, [projectId, queryKey, filters.page, filters.pageSize]);
+  }, [filters.page, filters.pageSize, projectId, queryKey, refreshToken]);
 
-  const totalAmount = useMemo(() => items.reduce((acc, item) => acc + Number(item.amount ?? 0), 0), [items]);
+  const totalAmount = useMemo(
+    () =>
+      items.reduce((acc, item) => {
+        const amount = Number.parseFloat(item.amount ?? '0');
+        return acc + (Number.isFinite(amount) ? amount : 0);
+      }, 0),
+    [items]
+  );
 
   const categories = useMemo(() => {
     const values = new Map<string, number>();
     items.forEach((item) => {
       const key = item.category || 'Без категории';
-      values.set(key, (values.get(key) ?? 0) + Number(item.amount ?? 0));
+      const amount = Number.parseFloat(item.amount ?? '0');
+      values.set(key, (values.get(key) ?? 0) + (Number.isFinite(amount) ? amount : 0));
     });
-    return Array.from(values.entries());
+    return Array.from(values.entries()).sort((a, b) => b[1] - a[1]);
   }, [items]);
 
   const vendors = useMemo(() => {
@@ -257,7 +336,7 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
     items.forEach((item) => {
       if (item.vendor) list.add(item.vendor);
     });
-    return Array.from(list.values());
+    return Array.from(list.values()).sort((a, b) => a.localeCompare(b, 'ru'));
   }, [items]);
 
   const burnSeries = useMemo(() => {
@@ -267,7 +346,8 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
       .forEach((item) => {
         const key = item.date.slice(0, 10);
-        map.set(key, (map.get(key) ?? 0) + Number(item.amount ?? 0));
+        const amount = Number.parseFloat(item.amount ?? '0');
+        map.set(key, (map.get(key) ?? 0) + (Number.isFinite(amount) ? amount : 0));
       });
     let acc = 0;
     return Array.from(map.entries()).map(([date, amount]) => {
@@ -298,18 +378,63 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
     [updateQuery]
   );
 
-  const openCreate = useCallback(() => {
-    if (role === 'viewer') return;
-    dispatchDrawer({ type: 'open-create', payload: { currency } });
-  }, [currency, role]);
-
-  const openExpense = useCallback(
-    (expense: Expense) => {
-      if (role === 'viewer') return;
-      dispatchDrawer({ type: 'open-view', payload: { expense } });
+  const canManageExpense = useCallback(
+    (expense: Expense | null) => {
+      if (!expense) {
+        return basePermissions.canCreate;
+      }
+      if (role === 'owner' || role === 'admin') {
+        return true;
+      }
+      if (role === 'member') {
+        if (!viewerEmail) {
+          return false;
+        }
+        return expense.createdBy.trim().toLowerCase() === viewerEmail;
+      }
+      return false;
     },
-    [role]
+    [basePermissions.canCreate, role, viewerEmail]
   );
+
+  const drawerPermissionOverrides = useMemo(() => {
+    if (!drawerState.expense) {
+      if (role === 'viewer') {
+        return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+      }
+      return undefined;
+    }
+    if (role === 'viewer') {
+      return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+    }
+    if (role === 'member' && !canManageExpense(drawerState.expense)) {
+      return { canEdit: false, canManageAttachments: false, canChangeStatus: false };
+    }
+    return undefined;
+  }, [canManageExpense, drawerState.expense, role]);
+
+  const drawerReadOnlyMessage = useMemo(() => {
+    if (!drawerState.expense) {
+      return null;
+    }
+    if (role === 'viewer') {
+      return 'У вас только доступ на чтение.';
+    }
+    if (role === 'member' && viewerEmail && drawerState.expense.createdBy.trim().toLowerCase() !== viewerEmail) {
+      return 'Редактирование доступно только автору и администраторам.';
+    }
+    return null;
+  }, [drawerState.expense, role, viewerEmail]);
+
+  const openCreate = useCallback(() => {
+    if (!basePermissions.canCreate) return;
+    dispatchDrawer({ type: 'open-create', payload: { currency } });
+    dispatchDrawer({ type: 'update', payload: { projectId } });
+  }, [basePermissions.canCreate, currency, projectId]);
+
+  const openExpense = useCallback((expense: Expense) => {
+    dispatchDrawer({ type: 'open-view', payload: { expense } });
+  }, []);
 
   const closeDrawer = useCallback(() => dispatchDrawer({ type: 'close' }), []);
 
@@ -318,23 +443,49 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
   }, []);
 
   const handleSave = useCallback(async () => {
-    if (role === 'viewer') return;
+    if (drawerState.expense) {
+      if (!canManageExpense(drawerState.expense)) {
+        dispatchDrawer({ type: 'set-error', payload: 'Недостаточно прав для редактирования' });
+        return;
+      }
+    } else if (!basePermissions.canCreate) {
+      return;
+    }
+
     dispatchDrawer({ type: 'set-saving', payload: true });
     dispatchDrawer({ type: 'set-error', payload: null });
+
+    const sanitizeText = (value: unknown) => (typeof value === 'string' && value.trim().length ? value.trim() : undefined);
+    const currencyCode = sanitizeText(drawerState.draft.currency) ?? currency;
+    const normalizedCurrency = /^[A-Z]{3}$/.test(currencyCode.toUpperCase()) ? currencyCode.toUpperCase() : currency.toUpperCase();
+    const attachments = Array.isArray(drawerState.draft.attachments)
+      ? drawerState.draft.attachments
+          .map((attachment) => {
+            const filename = sanitizeText(attachment?.filename) ?? 'Файл';
+            const url = sanitizeText(attachment?.url);
+            if (!url) {
+              return null;
+            }
+            return { filename, url };
+          })
+          .filter((item): item is { filename: string; url: string } => Boolean(item))
+      : [];
+
     const payload = {
       workspaceId: drawerState.draft.workspaceId ?? DEMO_WORKSPACE_ID,
       projectId,
-      date: drawerState.draft.date,
+      date: sanitizeText(drawerState.draft.date) ?? new Date().toISOString().slice(0, 10),
       amount: parseAmountInput(String(drawerState.draft.amount ?? '0')),
-      currency: drawerState.draft.currency ?? currency,
-      category: drawerState.draft.category ?? 'Uncategorized',
-      description: drawerState.draft.description,
-      vendor: drawerState.draft.vendor,
-      paymentMethod: drawerState.draft.paymentMethod,
-      taxAmount: drawerState.draft.taxAmount,
+      currency: normalizedCurrency,
+      category: sanitizeText(drawerState.draft.category) ?? 'Uncategorized',
+      description: sanitizeText(drawerState.draft.description),
+      vendor: sanitizeText(drawerState.draft.vendor),
+      paymentMethod: sanitizeText(drawerState.draft.paymentMethod),
+      taxAmount: sanitizeText(drawerState.draft.taxAmount),
       status: drawerState.draft.status ?? 'draft',
-      attachments: drawerState.draft.attachments ?? []
+      attachments
     };
+
     try {
       const endpoint = drawerState.expense ? `/api/expenses/${drawerState.expense.id}` : '/api/expenses';
       const method = drawerState.expense ? 'PATCH' : 'POST';
@@ -347,18 +498,32 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         throw new Error('SAVE_ERROR');
       }
       closeDrawer();
-      updateQuery({ page: filters.page });
+      triggerRefresh();
+      broadcastExpensesUpdated();
     } catch (error) {
       console.error(error);
       dispatchDrawer({ type: 'set-error', payload: 'Не удалось сохранить трату' });
     } finally {
       dispatchDrawer({ type: 'set-saving', payload: false });
     }
-  }, [closeDrawer, currency, drawerState.draft, drawerState.expense, filters.page, projectId, role, updateQuery]);
+  }, [
+    basePermissions.canCreate,
+    canManageExpense,
+    closeDrawer,
+    currency,
+    drawerState.draft,
+    drawerState.expense,
+    projectId,
+    triggerRefresh
+  ]);
 
   const handleStatusChange = useCallback(
     async (status: ExpenseStatus) => {
-      if (!drawerState.expense || role === 'viewer') return;
+      if (!drawerState.expense || !basePermissions.canChangeStatus) return;
+      if (!canManageExpense(drawerState.expense)) {
+        dispatchDrawer({ type: 'set-error', payload: 'Недостаточно прав для изменения статуса' });
+        return;
+      }
       dispatchDrawer({ type: 'set-saving', payload: true });
       dispatchDrawer({ type: 'set-error', payload: null });
       try {
@@ -371,7 +536,8 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
           throw new Error('STATUS_ERROR');
         }
         closeDrawer();
-        updateQuery({ page: filters.page });
+        triggerRefresh();
+        broadcastExpensesUpdated();
       } catch (error) {
         console.error(error);
         dispatchDrawer({ type: 'set-error', payload: 'Не удалось сменить статус' });
@@ -379,10 +545,13 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         dispatchDrawer({ type: 'set-saving', payload: false });
       }
     },
-    [closeDrawer, drawerState.expense, filters.page, role, updateQuery]
+    [basePermissions.canChangeStatus, canManageExpense, closeDrawer, drawerState.expense, triggerRefresh]
   );
 
   const handleExportCsv = useCallback(async () => {
+    if (!basePermissions.canExport) {
+      return;
+    }
     setExporting(true);
     try {
       const params = new URLSearchParams(queryKey);
@@ -394,8 +563,12 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
       if (!response.ok) {
         throw new Error('EXPORT_ERROR');
       }
-      const payload = (await response.json()) as ExpensesResponse;
-      const rows = (payload.items ?? []).map((expense) => ({
+      const payload = await response.json();
+      const normalized = normalizeExpensesResponse(payload, {
+        page: 1,
+        pageSize: Number.parseInt(params.get('pageSize') ?? '200', 10) || 200
+      });
+      const rows = normalized.items.map((expense) => ({
         date: expense.date.slice(0, 10),
         category: expense.category,
         description: expense.description ?? '',
@@ -408,18 +581,27 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         alert('Нет данных для экспорта');
         return;
       }
-      const [firstRow, ...restRows] = rows;
-      const header = Object.keys((firstRow ?? {}) as Record<string, string>);
-      const dataRows = [firstRow, ...restRows].filter(Boolean) as typeof rows;
-      const lines = dataRows.map((row) =>
-        header
-          .map((key) => {
-            const value = String(row[key as keyof typeof row] ?? '');
-            return /["\n,]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-          })
-          .join(',')
-      );
-      const content = [header.join(','), ...lines].join('\n');
+      const columns = [
+        { key: 'date', label: 'Date' },
+        { key: 'category', label: 'Category' },
+        { key: 'description', label: 'Description' },
+        { key: 'amount', label: 'Amount' },
+        { key: 'currency', label: 'Currency' },
+        { key: 'vendor', label: 'Vendor' },
+        { key: 'status', label: 'Status' }
+      ] as const;
+      const lines = [
+        columns.map((column) => column.label).join(','),
+        ...rows.map((row) =>
+          columns
+            .map(({ key }) => {
+              const value = String(row[key as keyof typeof row] ?? '');
+              return /["\n,]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+            })
+            .join(',')
+        )
+      ];
+      const content = lines.join('\n');
       const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -439,7 +621,7 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
     } finally {
       setExporting(false);
     }
-  }, [projectId, queryKey]);
+  }, [basePermissions.canExport, projectId, queryKey]);
 
   const loadHistory = useCallback(
     async (expenseId: string) => {
@@ -545,6 +727,8 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
         onStatusChange={handleStatusChange}
         onTabChange={(tab) => dispatchDrawer({ type: 'switch-tab', payload: tab })}
         role={role}
+        permissionOverrides={drawerPermissionOverrides}
+        readOnlyMessage={drawerReadOnlyMessage}
       />
     </ProjectPageFrame>
   );
