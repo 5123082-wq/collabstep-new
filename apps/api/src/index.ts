@@ -47,3 +47,4 @@ export {
   setDbExpenseStoreDependenciesFactory,
   type ExpenseStoreDriver
 } from './stores/expense-store-factory';
+export { amountToCents, centsToAmount } from './utils/money';
