@@ -102,26 +102,26 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   return (
     <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-      <div className="flex min-h-screen bg-transparent text-neutral-100">
-      <Sidebar roles={roles} />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <AppTopbar
-          profile={{ email: session.email, role: session.role }}
-          onOpenCreate={openCreateMenu}
-          onOpenPalette={openCommandPalette}
-          onLogout={handleLogout}
-          isLoggingOut={isLoggingOut}
-        />
-        <div className="flex flex-1 overflow-hidden bg-neutral-950/70">
-          <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
-            {children}
-          </ContentContainer>
+      <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-neutral-100">
+        <Sidebar roles={roles} />
+        <div className="flex h-full min-h-0 flex-1 flex-col">
+          <AppTopbar
+            profile={{ email: session.email, role: session.role }}
+            onOpenCreate={openCreateMenu}
+            onOpenPalette={openCommandPalette}
+            onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
+          />
+          <div className="flex flex-1 min-h-0 overflow-hidden bg-neutral-950/70">
+            <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
+              {children}
+            </ContentContainer>
+          </div>
         </div>
-      </div>
-      <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
-      <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
-      <ToastHub />
-      {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
+        <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
+        <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
+        <ToastHub />
+        {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
       </div>
     </AppShellProvider>
   );
