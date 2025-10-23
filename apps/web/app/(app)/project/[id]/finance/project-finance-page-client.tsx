@@ -8,42 +8,26 @@ import {
   useState
 } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import ExpenseDrawer from '@/components/finance/ExpenseDrawer';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  DEMO_WORKSPACE_ID,
+  PAGE_SIZE_OPTIONS,
+  STATUS_COLORS,
+  STATUS_LABELS,
+  createDraft,
+  drawerReducer,
+  type AuditEvent,
+  type DrawerState,
+  type Expense,
+  type ExpensesResponse,
+  type ExpenseStatus,
+  type FinanceRole
+} from '@/domain/finance/expenses';
 import { cn } from '@/lib/utils';
 import { formatMoney, parseAmountInput } from '@/lib/finance/format-money';
 import { useCurrency } from '@/lib/finance/useCurrency';
-
-type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'payable' | 'closed';
-
-type FinanceRole = 'owner' | 'admin' | 'member' | 'viewer';
-
-type ExpenseAttachment = { filename: string; url: string };
-
-type Expense = {
-  id: string;
-  projectId: string;
-  workspaceId: string;
-  date: string;
-  amount: string;
-  currency: string;
-  category: string;
-  description?: string;
-  vendor?: string;
-  paymentMethod?: string;
-  taxAmount?: string;
-  status: ExpenseStatus;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-  attachments?: ExpenseAttachment[];
-};
-
-type ExpensesResponse = {
-  items: Expense[];
-  pagination: { page: number; pageSize: number; total: number; totalPages: number };
-};
 
 type FinanceFilters = {
   status?: ExpenseStatus;
@@ -62,147 +46,6 @@ const DEFAULT_FILTERS: FinanceFilters = {
   pageSize: 20,
   tab: 'list'
 };
-
-const STATUS_LABELS: Record<ExpenseStatus, string> = {
-  draft: 'Черновик',
-  pending: 'На проверке',
-  approved: 'Подтверждено',
-  payable: 'К выплате',
-  closed: 'Закрыто'
-};
-
-const STATUS_COLORS: Record<ExpenseStatus, string> = {
-  draft: 'bg-neutral-700 text-neutral-100',
-  pending: 'bg-amber-500/20 text-amber-200',
-  approved: 'bg-emerald-500/20 text-emerald-200',
-  payable: 'bg-indigo-500/20 text-indigo-200',
-  closed: 'bg-neutral-600/50 text-neutral-100'
-};
-
-const STATUS_NEXT: Record<ExpenseStatus, ExpenseStatus | null> = {
-  draft: 'pending',
-  pending: 'approved',
-  approved: 'payable',
-  payable: 'closed',
-  closed: null
-};
-
-type DrawerState = {
-  open: boolean;
-  expense: Expense | null;
-  draft: Partial<Expense> & { attachments?: ExpenseAttachment[] };
-  saving: boolean;
-  error: string | null;
-  tab: 'details' | 'attachments' | 'history';
-  history: AuditEvent[];
-  loadingHistory: boolean;
-};
-
-type DrawerAction =
-  | { type: 'open-create'; payload: { currency: string } }
-  | { type: 'open-view'; payload: { expense: Expense } }
-  | { type: 'close' }
-  | { type: 'update'; payload: Partial<DrawerState['draft']> }
-  | { type: 'set-saving'; payload: boolean }
-  | { type: 'set-error'; payload: string | null }
-  | { type: 'switch-tab'; payload: DrawerState['tab'] }
-  | { type: 'set-history'; payload: { items: AuditEvent[]; loading: boolean } };
-
-type AuditEvent = {
-  id: string;
-  action: string;
-  actorId: string;
-  createdAt: string;
-};
-
-const PAGE_SIZE_OPTIONS = [10, 20, 50];
-const DEMO_WORKSPACE_ID = 'ws-demo';
-
-function createDraft(expense: Expense | null, currency: string): DrawerState['draft'] {
-  if (!expense) {
-    return {
-      date: new Date().toISOString().slice(0, 10),
-      amount: '0',
-      currency,
-      status: 'draft',
-      attachments: []
-    };
-  }
-  const draft: DrawerState['draft'] = {
-    id: expense.id,
-    projectId: expense.projectId,
-    workspaceId: expense.workspaceId,
-    date: expense.date.slice(0, 10),
-    amount: expense.amount,
-    currency: expense.currency,
-    category: expense.category,
-    status: expense.status,
-    attachments: expense.attachments ? [...expense.attachments] : []
-  };
-  if (expense.description !== undefined) {
-    draft.description = expense.description;
-  }
-  if (expense.vendor !== undefined) {
-    draft.vendor = expense.vendor;
-  }
-  if (expense.paymentMethod !== undefined) {
-    draft.paymentMethod = expense.paymentMethod;
-  }
-  if (expense.taxAmount !== undefined) {
-    draft.taxAmount = expense.taxAmount;
-  }
-  return draft;
-}
-
-function drawerReducer(state: DrawerState, action: DrawerAction): DrawerState {
-  switch (action.type) {
-    case 'open-create':
-      return {
-        open: true,
-        expense: null,
-        draft: createDraft(null, action.payload.currency),
-        saving: false,
-        error: null,
-        tab: 'details',
-        history: [],
-        loadingHistory: false
-      };
-    case 'open-view':
-      return {
-        open: true,
-        expense: action.payload.expense,
-        draft: createDraft(action.payload.expense, action.payload.expense.currency),
-        saving: false,
-        error: null,
-        tab: 'details',
-        history: [],
-        loadingHistory: false
-      };
-    case 'close':
-      return {
-        open: false,
-        expense: null,
-        draft: createDraft(null, state.draft.currency ?? 'RUB'),
-        saving: false,
-        error: null,
-        tab: 'details',
-        history: [],
-        loadingHistory: false
-      };
-    case 'update':
-      return { ...state, draft: { ...state.draft, ...action.payload } };
-    case 'set-saving':
-      return { ...state, saving: action.payload };
-    case 'set-error':
-      return { ...state, error: action.payload };
-    case 'switch-tab':
-      return { ...state, tab: action.payload };
-    case 'set-history':
-      return { ...state, history: action.payload.items, loadingHistory: action.payload.loading };
-    default:
-      return state;
-  }
-}
 
 function parseFilters(search: URLSearchParams): FinanceFilters {
   const filters: FinanceFilters = { ...DEFAULT_FILTERS };
@@ -694,7 +537,7 @@ export default function ProjectFinancePageClient({ projectId, searchParams }: Pr
       ) : (
         <FinanceCharts categories={categories} burnSeries={burnSeries} currency={currency} locale={locale} loading={loading} />
       )}
-      <FinanceDrawer
+      <ExpenseDrawer
         state={drawerState}
         onClose={closeDrawer}
         onDraftChange={handleDraftChange}
@@ -1078,224 +921,6 @@ function FinanceCharts({
         </div>
       </div>
     </div>
-  );
-}
-
-function FinanceDrawer({
-  state,
-  onClose,
-  onDraftChange,
-  onSave,
-  onStatusChange,
-  onTabChange,
-  role
-}: {
-  state: DrawerState;
-  onClose: () => void;
-  onDraftChange: (patch: Partial<DrawerState['draft']>) => void;
-  onSave: () => void;
-  onStatusChange: (status: ExpenseStatus) => void;
-  onTabChange: (tab: DrawerState['tab']) => void;
-  role: FinanceRole;
-}) {
-  const nextStatus = state.draft.status ? STATUS_NEXT[state.draft.status] : null;
-  const canTransition = role !== 'viewer' && nextStatus;
-
-  return (
-    <Sheet open={state.open} onOpenChange={(open) => (open ? null : onClose())}>
-      <SheetContent side="right" className="flex h-full flex-col bg-neutral-950/95">
-        <SheetHeader className="space-y-2">
-          <SheetTitle>{state.expense ? 'Карточка траты' : 'Новая трата'}</SheetTitle>
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute right-4 top-4 rounded-full border border-neutral-800 px-2 py-1 text-xs text-neutral-400 hover:text-white"
-          >
-            ×
-          </button>
-        </SheetHeader>
-        <div className="mt-4 flex gap-2 text-sm text-neutral-400">
-          {(['details', 'attachments', 'history'] as DrawerState['tab'][]).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => onTabChange(tab)}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs transition',
-                state.tab === tab ? 'bg-indigo-500 text-white' : 'hover:text-white'
-              )}
-            >
-              {tab === 'details' ? 'Детали' : tab === 'attachments' ? 'Вложения' : 'История'}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 flex-1 overflow-y-auto pr-3 text-sm text-neutral-200">
-          {state.tab === 'details' ? (
-            <div className="space-y-3">
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Дата
-                <input
-                  type="date"
-                  value={state.draft.date ?? ''}
-                  onChange={(event) => onDraftChange({ date: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Сумма
-                <input
-                  type="number"
-                  step="0.01"
-                  value={state.draft.amount ?? '0'}
-                  onChange={(event) => onDraftChange({ amount: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Валюта
-                <input
-                  type="text"
-                  value={state.draft.currency ?? 'RUB'}
-                  onChange={(event) => onDraftChange({ currency: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Категория
-                <input
-                  type="text"
-                  value={state.draft.category ?? ''}
-                  onChange={(event) => onDraftChange({ category: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Описание
-                <textarea
-                  value={state.draft.description ?? ''}
-                  onChange={(event) => onDraftChange({ description: event.target.value })}
-                  className="min-h-[72px] rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Поставщик
-                <input
-                  type="text"
-                  value={state.draft.vendor ?? ''}
-                  onChange={(event) => onDraftChange({ vendor: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Метод оплаты
-                <input
-                  type="text"
-                  value={state.draft.paymentMethod ?? ''}
-                  onChange={(event) => onDraftChange({ paymentMethod: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-xs text-neutral-400">
-                Налоги
-                <input
-                  type="number"
-                  step="0.01"
-                  value={state.draft.taxAmount ?? ''}
-                  onChange={(event) => onDraftChange({ taxAmount: event.target.value })}
-                  className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-neutral-100"
-                />
-              </label>
-            </div>
-          ) : null}
-          {state.tab === 'attachments' ? (
-            <div className="space-y-3">
-              <p className="text-sm text-neutral-400">
-                Перетащите файлы в область ниже или добавьте ссылку вручную. Хранение файлов реализуется на этапе F2.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  const name = window.prompt('Название файла');
-                  if (!name) return;
-                  const url = window.prompt('Ссылка на файл (URL)');
-                  if (!url) return;
-                  const next = [...(state.draft.attachments ?? []), { filename: name, url }];
-                  onDraftChange({ attachments: next });
-                }}
-                className="rounded-full border border-neutral-800 px-3 py-1 text-xs text-neutral-100"
-              >
-                Добавить ссылку
-              </button>
-              <div className="space-y-2">
-                {(state.draft.attachments ?? []).map((file, index) => (
-                  <div
-                    key={`${file.filename}-${index}`}
-                    className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/50 px-3 py-2"
-                  >
-                    <a href={file.url} target="_blank" rel="noreferrer" className="text-sm text-neutral-100 hover:text-indigo-300">
-                      {file.filename}
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = [...(state.draft.attachments ?? [])];
-                        next.splice(index, 1);
-                        onDraftChange({ attachments: next });
-                      }}
-                      className="rounded-full border border-neutral-800 px-2 py-1 text-xs text-neutral-400 hover:text-white"
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          {state.tab === 'history' ? (
-            <div className="space-y-3 text-sm text-neutral-300">
-              {state.loadingHistory ? (
-                <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-neutral-400 border-t-transparent" />
-              ) : state.history.length ? (
-                state.history.map((event) => (
-                  <div key={event.id} className="rounded-xl border border-neutral-900 bg-neutral-900/50 px-3 py-2">
-                    <p className="text-xs text-neutral-500">
-                      {new Date(event.createdAt).toLocaleString('ru-RU')} — {event.actorId}
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-100">{event.action}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-neutral-500">История событий появится после действий с тратой.</p>
-              )}
-            </div>
-          ) : null}
-        </div>
-        {state.error ? <p className="mt-2 text-sm text-rose-400">{state.error}</p> : null}
-        <div className="mt-4 flex flex-col gap-2 border-t border-neutral-900 pt-4">
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={role === 'viewer' || state.saving}
-            className={cn(
-              'rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition',
-              role === 'viewer' ? 'opacity-40' : 'hover:bg-indigo-400'
-            )}
-          >
-            {state.saving ? 'Сохранение...' : 'Сохранить'}
-          </button>
-          {canTransition ? (
-            <button
-              type="button"
-              onClick={() => onStatusChange(nextStatus!)}
-              disabled={state.saving}
-              className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-100 transition hover:border-indigo-400/60 hover:text-white"
-            >
-              Перевести в «{STATUS_LABELS[nextStatus!]}»
-            </button>
-          ) : null}
-        </div>
-      </SheetContent>
-    </Sheet>
   );
 }
 
