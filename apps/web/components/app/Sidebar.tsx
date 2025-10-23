@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
@@ -44,13 +44,36 @@ export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
   const menu = useMemo(() => buildLeftMenu(roles), [roles]);
-  const { expandedGroups, toggleGroup } = useUiStore((state) => ({
+  const { expandedGroups, toggleGroup, setExpandedGroups } = useUiStore((state) => ({
     expandedGroups: state.expandedGroups,
-    toggleGroup: state.toggleGroup
+    toggleGroup: state.toggleGroup,
+    setExpandedGroups: state.setExpandedGroups
   }));
 
+  useEffect(() => {
+    const activeGroupIds = menu
+      .filter((section) => section.children?.length)
+      .filter((section) => {
+        const isSectionActive = Boolean(section.href && normalizedPath.startsWith(section.href));
+        const hasActiveChild = section.children?.some(
+          (child) => child.type !== 'divider' && Boolean(child.href && normalizedPath.startsWith(child.href))
+        );
+
+        return isSectionActive || hasActiveChild;
+      })
+      .map((section) => section.id);
+
+    const uniqueActiveIds = Array.from(new Set(activeGroupIds));
+    if (
+      uniqueActiveIds.length !== expandedGroups.length ||
+      uniqueActiveIds.some((id) => !expandedGroups.includes(id))
+    ) {
+      setExpandedGroups(uniqueActiveIds);
+    }
+  }, [menu, normalizedPath, expandedGroups, setExpandedGroups]);
+
   return (
-    <aside className="hidden h-full w-[288px] flex-col border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
+    <aside className="hidden h-screen w-[288px] flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
       <div className="px-2">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
       </div>
