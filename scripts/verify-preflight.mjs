@@ -40,7 +40,10 @@ const importPattern = /['"]([^'"\n]*?_wip\/[^'"\n]+)['"]/gu;
 for (const pageFile of pageFiles) {
   const content = readFileSync(pageFile, 'utf8');
   if (content.includes('_wip/')) {
-    const hasFeatureFlag = /process\.env\.NEXT_PUBLIC_FEATURE_[A-Z0-9_]*\s*===\s*'1'/u.test(content);
+    const hasFeatureFlag =
+      /process\.env\.NEXT_PUBLIC_FEATURE_[A-Z0-9_]*\s*===\s*'1'/u.test(content) ||
+      /\bfeatureFlags\.[A-Za-z0-9_]+/u.test(content) ||
+      /\bisFeatureEnabled\(['"][^'"]+['"]\)/u.test(content);
     const hasComingSoon = content.includes('FeatureComingSoon');
     if (!hasFeatureFlag || !hasComingSoon) {
       errors.push(`Файл ${relative(rootDir, pageFile)} использует _wip, но не содержит проверку флага и/или заглушку`);

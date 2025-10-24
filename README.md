@@ -24,6 +24,7 @@
 - `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` — реквизиты демо-админа
 - `DEMO_USER_EMAIL`, `DEMO_USER_PASSWORD` — реквизиты демо-пользователя
 - `FIN_EXPENSES_STORAGE` — выбирает драйвер хранилища расходов (`memory` или `db`). Значение по умолчанию в dev — `memory`, в staging/prod (`NODE_ENV` или `VERCEL_ENV`) — `db`. На Vercel задайте `FIN_EXPENSES_STORAGE=db` для окружений `staging` и `production`, а в `preview` оставьте `memory`, если не требуется реальная база.
+- `NEXT_PUBLIC_FEATURE_*` — флаги второго поколения для UI. По умолчанию включены `NEXT_PUBLIC_FEATURE_FINANCE_GLOBAL=1` и `NEXT_PUBLIC_FEATURE_PROJECTS_OVERVIEW=1`; остальные (`NEXT_PUBLIC_FEATURE_CREATE_WIZARD`, `NEXT_PUBLIC_FEATURE_PROJECT_DASHBOARD`, `NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE`, `NEXT_PUBLIC_FEATURE_BUDGET_LIMITS`, `NEXT_PUBLIC_FEATURE_FINANCE_AUTOMATIONS`) стартуют в состоянии `0` и включаются по мере готовности.
 - (опционально) `SKIP_VERCEL_BUILD=1` — отключает локальную симуляцию `vercel build` при отсутствии токена
 - На Vercel установите `NAV_V1=on`, `APP_LOCALE=ru`, `AUTH_DEV=on`, данные демо-аккаунтов и `FIN_EXPENSES_STORAGE` согласно окружению (`memory` для `preview`, `db` для `staging`/`production`).
 

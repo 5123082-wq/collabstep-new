@@ -10,6 +10,7 @@ if (shouldSkip) {
 }
 
 try {
+  execSync('node scripts/flags-snapshot.mjs', { stdio: 'inherit', env: process.env });
   execSync('npx vercel build --prod', { stdio: 'inherit', env: process.env });
 } catch (error) {
   const status = typeof error.status === 'number' ? error.status : 1;
