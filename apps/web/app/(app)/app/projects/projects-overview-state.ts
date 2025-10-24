@@ -276,6 +276,13 @@ export function mapProjectCard(dto: ProjectCard): ProjectCard {
       important: dto.tasks.important ?? 0,
       completed: dto.tasks.completed ?? 0
     },
-    budget: dto.budget ?? { planned: null, spent: null }
+    budget: dto.budget ?? { planned: null, spent: null },
+    permissions: {
+      // [PLAN:S2-120] Гарантируем предсказуемые ACL в клиенте.
+      canArchive: dto.permissions?.canArchive ?? false,
+      canInvite: dto.permissions?.canInvite ?? false,
+      canCreateTask: dto.permissions?.canCreateTask ?? false,
+      canView: dto.permissions?.canView ?? true
+    }
   };
 }

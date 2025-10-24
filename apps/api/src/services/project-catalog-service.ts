@@ -194,6 +194,15 @@ export class ProjectCatalogService {
       const isParticipant = rawMembers.some(
         (member) => member.userId === currentUserId && member.role !== 'viewer'
       );
+      const membership = rawMembers.find((member) => member.userId === currentUserId) ?? null;
+      const effectiveRole = membership?.role ?? (project.ownerId === currentUserId ? 'owner' : null);
+      const canInvite = effectiveRole === 'owner' || effectiveRole === 'admin';
+      const canCreateTask =
+        effectiveRole === 'owner' ||
+        effectiveRole === 'admin' ||
+        effectiveRole === 'coord' ||
+        effectiveRole === 'member';
+      const canView = Boolean(effectiveRole) || project.ownerId === currentUserId;
 
       if (params.tab === 'mine') {
         if (!isOwner) {
@@ -231,7 +240,11 @@ export class ProjectCatalogService {
         },
         budget: { planned: null, spent: null },
         permissions: {
-          canArchive: project.ownerId === currentUserId
+          // [PLAN:S2-111] Быстрые действия синхронизированы с ACL участников.
+          canArchive: project.ownerId === currentUserId,
+          canInvite,
+          canCreateTask,
+          canView
         }
       };
 

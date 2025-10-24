@@ -179,7 +179,11 @@ export interface ProjectCard {
     spent: string | null;
   };
   permissions: {
+    // [PLAN:S2-110] Stage 2 cards раскрывают действия по ролям для обзора проектов.
     canArchive: boolean;
+    canInvite: boolean;
+    canCreateTask: boolean;
+    canView: boolean;
   };
   deadline?: string;
   stage?: ProjectStage;

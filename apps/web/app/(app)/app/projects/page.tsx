@@ -1,8 +1,18 @@
+// [PLAN:S2-010] Stage 2 overview entrypoint подключает клиентский контейнер и fallback под флагом.
 import Link from 'next/link';
 import ProjectsDrawerTrigger from '@/components/projects/ProjectsDrawerTrigger';
+import { flags } from '@/lib/flags';
+import ProjectsOverviewPageClient from './projects-overview-page-client';
 
 export default function ProjectsOverviewPage() {
-  // [PLAN:S2] Projects overview filters & tabs
+  if (!flags.PROJECTS_OVERVIEW) {
+    return <ProjectsOverviewFallback />;
+  }
+
+  return <ProjectsOverviewPageClient />;
+}
+
+function ProjectsOverviewFallback() {
   return (
     <section className="flex min-h-[420px] flex-col justify-center gap-10 rounded-3xl border border-dashed border-neutral-900/60 bg-neutral-950/60 px-10 py-16 text-center shadow-inner">
       <div className="space-y-4">
