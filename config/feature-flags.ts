@@ -41,7 +41,7 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_CREATE_WIZARD',
     stage: 3,
     description: 'Мастер создания проекта из трёх шагов.',
-    default: false
+    default: true
   },
   projectDashboard: {
     env: 'NEXT_PUBLIC_FEATURE_PROJECT_DASHBOARD',

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2025-10-24T08:24:00.000Z",
+  "generatedAt": "2025-11-12T00:00:00.000Z",
   "flags": [
     {
       "name": "projectsCore",
@@ -26,8 +26,8 @@
       "name": "projectCreateWizard",
       "env": "NEXT_PUBLIC_FEATURE_CREATE_WIZARD",
       "stage": 3,
-      "default": false,
-      "enabled": false
+      "default": true,
+      "enabled": true
     },
     {
       "name": "projectDashboard",
