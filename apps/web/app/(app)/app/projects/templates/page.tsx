@@ -1,6 +1,18 @@
 import ProjectsDrawerTrigger from '@/components/projects/ProjectsDrawerTrigger';
+import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
+import { flags } from '@/lib/flags';
 
 export default function ProjectTemplatesPage() {
+  if (!flags.PROJECTS_OVERVIEW) {
+    return (
+      <FeatureComingSoon
+        // [PLAN:S2-220] Зафлагировано до завершения Stage 2.
+        title="Шаблоны проектов"
+        description="Раздел доступен в рамках нового обзора проектов. Включите фич-флаг NEXT_PUBLIC_FEATURE_PROJECTS_OVERVIEW, чтобы протестировать функциональность."
+      />
+    );
+  }
+
   return (
     <section className="rounded-3xl border border-dashed border-neutral-900/60 bg-neutral-950/60 px-10 py-16 text-center shadow-inner">
       <div className="space-y-4">

@@ -119,6 +119,7 @@ function Avatar({
 
 function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArchive, actionInFlight }: ProjectCardProps) {
   const isArchived = project.status === 'archived';
+  const { canArchive, canCreateTask, canInvite, canView } = project.permissions; // [PLAN:S2-210] Быстрые действия по ролям.
   return (
     <article className="flex h-full flex-col justify-between gap-6 rounded-2xl border border-neutral-900 bg-neutral-950/50 p-5 shadow-md shadow-black/10">
       <div className="space-y-4">
@@ -219,25 +220,33 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
           <button
             type="button"
             onClick={() => onOpen(project.id)}
-            className="rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white"
+            disabled={!canView}
+            className={cn(
+              'rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
+              !canView ? 'cursor-not-allowed opacity-60 hover:border-indigo-500/60 hover:bg-transparent hover:text-indigo-200' : undefined
+            )}
           >
             Открыть
           </button>
-          <button
-            type="button"
-            onClick={() => onCreateTask(project.id)}
-            className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-          >
-            Создать задачу
-          </button>
-          <button
-            type="button"
-            onClick={() => onInvite(project.id)}
-            className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-          >
-            Пригласить
-          </button>
-          {project.permissions.canArchive ? (
+          {canCreateTask ? (
+            <button
+              type="button"
+              onClick={() => onCreateTask(project.id)}
+              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+            >
+              Создать задачу
+            </button>
+          ) : null}
+          {canInvite ? (
+            <button
+              type="button"
+              onClick={() => onInvite(project.id)}
+              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+            >
+              Пригласить
+            </button>
+          ) : null}
+          {canArchive ? (
             <button
               type="button"
               onClick={() => onToggleArchive(project.id, !isArchived)}
@@ -261,6 +270,7 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
 }
 function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArchive, actionInFlight }: ProjectCardProps) {
   const isArchived = project.status === 'archived';
+  const { canArchive, canCreateTask, canInvite, canView } = project.permissions; // [PLAN:S2-211] ACL для списочного вида.
   return (
     <article className="flex flex-col gap-4 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-5 shadow-sm shadow-black/5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -353,26 +363,34 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
           <button
             type="button"
             onClick={() => onOpen(project.id)}
-            className="rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white"
+            disabled={!canView}
+            className={cn(
+              'rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
+              !canView ? 'cursor-not-allowed opacity-60 hover:border-indigo-500/60 hover:bg-transparent hover:text-indigo-200' : undefined
+            )}
           >
             Открыть
           </button>
-          <button
-            type="button"
-            onClick={() => onCreateTask(project.id)}
-            className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-          >
-            Создать задачу
-          </button>
-          <button
-            type="button"
-            onClick={() => onInvite(project.id)}
-            className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-          >
-            Пригласить
-          </button>
+          {canCreateTask ? (
+            <button
+              type="button"
+              onClick={() => onCreateTask(project.id)}
+              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+            >
+              Создать задачу
+            </button>
+          ) : null}
+          {canInvite ? (
+            <button
+              type="button"
+              onClick={() => onInvite(project.id)}
+              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+            >
+              Пригласить
+            </button>
+          ) : null}
         </div>
-        {project.permissions.canArchive ? (
+        {canArchive ? (
           <button
             type="button"
             onClick={() => onToggleArchive(project.id, !isArchived)}
@@ -384,10 +402,10 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
                 : 'border-rose-500/40 bg-rose-500/10 text-rose-200 hover:border-rose-400 hover:text-rose-100',
               actionInFlight === project.id ? 'opacity-75' : undefined
             )}
-          >
-            {actionInFlight === project.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            {isArchived ? 'Восстановить' : 'Архивировать'}
-          </button>
+            >
+              {actionInFlight === project.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isArchived ? 'Восстановить' : 'Архивировать'}
+            </button>
         ) : null}
       </div>
     </article>
