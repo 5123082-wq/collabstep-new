@@ -2,14 +2,19 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 
+type ThemePreference = 'light' | 'dark' | 'system';
+type BackgroundPreset = 'mesh' | 'grid' | 'halo' | 'bloom' | 'mist' | 'aurora' | 'midnight';
+
 type UiState = {
-  bgPreset: 'mesh' | 'grid' | 'halo';
+  bgPreset: BackgroundPreset;
   expandedGroups: string[];
   lastProjectId: string | null;
+  theme: ThemePreference;
   setBgPreset: (v: UiState['bgPreset']) => void;
   toggleGroup: (id: string) => void;
   setExpandedGroups: (ids: string[]) => void;
   setLastProjectId: (id: string | null) => void;
+  setTheme: (theme: ThemePreference) => void;
 };
 
 const memoryStore: Record<string, string> = {};
@@ -25,10 +30,11 @@ const memoryStorage: StateStorage = {
   }
 };
 
-const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId'> = {
+const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId' | 'theme'> = {
   bgPreset: 'mesh',
   expandedGroups: [],
-  lastProjectId: null
+  lastProjectId: null,
+  theme: 'system'
 };
 
 export const useUiStore = create<UiState>()(
@@ -36,6 +42,7 @@ export const useUiStore = create<UiState>()(
     (set, get) => ({
       ...defaultState,
       setBgPreset: (v) => set({ bgPreset: v }),
+      setTheme: (theme) => set({ theme }),
       toggleGroup: (id) => {
         const current = get().expandedGroups;
         const exists = current.includes(id);
@@ -52,10 +59,16 @@ export const useUiStore = create<UiState>()(
       merge: (persistedState, currentState) => {
         const persisted = (persistedState as Partial<UiState>) ?? {};
 
-        const bgPreset =
-          persisted.bgPreset === 'mesh' || persisted.bgPreset === 'grid' || persisted.bgPreset === 'halo'
-            ? persisted.bgPreset
-            : currentState.bgPreset;
+        const allowedPresets: BackgroundPreset[] = ['mesh', 'grid', 'halo', 'bloom', 'mist', 'aurora', 'midnight'];
+        const persistedPreset = persisted.bgPreset as BackgroundPreset | undefined;
+        const bgPreset = allowedPresets.includes(persistedPreset ?? 'mesh')
+          ? (persistedPreset as BackgroundPreset)
+          : currentState.bgPreset;
+
+        const persistedTheme = persisted.theme as ThemePreference | undefined;
+        const theme: ThemePreference = ['light', 'dark', 'system'].includes(persistedTheme ?? 'system')
+          ? (persistedTheme as ThemePreference)
+          : currentState.theme;
 
         const expandedGroups = Array.isArray(persisted.expandedGroups)
           ? persisted.expandedGroups.filter((item): item is string => typeof item === 'string')
@@ -67,6 +80,7 @@ export const useUiStore = create<UiState>()(
           ...currentState,
           ...persisted,
           bgPreset,
+          theme,
           expandedGroups,
           lastProjectId
         } satisfies UiState;

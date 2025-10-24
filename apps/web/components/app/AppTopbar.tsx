@@ -11,7 +11,17 @@ import { toast } from '@/lib/ui/toast';
 const backgroundPresets = [
   { id: 'mesh', label: 'Mesh' },
   { id: 'grid', label: 'Grid' },
-  { id: 'halo', label: 'Halo' }
+  { id: 'halo', label: 'Halo' },
+  { id: 'bloom', label: 'Bloom' },
+  { id: 'mist', label: 'Mist' },
+  { id: 'aurora', label: 'Aurora' },
+  { id: 'midnight', label: 'Midnight' }
+] as const;
+
+const themeOptions = [
+  { id: 'light', label: 'Светлая' },
+  { id: 'system', label: 'Авто' },
+  { id: 'dark', label: 'Тёмная' }
 ] as const;
 
 type QuickSuggestion = {
@@ -28,6 +38,32 @@ const iconPaths: Record<string, string> = {
   wallet: 'M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 0 4H5a2 2 0 0 1-2-2Zm0 5a2 2 0 0 1 2-2h16v8H5a2 2 0 0 1-2-2v-4Zm13 2a1 1 0 1 0 0 2h3v-2h-3Z',
   user: 'M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4Z'
 };
+
+function ThemeIcon({ variant }: { variant: (typeof themeOptions)[number]['id'] }) {
+  if (variant === 'light') {
+    return (
+      <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v2m0 16v2m10-10h-2M4 12H2m3.64-6.36 1.42 1.42M16.94 16.94l1.42 1.42m0-11.31-1.42 1.42M7.05 16.95 5.64 18.36" />
+      </svg>
+    );
+  }
+
+  if (variant === 'dark') {
+    return (
+      <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+        <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M19 12h3M2 12h3M12 2.5V1M12 23v-1.5M5.64 5.64 4.22 4.22m15.56 0-1.42 1.42m0 12.72 1.42 1.42m-15.56 0 1.42-1.42" />
+    </svg>
+  );
+}
 
 function resolveRoleLabel(role: DemoProfile['role']): string {
   return role === 'admin' ? 'Админ' : 'Пользователь';
@@ -72,7 +108,12 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { bgPreset, setBgPreset } = useUiStore((state) => ({ bgPreset: state.bgPreset, setBgPreset: state.setBgPreset }));
+  const { bgPreset, setBgPreset, theme, setTheme } = useUiStore((state) => ({
+    bgPreset: state.bgPreset,
+    setBgPreset: state.setBgPreset,
+    theme: state.theme,
+    setTheme: state.setTheme
+  }));
   const { items: specialistItems } = loadSpecialists();
   const { items: vacancyItems } = loadVacancies();
   const [searchValue, setSearchValue] = useState('');
@@ -81,6 +122,8 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
   const hintId = `${listboxId}-hint`;
+  const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+  const backgroundClassNames = useMemo(() => backgroundPresets.map((preset) => `app-bg-${preset.id}`), []);
 
   const suggestions: QuickSuggestion[] = useMemo(() => {
     const trimmed = searchValue.trim();
@@ -145,6 +188,23 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
     setActiveSuggestion(0);
   }, [suggestions]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setSystemPrefersDark(event.matches);
+    };
+    setSystemPrefersDark(media.matches);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange);
+      return () => media.removeEventListener('change', handleChange);
+    }
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
+
   const handleSelectSuggestion = useCallback(
     (suggestion: QuickSuggestion) => {
       router.push(suggestion.href);
@@ -205,15 +265,16 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
     ? `${listboxId}-option-${suggestions[activeSuggestion]?.id ?? activeSuggestion}`
     : undefined;
   const currentSubscriptionLabel = 'Подписка Pro';
+  const resolvedTheme = theme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : theme;
 
   useEffect(() => {
     const body = document.body;
-    body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
+    body.classList.remove(...backgroundClassNames);
     body.classList.add(`app-bg-${bgPreset}`);
     return () => {
-      body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
+      body.classList.remove(...backgroundClassNames);
     };
-  }, [bgPreset, pathname]);
+  }, [bgPreset, pathname, backgroundClassNames]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
@@ -359,6 +420,33 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           >
             {isLoggingOut ? 'Выход…' : 'Выйти'}
           </button>
+          <div className="flex items-center gap-1 rounded-xl border border-neutral-800 bg-neutral-900/60 p-1">
+            {themeOptions.map((option) => {
+              const isSelected = theme === option.id;
+              const title =
+                option.id === 'system'
+                  ? `Авто · сейчас ${resolvedTheme === 'dark' ? 'тёмная' : 'светлая'}`
+                  : option.label;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setTheme(option.id)}
+                  className={clsx(
+                    'flex items-center gap-2 rounded-lg px-2 py-1 text-[11px] font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    isSelected
+                      ? 'bg-indigo-500/20 text-indigo-100 ring-1 ring-inset ring-indigo-500/50'
+                      : 'text-neutral-400 hover:text-neutral-100'
+                  )}
+                  aria-pressed={isSelected}
+                  title={title}
+                >
+                  <ThemeIcon variant={option.id} />
+                  <span>{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
           {backgroundPresets.map((preset) => (
             <button
               key={preset.id}

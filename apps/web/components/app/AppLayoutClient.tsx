@@ -15,6 +15,7 @@ import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
+import { useUiStore } from '@/lib/state/ui-store';
 
 const TOAST_MESSAGES: Record<string, { message: string; tone?: 'info' | 'success' | 'warning' }> = {
   'register-success': { message: 'Регистрация успешна', tone: 'success' },
@@ -32,6 +33,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
+  const themePreference = useUiStore((state) => state.theme);
   useQueryToast(TOAST_MESSAGES);
 
   const openCreateMenu = useCallback(() => {
@@ -45,6 +47,26 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   useEffect(() => {
     setUserRoles(roles);
   }, [roles]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyTheme = () => {
+      const nextTheme = themePreference === 'system' ? (media.matches ? 'dark' : 'light') : themePreference;
+      document.documentElement.dataset.theme = nextTheme;
+      document.body.dataset.theme = nextTheme;
+    };
+    applyTheme();
+    const listener = () => applyTheme();
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', listener);
+      return () => media.removeEventListener('change', listener);
+    }
+    media.addListener(listener);
+    return () => media.removeListener(listener);
+  }, [themePreference]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
