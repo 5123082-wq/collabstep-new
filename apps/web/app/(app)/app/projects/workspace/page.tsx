@@ -1,7 +1,8 @@
 import dynamic from 'next/dynamic';
 import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
-const workspaceEnabled = process.env.NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE === '1';
+const workspaceEnabled = isFeatureEnabled('tasksWorkspace');
 const ProjectsWorkspacePageContent = dynamic(() => import('../_wip/workspace-page'), { ssr: false });
 
 export default function ProjectsWorkspacePlaceholder() {
