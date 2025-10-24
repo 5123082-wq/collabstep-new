@@ -31,7 +31,7 @@ describe('ui-store', () => {
 
     jest.resetModules();
     reloadStore();
-    useUiStore.setState({ bgPreset: 'mesh', expandedGroups: [], lastProjectId: null });
+    useUiStore.setState({ bgPreset: 'mesh', expandedGroups: [], lastProjectId: null, theme: 'system' });
     await useUiStore.persist?.clearStorage?.();
   });
 
@@ -41,10 +41,18 @@ describe('ui-store', () => {
 
   it('переключает фон и сохраняет состояние', () => {
     act(() => {
-      useUiStore.getState().setBgPreset('grid');
+      useUiStore.getState().setBgPreset('aurora');
     });
 
-    expect(useUiStore.getState().bgPreset).toBe('grid');
+    expect(useUiStore.getState().bgPreset).toBe('aurora');
+  });
+
+  it('переключает тему интерфейса', () => {
+    act(() => {
+      useUiStore.getState().setTheme('light');
+    });
+
+    expect(useUiStore.getState().theme).toBe('light');
   });
 
   it('переключает раскрытые группы меню', () => {
