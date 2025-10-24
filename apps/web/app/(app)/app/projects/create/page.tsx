@@ -3,13 +3,15 @@ import { FeatureComingSoon } from '@/components/app/FeatureComingSoon';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 
 const createWizardEnabled = isFeatureEnabled('projectCreateWizard');
-const ProjectCreatePageContent = dynamic(() => import('../_wip/create-page'), { ssr: false });
-// [PLAN:S3] Multi-step project creation wizard
+const ProjectCreateWizardPage = dynamic(() => import('./project-create-wizard-page-client'), {
+  ssr: false
+});
 
-export default function ProjectCreatePlaceholderPage() {
+// [PLAN:S3-entry] P3 wizard entrypoint guarded by feature flag.
+export default function ProjectCreatePage() {
   if (!createWizardEnabled) {
     return <FeatureComingSoon title="Мастер создания проектов" />;
   }
 
-  return <ProjectCreatePageContent />;
+  return <ProjectCreateWizardPage />;
 }

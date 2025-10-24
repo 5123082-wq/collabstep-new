@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/ui/toast';
 import { useUiStore } from '@/lib/state/ui-store';
 import { useProjectContext } from '@/components/project/ProjectContext';
 import { loadProjects } from '@/lib/mock/loaders';
 import type { Project } from '@/lib/schemas/project';
+import { getUserRoles, type UserRole } from '@/lib/auth/roles';
 
 type CreateMenuProps = {
   open: boolean;
@@ -18,10 +20,17 @@ type CreateAction = {
   description: string;
   toastMessage: string;
   requiresProject?: boolean;
+  roles?: UserRole[];
 };
 
 const createActions: CreateAction[] = [
-  { id: 'project', label: 'Проект', description: 'Запустить новый проект и команду.', toastMessage: 'TODO: Создать проект' },
+  {
+    id: 'project',
+    label: 'Проект',
+    description: 'Запустить новый проект и команду.',
+    toastMessage: 'TODO: Создать проект',
+    roles: ['FOUNDER', 'PM', 'ADMIN']
+  },
   { id: 'vacancy', label: 'Вакансию', description: 'Открыть позицию и собрать отклики.', toastMessage: 'TODO: Создать вакансию', requiresProject: true },
   { id: 'task', label: 'Задачу', description: 'Добавить задачу в план работ.', toastMessage: 'TODO: Создать задачу', requiresProject: true },
   { id: 'ai-session', label: 'AI-сессию', description: 'Запустить диалог с AI-ассистентом.', toastMessage: 'TODO: Открыть AI-сессию', requiresProject: true },
@@ -30,12 +39,23 @@ const createActions: CreateAction[] = [
 ];
 
 export default function CreateMenu({ open, onClose }: CreateMenuProps) {
+  const router = useRouter();
   const { lastProjectId, setLastProjectId } = useUiStore((state) => ({
     lastProjectId: state.lastProjectId,
     setLastProjectId: state.setLastProjectId
   }));
   const projectContext = useProjectContext();
   const projectOptions: Project[] = loadProjects();
+  const roles = useMemo(() => getUserRoles(), []);
+
+  const visibleActions = useMemo(() => {
+    return createActions.filter((action) => {
+      if (!action.roles) {
+        return true;
+      }
+      return action.roles.some((role) => roles.includes(role));
+    });
+  }, [roles]);
 
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | undefined>(undefined);
@@ -87,6 +107,12 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
 
     if (targetProjectId) {
       setLastProjectId(targetProjectId);
+    }
+
+    if (action.id === 'project') {
+      onClose();
+      router.push('/app/projects/create');
+      return;
     }
 
     toast(action.toastMessage);
@@ -199,22 +225,28 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            {createActions.map((action) => (
-              <button
-                key={action.id}
-                type="button"
-                onClick={() => handleAction(action)}
-                className="flex h-full flex-col justify-between rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-neutral-100">{action.label}</p>
-                  <p className="mt-2 text-xs text-neutral-400">{action.description}</p>
-                </div>
-                {action.requiresProject && (
-                  <p className="mt-3 text-[10px] uppercase tracking-wide text-neutral-500">Нужен выбранный проект</p>
-                )}
-              </button>
-            ))}
+            {visibleActions.length > 0 ? (
+              visibleActions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => handleAction(action)}
+                  className="flex h-full flex-col justify-between rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-100">{action.label}</p>
+                    <p className="mt-2 text-xs text-neutral-400">{action.description}</p>
+                  </div>
+                  {action.requiresProject && (
+                    <p className="mt-3 text-[10px] uppercase tracking-wide text-neutral-500">Нужен выбранный проект</p>
+                  )}
+                </button>
+              ))
+            ) : (
+              <p className="rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 p-6 text-center text-xs text-neutral-500">
+                Доступные действия отсутствуют для вашей роли.
+              </p>
+            )}
           </div>
         </div>
       </div>
