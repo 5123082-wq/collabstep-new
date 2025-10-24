@@ -62,8 +62,8 @@ html[data-theme='light'] {
   --surface-border-strong: rgba(100, 116, 139, 0.45);
   --surface-chip: rgba(15, 23, 42, 0.08);
   --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-tertiary: #64748b;
+  --text-secondary: #1f2937;
+  --text-tertiary: #334155;
   --text-chip: #0f172a;
   --accent-border: rgba(79, 70, 229, 0.55);
   --accent-border-strong: rgba(67, 56, 202, 0.75);
@@ -187,6 +187,10 @@ html[data-theme='dark'] .text-neutral-200 {
   color: #f8fafc !important;
 }
 
+html[data-theme='light'] .text-neutral-50 {
+  color: #0f172a !important;
+}
+
 html[data-theme='light'] .text-neutral-100,
 html[data-theme='light'] .text-neutral-200 {
   color: #0f172a !important;
@@ -197,7 +201,7 @@ html[data-theme='dark'] .text-neutral-300 {
 }
 
 html[data-theme='light'] .text-neutral-300 {
-  color: #1e293b !important;
+  color: #1f2937 !important;
 }
 
 html[data-theme='dark'] .text-neutral-400 {
@@ -205,7 +209,7 @@ html[data-theme='dark'] .text-neutral-400 {
 }
 
 html[data-theme='light'] .text-neutral-400 {
-  color: #475569 !important;
+  color: #334155 !important;
 }
 
 html[data-theme='dark'] .text-neutral-500 {
@@ -213,7 +217,7 @@ html[data-theme='dark'] .text-neutral-500 {
 }
 
 html[data-theme='light'] .text-neutral-500 {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 html[data-theme='dark'] .text-neutral-600 {
@@ -221,5 +225,9 @@ html[data-theme='dark'] .text-neutral-600 {
 }
 
 html[data-theme='light'] .text-neutral-600 {
+  color: #4b5563 !important;
+}
+
+html[data-theme='light'] .placeholder\:text-neutral-500::placeholder {
   color: #475569 !important;
 }
