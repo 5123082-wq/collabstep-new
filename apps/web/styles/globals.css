@@ -231,3 +231,212 @@ html[data-theme='light'] .text-neutral-600 {
 html[data-theme='light'] .placeholder\:text-neutral-500::placeholder {
   color: #475569 !important;
 }
+
+html[data-theme='light'] .text-white {
+  color: #0f172a !important;
+}
+
+html[data-theme='light'] .bg-indigo-500.text-white,
+html[data-theme='light'] .bg-indigo-500\/90.text-white,
+html[data-theme='light'] .bg-indigo-500\/80.text-white,
+html[data-theme='light'] .bg-indigo-600.text-white,
+html[data-theme='light'] .bg-indigo-700.text-white,
+html[data-theme='light'] .bg-indigo-800.text-white,
+html[data-theme='light'] .bg-indigo-900.text-white {
+  color: #ffffff !important;
+}
+
+html[data-theme='light'] .bg-neutral-950,
+html[data-theme='light'] .bg-neutral-950\/98,
+html[data-theme='light'] .bg-neutral-950\/95,
+html[data-theme='light'] .bg-neutral-950\/90,
+html[data-theme='light'] .bg-neutral-950\/80,
+html[data-theme='light'] .bg-neutral-950\/70,
+html[data-theme='light'] .bg-neutral-950\/60,
+html[data-theme='light'] .bg-neutral-950\/50,
+html[data-theme='light'] .bg-neutral-950\/40,
+html[data-theme='light'] .bg-neutral-950\/30,
+html[data-theme='light'] .bg-neutral-900,
+html[data-theme='light'] .bg-neutral-900\/95,
+html[data-theme='light'] .bg-neutral-900\/90,
+html[data-theme='light'] .bg-neutral-900\/80,
+html[data-theme='light'] .bg-neutral-900\/70,
+html[data-theme='light'] .bg-neutral-900\/60,
+html[data-theme='light'] .bg-neutral-900\/50,
+html[data-theme='light'] .bg-neutral-900\/40,
+html[data-theme='light'] .bg-neutral-900\/30 {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .bg-neutral-950.text-white,
+html[data-theme='light'] .bg-neutral-950\/98.text-white,
+html[data-theme='light'] .bg-neutral-950\/95.text-white,
+html[data-theme='light'] .bg-neutral-950\/90.text-white,
+html[data-theme='light'] .bg-neutral-950\/80.text-white,
+html[data-theme='light'] .bg-neutral-950\/70.text-white,
+html[data-theme='light'] .bg-neutral-950\/60.text-white,
+html[data-theme='light'] .bg-neutral-950\/50.text-white,
+html[data-theme='light'] .bg-neutral-950\/40.text-white,
+html[data-theme='light'] .bg-neutral-950\/30.text-white,
+html[data-theme='light'] .bg-neutral-900.text-white,
+html[data-theme='light'] .bg-neutral-900\/95.text-white,
+html[data-theme='light'] .bg-neutral-900\/90.text-white,
+html[data-theme='light'] .bg-neutral-900\/80.text-white,
+html[data-theme='light'] .bg-neutral-900\/70.text-white,
+html[data-theme='light'] .bg-neutral-900\/60.text-white,
+html[data-theme='light'] .bg-neutral-900\/50.text-white,
+html[data-theme='light'] .bg-neutral-900\/40.text-white,
+html[data-theme='light'] .bg-neutral-900\/30.text-white,
+html[data-theme='light'] .bg-neutral-950 .text-white,
+html[data-theme='light'] .bg-neutral-950\/98 .text-white,
+html[data-theme='light'] .bg-neutral-950\/95 .text-white,
+html[data-theme='light'] .bg-neutral-950\/90 .text-white,
+html[data-theme='light'] .bg-neutral-950\/80 .text-white,
+html[data-theme='light'] .bg-neutral-950\/70 .text-white,
+html[data-theme='light'] .bg-neutral-950\/60 .text-white,
+html[data-theme='light'] .bg-neutral-950\/50 .text-white,
+html[data-theme='light'] .bg-neutral-950\/40 .text-white,
+html[data-theme='light'] .bg-neutral-950\/30 .text-white,
+html[data-theme='light'] .bg-neutral-900 .text-white,
+html[data-theme='light'] .bg-neutral-900\/95 .text-white,
+html[data-theme='light'] .bg-neutral-900\/90 .text-white,
+html[data-theme='light'] .bg-neutral-900\/80 .text-white,
+html[data-theme='light'] .bg-neutral-900\/70 .text-white,
+html[data-theme='light'] .bg-neutral-900\/60 .text-white,
+html[data-theme='light'] .bg-neutral-900\/50 .text-white,
+html[data-theme='light'] .bg-neutral-900\/40 .text-white,
+html[data-theme='light'] .bg-neutral-900\/30 .text-white {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme='light'] .text-indigo-100,
+html[data-theme='light'] .text-indigo-200 {
+  color: #4338ca !important;
+}
+
+html[data-theme='light'] .text-indigo-300 {
+  color: #4f46e5 !important;
+}
+
+html[data-theme='light'] .bg-indigo-500\/10,
+html[data-theme='light'] .bg-indigo-500\/15,
+html[data-theme='light'] .bg-indigo-500\/20,
+html[data-theme='light'] .bg-indigo-500\/30 {
+  color: #4338ca !important;
+}
+
+html[data-theme='light'] .bg-indigo-500\/10 .text-white,
+html[data-theme='light'] .bg-indigo-500\/10 .text-indigo-100,
+html[data-theme='light'] .bg-indigo-500\/10 .text-indigo-200,
+html[data-theme='light'] .bg-indigo-500\/10 .text-indigo-300,
+html[data-theme='light'] .bg-indigo-500\/15 .text-white,
+html[data-theme='light'] .bg-indigo-500\/15 .text-indigo-100,
+html[data-theme='light'] .bg-indigo-500\/15 .text-indigo-200,
+html[data-theme='light'] .bg-indigo-500\/15 .text-indigo-300,
+html[data-theme='light'] .bg-indigo-500\/20 .text-white,
+html[data-theme='light'] .bg-indigo-500\/20 .text-indigo-100,
+html[data-theme='light'] .bg-indigo-500\/20 .text-indigo-200,
+html[data-theme='light'] .bg-indigo-500\/20 .text-indigo-300,
+html[data-theme='light'] .bg-indigo-500\/30 .text-white,
+html[data-theme='light'] .bg-indigo-500\/30 .text-indigo-100,
+html[data-theme='light'] .bg-indigo-500\/30 .text-indigo-200,
+html[data-theme='light'] .bg-indigo-500\/30 .text-indigo-300 {
+  color: #4338ca !important;
+}
+
+html[data-theme='light'] .text-emerald-100,
+html[data-theme='light'] .text-emerald-200,
+html[data-theme='light'] .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .bg-emerald-500\/10,
+html[data-theme='light'] .bg-emerald-500\/15,
+html[data-theme='light'] .bg-emerald-500\/20 {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .bg-emerald-500\/10 .text-white,
+html[data-theme='light'] .bg-emerald-500\/10 .text-emerald-100,
+html[data-theme='light'] .bg-emerald-500\/10 .text-emerald-200,
+html[data-theme='light'] .bg-emerald-500\/10 .text-emerald-300,
+html[data-theme='light'] .bg-emerald-500\/15 .text-white,
+html[data-theme='light'] .bg-emerald-500\/15 .text-emerald-100,
+html[data-theme='light'] .bg-emerald-500\/15 .text-emerald-200,
+html[data-theme='light'] .bg-emerald-500\/15 .text-emerald-300,
+html[data-theme='light'] .bg-emerald-500\/20 .text-white,
+html[data-theme='light'] .bg-emerald-500\/20 .text-emerald-100,
+html[data-theme='light'] .bg-emerald-500\/20 .text-emerald-200,
+html[data-theme='light'] .bg-emerald-500\/20 .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .text-rose-100,
+html[data-theme='light'] .text-rose-200,
+html[data-theme='light'] .text-rose-300 {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .bg-rose-500\/5,
+html[data-theme='light'] .bg-rose-500\/10,
+html[data-theme='light'] .bg-rose-500\/20,
+html[data-theme='light'] .bg-rose-500\/30 {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .bg-rose-500\/5 .text-white,
+html[data-theme='light'] .bg-rose-500\/5 .text-rose-100,
+html[data-theme='light'] .bg-rose-500\/5 .text-rose-200,
+html[data-theme='light'] .bg-rose-500\/5 .text-rose-300,
+html[data-theme='light'] .bg-rose-500\/10 .text-white,
+html[data-theme='light'] .bg-rose-500\/10 .text-rose-100,
+html[data-theme='light'] .bg-rose-500\/10 .text-rose-200,
+html[data-theme='light'] .bg-rose-500\/10 .text-rose-300,
+html[data-theme='light'] .bg-rose-500\/20 .text-white,
+html[data-theme='light'] .bg-rose-500\/20 .text-rose-100,
+html[data-theme='light'] .bg-rose-500\/20 .text-rose-200,
+html[data-theme='light'] .bg-rose-500\/20 .text-rose-300,
+html[data-theme='light'] .bg-rose-500\/30 .text-white,
+html[data-theme='light'] .bg-rose-500\/30 .text-rose-100,
+html[data-theme='light'] .bg-rose-500\/30 .text-rose-200,
+html[data-theme='light'] .bg-rose-500\/30 .text-rose-300 {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .text-amber-100,
+html[data-theme='light'] .text-amber-200,
+html[data-theme='light'] .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html[data-theme='light'] .bg-amber-500\/10,
+html[data-theme='light'] .bg-amber-500\/20,
+html[data-theme='light'] .bg-amber-500\/30 {
+  color: #b45309 !important;
+}
+
+html[data-theme='light'] .bg-amber-500\/10 .text-white,
+html[data-theme='light'] .bg-amber-500\/10 .text-amber-100,
+html[data-theme='light'] .bg-amber-500\/10 .text-amber-200,
+html[data-theme='light'] .bg-amber-500\/10 .text-amber-300,
+html[data-theme='light'] .bg-amber-500\/20 .text-white,
+html[data-theme='light'] .bg-amber-500\/20 .text-amber-100,
+html[data-theme='light'] .bg-amber-500\/20 .text-amber-200,
+html[data-theme='light'] .bg-amber-500\/20 .text-amber-300,
+html[data-theme='light'] .bg-amber-500\/30 .text-white,
+html[data-theme='light'] .bg-amber-500\/30 .text-amber-100,
+html[data-theme='light'] .bg-amber-500\/30 .text-amber-200,
+html[data-theme='light'] .bg-amber-500\/30 .text-amber-300 {
+  color: #b45309 !important;
+}
+
+html[data-theme='light'] .text-green-200,
+html[data-theme='light'] .text-green-300 {
+  color: #15803d !important;
+}
+
+html[data-theme='light'] .text-red-200,
+html[data-theme='light'] .text-red-300,
+html[data-theme='light'] .text-red-400 {
+  color: #b91c1c !important;
+}
