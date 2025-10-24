@@ -4,6 +4,7 @@ import { isFeatureEnabled } from '@/lib/feature-flags';
 
 const createWizardEnabled = isFeatureEnabled('projectCreateWizard');
 const ProjectCreatePageContent = dynamic(() => import('../_wip/create-page'), { ssr: false });
+// [PLAN:S3] Multi-step project creation wizard
 
 export default function ProjectCreatePlaceholderPage() {
   if (!createWizardEnabled) {

@@ -1,63 +1,44 @@
 import {
-  FEATURE_FLAG_BY_NAME,
-  FEATURE_FLAG_DEFINITIONS,
+  featureFlagEntries,
+  featureFlagRegistry,
+  getFeatureFlagSnapshot,
+  isFeatureEnabled as resolveFeatureEnabled,
+  resolveFlagValue,
   type FeatureFlagDefinition,
-  type FeatureFlagName
-} from '@/config/featureFlags';
+  type FeatureFlagKey
+} from '../../../config/feature-flags';
 
-const TRUTHY_VALUES = new Set(['1', 'true', 'yes', 'on', 'enabled']);
-const FALSY_VALUES = new Set(['0', 'false', 'no', 'off', 'disabled']);
-
-function resolveBooleanFlagValue(rawValue: string | undefined, fallback: boolean): boolean {
-  if (rawValue === undefined) {
-    return fallback;
-  }
-
-  const normalized = rawValue.trim().toLowerCase();
-  if (normalized.length === 0) {
-    return fallback;
-  }
-
-  if (TRUTHY_VALUES.has(normalized)) {
-    return true;
-  }
-
-  if (FALSY_VALUES.has(normalized)) {
-    return false;
-  }
-
-  return fallback;
-}
-
-export const NAV_V1 = resolveBooleanFlagValue(process.env.NAV_V1 ?? 'on', true);
+export const NAV_V1 = resolveFlagValue(process.env.NAV_V1, true);
 export const APP_LOCALE = process.env.APP_LOCALE ?? 'ru';
 
-export const featureFlags = Object.freeze(
-  FEATURE_FLAG_DEFINITIONS.reduce<Record<FeatureFlagName, boolean>>((acc, definition) => {
-    acc[definition.name] = resolveBooleanFlagValue(process.env[definition.env], definition.defaultValue);
-    return acc;
-  }, {} as Record<FeatureFlagName, boolean>)
-);
+export const featureFlags = Object.freeze(getFeatureFlagSnapshot(process.env));
 
 export type FeatureFlagsSnapshot = typeof featureFlags;
 
 export const activeFeatureFlags = Object.freeze(
-  (Object.entries(featureFlags) as [FeatureFlagName, boolean][]) // narrow tuple type for TS
+  (Object.entries(featureFlags) as [FeatureFlagKey, boolean][]) // narrow tuple type for TS
     .filter(([, enabled]) => enabled)
     .map(([name]) => name)
 );
 
-export function isFeatureEnabled(flag: FeatureFlagName): boolean {
-  return featureFlags[flag];
+export function isFeatureEnabled(flag: FeatureFlagKey): boolean {
+  return resolveFeatureEnabled(flag, process.env);
 }
 
-export function getFeatureFlagDefinition(flag: FeatureFlagName): FeatureFlagDefinition {
-  return FEATURE_FLAG_BY_NAME[flag];
+export function getFeatureFlagDefinition(flag: FeatureFlagKey): FeatureFlagDefinition {
+  return featureFlagRegistry[flag];
 }
 
-export function getFeatureFlagEnv(flag: FeatureFlagName): string {
-  return FEATURE_FLAG_BY_NAME[flag].env;
+export function getFeatureFlagEnv(flag: FeatureFlagKey): string {
+  return featureFlagRegistry[flag].env;
 }
 
-export { FEATURE_FLAG_DEFINITIONS, FEATURE_FLAG_BY_NAME };
-export type { FeatureFlagDefinition, FeatureFlagName };
+export const FEATURE_FLAG_DEFINITIONS = featureFlagEntries.map(([name, definition]) => ({
+  name,
+  ...definition
+}));
+
+export type FeatureFlagName = FeatureFlagKey;
+
+export { featureFlagRegistry };
+export type { FeatureFlagDefinition, FeatureFlagKey };

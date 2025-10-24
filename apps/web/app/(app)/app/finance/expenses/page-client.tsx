@@ -937,6 +937,7 @@ export default function FinanceExpensesPageClient({
               <input
                 type="file"
                 accept=".csv"
+                // [PLAN:S1] Expenses CSV pre-validation
                 onChange={(event) => {
                   const file = event.target.files?.[0];
                   if (file) {
