@@ -2,6 +2,8 @@ import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
+import ThemeScript from '@/components/theme/ThemeScript';
+import { ThemeProvider } from '@/components/theme/ThemeContext';
 
 export const metadata: Metadata = {
   title: 'Collabverse',
@@ -11,9 +13,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
+      <head>
+        <ThemeScript />
+      </head>
       <body>
-        <ConsoleFilter />
-        {children}
+        <ThemeProvider>
+          <ConsoleFilter />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

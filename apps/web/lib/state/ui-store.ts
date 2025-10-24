@@ -2,8 +2,17 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { StateStorage } from 'zustand/middleware';
 
+export type WallpaperPreset =
+  | 'mesh'
+  | 'grid'
+  | 'halo'
+  | 'sunrise'
+  | 'mint'
+  | 'lavender'
+  | 'sands';
+
 type UiState = {
-  bgPreset: 'mesh' | 'grid' | 'halo';
+  bgPreset: WallpaperPreset;
   expandedGroups: string[];
   lastProjectId: string | null;
   setBgPreset: (v: UiState['bgPreset']) => void;
@@ -52,10 +61,10 @@ export const useUiStore = create<UiState>()(
       merge: (persistedState, currentState) => {
         const persisted = (persistedState as Partial<UiState>) ?? {};
 
-        const bgPreset =
-          persisted.bgPreset === 'mesh' || persisted.bgPreset === 'grid' || persisted.bgPreset === 'halo'
-            ? persisted.bgPreset
-            : currentState.bgPreset;
+        const allowedPresets: WallpaperPreset[] = ['mesh', 'grid', 'halo', 'sunrise', 'mint', 'lavender', 'sands'];
+        const bgPreset = allowedPresets.includes(persisted.bgPreset as WallpaperPreset)
+          ? (persisted.bgPreset as WallpaperPreset)
+          : currentState.bgPreset;
 
         const expandedGroups = Array.isArray(persisted.expandedGroups)
           ? persisted.expandedGroups.filter((item): item is string => typeof item === 'string')

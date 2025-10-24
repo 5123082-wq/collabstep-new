@@ -7,12 +7,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUiStore } from '@/lib/state/ui-store';
 import { loadSpecialists, loadVacancies } from '@/lib/mock/loaders';
 import { toast } from '@/lib/ui/toast';
-
-const backgroundPresets = [
-  { id: 'mesh', label: 'Mesh' },
-  { id: 'grid', label: 'Grid' },
-  { id: 'halo', label: 'Halo' }
-] as const;
+import ThemeToggle from '@/components/app/ThemeToggle';
+import AccountMenu from '@/components/app/AccountMenu';
 
 type QuickSuggestion = {
   id: string;
@@ -37,7 +33,11 @@ function IconButton({ icon, label }: { icon: keyof typeof iconPaths; label: stri
   return (
     <button
       type="button"
-      className="group flex h-10 w-10 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900/60 text-neutral-300 transition hover:border-indigo-500/50 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+      className={clsx(
+        'group flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+        'border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)]',
+        'hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]'
+      )}
       aria-label={label}
     >
       <svg
@@ -72,7 +72,7 @@ type AppTopbarProps = {
 export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { bgPreset, setBgPreset } = useUiStore((state) => ({ bgPreset: state.bgPreset, setBgPreset: state.setBgPreset }));
+  const bgPreset = useUiStore((state) => state.bgPreset);
   const { items: specialistItems } = loadSpecialists();
   const { items: vacancyItems } = loadVacancies();
   const [searchValue, setSearchValue] = useState('');
@@ -208,10 +208,11 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
 
   useEffect(() => {
     const body = document.body;
-    body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
+    const classes = ['app-bg-mesh', 'app-bg-grid', 'app-bg-halo', 'app-bg-sunrise', 'app-bg-mint', 'app-bg-lavender', 'app-bg-sands'];
+    body.classList.remove(...classes);
     body.classList.add(`app-bg-${bgPreset}`);
     return () => {
-      body.classList.remove('app-bg-mesh', 'app-bg-grid', 'app-bg-halo');
+      body.classList.remove(...classes);
     };
   }, [bgPreset, pathname]);
 
@@ -332,9 +333,10 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           <IconButton icon="bell" label="Уведомления" />
           <IconButton icon="chat" label="Сообщения" />
           <IconButton icon="wallet" label="Кошелёк" />
-          <IconButton icon="user" label="Профиль" />
+          <ThemeToggle />
+          <AccountMenu profile={profile} onLogout={onLogout} isLoggingOut={isLoggingOut} />
         </div>
-        <div className="flex flex-wrap items-center gap-1">
+        <div className="flex flex-wrap items-center gap-2">
           <span
             data-testid="role-badge"
             className={clsx(
@@ -346,35 +348,21 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           >
             {resolveRoleLabel(profile.role)}
           </span>
-          <button
-            type="button"
-            onClick={onLogout}
-            disabled={isLoggingOut}
-            className={clsx(
-              'rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-              isLoggingOut
-                ? 'cursor-not-allowed border-neutral-800 bg-neutral-900/60 text-neutral-500'
-                : 'border-neutral-800 bg-neutral-900/60 text-neutral-300 hover:border-indigo-500/40 hover:text-white'
-            )}
-          >
-            {isLoggingOut ? 'Выход…' : 'Выйти'}
-          </button>
-          {backgroundPresets.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => setBgPreset(preset.id)}
-              className={clsx(
-                'rounded-xl border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                bgPreset === preset.id
-                  ? 'border-indigo-500/60 bg-indigo-500/15 text-indigo-100'
-                  : 'border-neutral-800 bg-neutral-900/60 text-neutral-400 hover:border-indigo-500/40 hover:text-white'
-              )}
-              aria-pressed={bgPreset === preset.id}
-            >
-              {preset.label}
-            </button>
-          ))}
+          <span className="text-xs text-[color:var(--text-tertiary)]">
+            {bgPreset === 'mesh'
+              ? 'Градиент Mesh'
+              : bgPreset === 'grid'
+                ? 'Сетка'
+                : bgPreset === 'halo'
+                  ? 'Гало'
+                  : bgPreset === 'sunrise'
+                    ? 'Рассвет'
+                    : bgPreset === 'mint'
+                      ? 'Мята'
+                      : bgPreset === 'lavender'
+                        ? 'Лаванда'
+                        : 'Пастель'}
+          </span>
         </div>
       </div>
     </header>
