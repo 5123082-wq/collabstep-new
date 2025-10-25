@@ -160,7 +160,12 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
         data-expanded={expanded}
         >
-          <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
+          <div
+            className={cn(
+              'pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 py-2 backdrop-blur',
+              expanded ? 'pl-3' : 'px-0'
+            )}
+          >
             {actions.map((action, index) => {
               const previous = index > 0 ? actions[index - 1] : undefined;
               const currentSection = action.section ?? 'default';

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import type { QuickAction } from '@/types/quickActions';
 
 const ICON_COLUMN_WIDTH = 56;
+const LABEL_MAX_WIDTH = 176;
 
 interface RailItemProps {
   action: QuickAction;
@@ -16,18 +17,16 @@ interface RailItemProps {
 export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
   const Icon = action.icon;
   const showBadge = typeof badge === 'number' && badge > 0;
-  const iconColumnWidth = `${ICON_COLUMN_WIDTH}px`;
   const gridTemplateColumns = expanded
-    ? `minmax(0,1fr) ${iconColumnWidth}`
-    : `0px ${iconColumnWidth}`;
+    ? `${LABEL_MAX_WIDTH}px ${ICON_COLUMN_WIDTH}px`
+    : `0px ${ICON_COLUMN_WIDTH}px`;
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        'group relative my-1 grid w-full items-center overflow-hidden rounded-xl py-2 transition-all duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-        'hover:shadow-lg hover:scale-[1.03]',
-        expanded ? 'pl-3 pr-0' : 'px-0'
+        'group relative my-0.5 grid w-full items-center justify-end overflow-hidden rounded-xl py-1 transition-colors duration-150 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+        expanded ? 'gap-x-3 pl-3' : 'px-0'
       )}
       style={{ gridTemplateColumns }}
       aria-label={expanded ? undefined : action.label}
@@ -35,16 +34,13 @@ export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
       <span
         aria-hidden={!expanded}
         className={cn(
-          'block overflow-hidden whitespace-nowrap pr-3 text-right text-sm text-neutral-500 opacity-0 transition-[max-width,opacity,transform] duration-200 ease-out dark:text-neutral-200',
-          expanded ? 'max-w-[188px] opacity-100 translate-x-0' : 'max-w-0 -translate-x-1'
+          'block overflow-hidden whitespace-nowrap text-right text-sm text-neutral-500 opacity-0 transition-[max-width,opacity] duration-200 ease-out dark:text-neutral-200',
+          expanded ? 'max-w-full opacity-100' : 'max-w-0'
         )}
       >
         {action.label}
       </span>
-      <span
-        className="flex h-10 items-center justify-center"
-        style={{ width: iconColumnWidth }}
-      >
+      <span className="flex h-10 items-center justify-center justify-self-center" style={{ width: `${ICON_COLUMN_WIDTH}px` }}>
         <span className="relative flex h-10 w-10 items-center justify-center">
           <Icon className="h-[19px] w-[19px] text-neutral-500 dark:text-neutral-200" aria-hidden="true" />
           {showBadge ? (
