@@ -8,6 +8,7 @@ import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUI, type Dialog as DialogType, type Drawer as DrawerType } from '@/stores/ui';
+import { toast } from '@/lib/ui/toast';
 
 const COLLAPSED_WIDTH = 56;
 const EXPANDED_WIDTH = 280;
@@ -124,9 +125,15 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
         openDialog(payload.dialog as DialogType);
       }
 
-      if (intent === 'command' && typeof window !== 'undefined') {
-        const event = new CustomEvent('rail:command', { detail: action });
-        window.dispatchEvent(event);
+      if (intent === 'command') {
+        const casted = payload as { toastMessage?: unknown };
+        if (typeof casted.toastMessage === 'string') {
+          toast(casted.toastMessage);
+        }
+        if (typeof window !== 'undefined') {
+          const event = new CustomEvent('rail:command', { detail: action });
+          window.dispatchEvent(event);
+        }
       }
 
       if (mobileOpen) {
