@@ -15,10 +15,13 @@ type UiState = {
   bgPreset: WallpaperPreset;
   expandedGroups: string[];
   lastProjectId: string | null;
+  sidebarCollapsed: boolean;
   setBgPreset: (v: UiState['bgPreset']) => void;
   toggleGroup: (id: string) => void;
   setExpandedGroups: (ids: string[]) => void;
   setLastProjectId: (id: string | null) => void;
+  toggleSidebarCollapsed: () => void;
+  setSidebarCollapsed: (value: boolean) => void;
 };
 
 const memoryStore: Record<string, string> = {};
@@ -34,10 +37,11 @@ const memoryStorage: StateStorage = {
   }
 };
 
-const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId'> = {
+const defaultState: Pick<UiState, 'bgPreset' | 'expandedGroups' | 'lastProjectId' | 'sidebarCollapsed'> = {
   bgPreset: 'mesh',
   expandedGroups: [],
-  lastProjectId: null
+  lastProjectId: null,
+  sidebarCollapsed: false
 };
 
 export const useUiStore = create<UiState>()(
@@ -51,7 +55,11 @@ export const useUiStore = create<UiState>()(
         set({ expandedGroups: exists ? current.filter((item) => item !== id) : [...current, id] });
       },
       setExpandedGroups: (ids) => set({ expandedGroups: ids }),
-      setLastProjectId: (id) => set({ lastProjectId: id })
+      setLastProjectId: (id) => set({ lastProjectId: id }),
+      toggleSidebarCollapsed: () => {
+        set({ sidebarCollapsed: !get().sidebarCollapsed });
+      },
+      setSidebarCollapsed: (value) => set({ sidebarCollapsed: value })
     }),
     {
       name: 'cv-ui',
@@ -72,12 +80,17 @@ export const useUiStore = create<UiState>()(
 
         const lastProjectId = typeof persisted.lastProjectId === 'string' ? persisted.lastProjectId : null;
 
+        const sidebarCollapsed = typeof persisted.sidebarCollapsed === 'boolean'
+          ? persisted.sidebarCollapsed
+          : currentState.sidebarCollapsed;
+
         return {
           ...currentState,
           ...persisted,
           bgPreset,
           expandedGroups,
-          lastProjectId
+          lastProjectId,
+          sidebarCollapsed
         } satisfies UiState;
       }
     }

@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
@@ -28,9 +28,15 @@ const iconMap: Record<string, string> = {
 
 type IconName = keyof typeof iconMap;
 
-function MenuIcon({ name }: { name: IconName }) {
+function MenuIcon({ name, className }: { name: IconName; className?: string }) {
   return (
-    <svg className="h-4 w-4 flex-none text-indigo-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+    <svg
+      className={clsx('h-4 w-4 flex-none text-indigo-200', className)}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+    >
       <path d={iconMap[name]} fill="currentColor" />
     </svg>
   );
@@ -44,83 +50,276 @@ export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
   const menu = useMemo(() => buildLeftMenu(roles), [roles]);
-  const { expandedGroups, toggleGroup } = useUiStore((state) => ({
+  const { expandedGroups, toggleGroup, sidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed } = useUiStore((state) => ({
     expandedGroups: state.expandedGroups,
-    toggleGroup: state.toggleGroup
+    toggleGroup: state.toggleGroup,
+    sidebarCollapsed: state.sidebarCollapsed,
+    toggleSidebarCollapsed: state.toggleSidebarCollapsed,
+    setSidebarCollapsed: state.setSidebarCollapsed
   }));
+  const [activeFlyout, setActiveFlyout] = useState<string | null>(null);
 
-  return (
-    <aside className="hidden h-full w-[288px] flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
-      <div className="px-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
-      </div>
-      <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
-        {menu.map((section) => {
-          const isExpanded = expandedGroups.includes(section.id) || !section.children;
-          const hasChildren = Boolean(section.children?.length);
-          const isActive = (href?: string) => Boolean(href && normalizedPath.startsWith(href));
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-          return (
-            <div key={section.id} className="rounded-2xl border border-transparent hover:border-neutral-800/80">
-              <div className="flex items-center justify-between px-3 py-2">
-                {section.href ? (
-                  <Link
-                    href={section.href}
-                    className={clsx(
-                      'flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                      isActive(section.href) && 'text-white'
-                    )}
-                  >
-                    <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
-                    {section.label}
-                  </Link>
-                ) : (
-                  <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300">
-                    <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
-                    {section.label}
-                  </div>
-                )}
-                {hasChildren && (
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(section.id)}
-                    aria-expanded={isExpanded}
-                    aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
-                    className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                  >
-                    {isExpanded ? '−' : '+'}
-                  </button>
-                )}
-              </div>
-              {hasChildren && isExpanded && (
-                <ul className="space-y-1 px-3 pb-3">
-                  {section.children?.map((child) => {
-                    if (child.type === 'divider') {
-                      return (
-                        <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
-                      );
-                    }
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const applyValue = (value: boolean) => setSidebarCollapsed(value);
+    applyValue(mediaQuery.matches);
 
-                    return (
-                      <li key={child.id}>
-                        <Link
-                          href={child.href}
-                          className={clsx(
-                            'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                            normalizedPath === child.href && 'bg-indigo-500/10 text-white'
-                          )}
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+    const listener = (event: MediaQueryListEvent) => applyValue(event.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    }
+
+    mediaQuery.addListener(listener);
+    return () => mediaQuery.removeListener(listener);
+  }, [setSidebarCollapsed]);
+
+  const isSectionActive = (href?: string, children?: typeof menu[number]['children']) => {
+    if (href && normalizedPath.startsWith(href)) {
+      return true;
+    }
+
+    if (!children?.length) {
+      return false;
+    }
+
+    return children.some((child) => child.type !== 'divider' && child.href && normalizedPath.startsWith(child.href));
+  };
+
+  const closeFlyout = () => setActiveFlyout(null);
+
+  const renderExpandedMenu = () => (
+    <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
+      {menu.map((section) => {
+        const isExpanded = expandedGroups.includes(section.id) || !section.children;
+        const hasChildren = Boolean(section.children?.length);
+        const active = isSectionActive(section.href, section.children);
+
+        return (
+          <div key={section.id} className="rounded-2xl border border-transparent hover:border-neutral-800/80">
+            <div className="flex items-center justify-between px-3 py-2">
+              {section.href ? (
+                <Link
+                  href={section.href}
+                  className={clsx(
+                    'flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    active && 'text-white'
+                  )}
+                >
+                  <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                  {section.label}
+                </Link>
+              ) : (
+                <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300">
+                  <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                  {section.label}
+                </div>
+              )}
+              {hasChildren && (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(section.id)}
+                  aria-expanded={isExpanded}
+                  aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
+                  className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                >
+                  {isExpanded ? '−' : '+'}
+                </button>
               )}
             </div>
-          );
-        })}
-      </nav>
+            {hasChildren && isExpanded && (
+              <ul className="space-y-1 px-3 pb-3">
+                {section.children?.map((child) => {
+                  if (child.type === 'divider') {
+                    return (
+                      <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
+                    );
+                  }
+
+                  return (
+                    <li key={child.id}>
+                      <Link
+                        href={child.href}
+                        className={clsx(
+                          'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+
+  const renderCollapsedMenu = () => (
+    <nav
+      aria-label="Свёрнутая навигация приложения"
+      className="mt-4 flex flex-1 flex-col items-center gap-2 overflow-y-auto pb-4"
+    >
+      {menu.map((section) => {
+        const hasChildren = Boolean(section.children?.length);
+        const active = isSectionActive(section.href, section.children);
+        const isFlyoutOpen = activeFlyout === section.id;
+
+        return (
+          <div
+            key={section.id}
+            className="relative w-full"
+            onMouseLeave={() => closeFlyout()}
+            onMouseEnter={() => hasChildren && setActiveFlyout(section.id)}
+            onFocus={() => hasChildren && setActiveFlyout(section.id)}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                closeFlyout();
+              }
+            }}
+          >
+            {hasChildren ? (
+              <button
+                type="button"
+                className={clsx(
+                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  active && 'border-indigo-500/40 text-white'
+                )}
+                aria-haspopup="true"
+                aria-expanded={isFlyoutOpen}
+                onClick={() => setActiveFlyout(isFlyoutOpen ? null : section.id)}
+              >
+                <MenuIcon
+                  name={(section.icon ?? 'dashboard') as IconName}
+                  className="h-5 w-5 text-indigo-200 transition group-hover:text-indigo-100"
+                />
+                <span className="sr-only">{section.label}</span>
+              </button>
+            ) : section.href ? (
+              <Link
+                href={section.href}
+                className={clsx(
+                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  active && 'border-indigo-500/40 text-white'
+                )}
+              >
+                <MenuIcon
+                  name={(section.icon ?? 'dashboard') as IconName}
+                  className="h-5 w-5 text-indigo-200 transition group-hover:text-indigo-100"
+                />
+                <span className="sr-only">{section.label}</span>
+              </Link>
+            ) : (
+              <div
+                className={clsx(
+                  'flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-900/80 text-neutral-300',
+                  active && 'border-indigo-500/40 text-white'
+                )}
+              >
+                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className="h-5 w-5 text-indigo-200" />
+                <span className="sr-only">{section.label}</span>
+              </div>
+            )}
+
+            {hasChildren && (
+              <div
+                className={clsx(
+                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden min-w-[220px] max-w-[260px] rounded-2xl border border-neutral-800 bg-neutral-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur',
+                  isFlyoutOpen && 'pointer-events-auto block'
+                )}
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-white">{section.label}</span>
+                    <button
+                      type="button"
+                      className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-400 transition hover:border-indigo-500/40 hover:text-white"
+                      onClick={() => closeFlyout()}
+                    >
+                      Закрыть
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {section.href && (
+                      <Link
+                        href={section.href}
+                        className={clsx(
+                          'block rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          isSectionActive(section.href) && 'border-indigo-500/40 bg-indigo-500/10 text-white'
+                        )}
+                        onClick={() => closeFlyout()}
+                      >
+                        {section.label}
+                      </Link>
+                    )}
+                    <ul className="space-y-1">
+                      {section.children?.map((child) => {
+                        if (child.type === 'divider') {
+                          return <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />;
+                        }
+
+                        return (
+                          <li key={child.id}>
+                            <Link
+                              href={child.href}
+                              className={clsx(
+                                'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                                normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                              )}
+                              onClick={() => closeFlyout()}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+  );
+
+  return (
+    <aside
+      className={clsx(
+        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 py-5 transition-[width] duration-300 ease-out',
+        sidebarCollapsed ? 'w-[72px] px-2' : 'w-[288px] px-4'
+      )}
+      data-collapsed={sidebarCollapsed}
+    >
+      <div className={clsx('flex items-center justify-between', sidebarCollapsed ? 'px-1' : 'px-2')}>
+        {!sidebarCollapsed && (
+          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
+        )}
+        <button
+          type="button"
+          onClick={toggleSidebarCollapsed}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900/70 text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+        >
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+            {sidebarCollapsed ? (
+              <path d="M7 5l6 5-6 5" strokeLinecap="round" strokeLinejoin="round" />
+            ) : (
+              <path d="M13 5l-6 5 6 5" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </svg>
+        </button>
+      </div>
+      {sidebarCollapsed ? renderCollapsedMenu() : renderExpandedMenu()}
     </aside>
   );
 }
