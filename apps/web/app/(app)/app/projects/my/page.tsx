@@ -6,7 +6,7 @@ export default function MyProjectsPage() {
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Мои проекты</p>
         <h1 className="text-3xl font-semibold text-white">Вы ещё не владеете ни одним проектом</h1>
-        <p className="mx-auto max-w-2xl text-base text-neutral-400">
+        <p className="text-base text-neutral-400">
           Запланируйте новый проект или присоединитесь к существующим инициативам, чтобы они появились здесь.
         </p>
       </div>
