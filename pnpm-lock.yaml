@@ -88,6 +88,9 @@ importers:
       lucide-react:
         specifier: ^0.546.0
         version: 0.546.0(react@18.3.1)
+      nanoid:
+        specifier: ^3.3.11
+        version: 3.3.11
       next:
         specifier: 14.2.4
         version: 14.2.4(@babel/core@7.28.4)(@playwright/test@1.56.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

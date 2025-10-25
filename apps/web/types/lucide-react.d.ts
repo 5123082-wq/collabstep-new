@@ -12,4 +12,15 @@ declare module 'lucide-react' {
   export const LayoutList: LucideIcon;
   export const Loader2: LucideIcon;
   export const RefreshCw: LucideIcon;
+  export const Bookmark: LucideIcon;
+  export const Link: LucideIcon;
+  export const Rocket: LucideIcon;
+  export const Sparkles: LucideIcon;
+  export const Star: LucideIcon;
+  export const Zap: LucideIcon;
+  export const ExternalLink: LucideIcon;
+  export const Flame: LucideIcon;
+  export const Calendar: LucideIcon;
+  export const BookOpen: LucideIcon;
+  export const Settings2: LucideIcon;
 }
