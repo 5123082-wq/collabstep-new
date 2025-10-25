@@ -1,16 +1,17 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DrawerManager } from './DrawerManager';
 import { DialogManager } from './DialogManager';
 import { RailItem } from './RailItem';
+import { RAIL_COLLAPSED_WIDTH, RAIL_EXPANDED_WIDTH } from './constants';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUI, type Dialog as DialogType, type Drawer as DrawerType } from '@/stores/ui';
+import { cn } from '@/lib/utils';
 
-const COLLAPSED_WIDTH = 56;
-const EXPANDED_WIDTH = 280;
 const HOVER_DELAY = 150;
 
 type HoverRailProps = {
@@ -149,14 +150,17 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
     <>
       {shouldRenderRail ? (
         <aside
-        ref={containerRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onFocusCapture={handleFocus}
-        onBlurCapture={handleBlur}
-        className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
-        style={{ width: expanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, transition: 'width 200ms ease' }}
-        data-expanded={expanded}
+          ref={containerRef}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onFocusCapture={handleFocus}
+          onBlurCapture={handleBlur}
+          className="pointer-events-none fixed right-4 top-24 bottom-8 z-40 hidden lg:flex"
+          style={{
+            width: expanded ? RAIL_EXPANDED_WIDTH : RAIL_COLLAPSED_WIDTH,
+            transition: 'width 200ms ease'
+          }}
+          data-expanded={expanded}
         >
           <div className="pointer-events-auto flex h-full w-full flex-col rounded-2xl border border-neutral-800/80 bg-neutral-900/80 p-2 backdrop-blur">
             {actions.map((action, index) => {
@@ -180,9 +184,14 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
               <button
                 type="button"
                 onClick={handleOpenSettings}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className={cn(
+                  'flex w-full items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-950/70 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  expanded ? 'gap-2 px-3 py-2' : 'h-12 px-0'
+                )}
+                aria-label="Настроить меню"
               >
-                Настроить меню
+                <Settings className="h-5 w-5" aria-hidden="true" />
+                {expanded ? <span>Настроить меню</span> : <span className="sr-only">Настроить меню</span>}
               </button>
             </div>
           </div>
