@@ -6,7 +6,7 @@ export default function MarketCategoriesPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Категории и подборки' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Категории и подборки</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Витрина категорий и тематических подборок появится в следующих релизах. Здесь будут тайлы навигации и
           предфильтрованные ленты шаблонов и проектов.
         </p>

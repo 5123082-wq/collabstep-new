@@ -18,7 +18,7 @@ function ProjectsOverviewFallback() {
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Обзор</p>
         <h1 className="text-3xl font-semibold text-white">У вас пока нет проектов</h1>
-        <p className="mx-auto max-w-2xl text-base text-neutral-400">
+        <p className="text-base text-neutral-400">
           Нажмите «Создать проект» или выберите шаблон, чтобы запустить первую инициативу.
         </p>
       </div>
