@@ -25,6 +25,11 @@
   --theme-control-border-hover: rgba(129, 140, 248, 0.75);
   --theme-control-foreground: #cbd5ff;
   --theme-control-foreground-hover: #e2e8ff;
+  --content-inline-padding: 24px;
+  --rail-collapsed-width: 56px;
+  --rail-dock-spacing: 1rem;
+  --rail-safe-gap: 5px;
+  --rail-safe-area: calc(var(--rail-collapsed-width) + var(--rail-dock-spacing) + var(--rail-safe-gap));
 }
 
 html[data-theme='dark'] {
@@ -120,6 +125,37 @@ body.app-bg-lavender {
 
 body.app-bg-sands {
   background-image: linear-gradient(140deg, rgba(254, 249, 195, 0.92) 0%, rgba(253, 230, 138, 0.75) 40%, rgba(251, 207, 232, 0.82) 100%);
+}
+
+[data-app-main],
+main[data-app-main] {
+  max-width: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding-inline-start: var(--content-inline-padding);
+  padding-inline-end: var(--content-inline-padding);
+}
+
+@media (min-width: 1024px) {
+  [data-app-main],
+  main[data-app-main] {
+    padding-inline-end: max(var(--content-inline-padding), var(--rail-safe-area));
+  }
+}
+
+[data-app-main] .container,
+[data-app-main] [class*='max-w-'],
+[data-app-main].container {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+[data-app-main] .cs-auto-grid {
+  display: grid;
+  gap: var(--cs-grid-gap, 1.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(var(--cs-grid-min, 280px), 1fr));
 }
 
 a {

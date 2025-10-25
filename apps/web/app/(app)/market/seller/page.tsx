@@ -6,7 +6,7 @@ export default function MarketSellerPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Мои продажи' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Кабинет продавца</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Управляйте листингами, черновиками и выплатами. Аналитика по продажам появится в будущих обновлениях.
         </p>
       </header>
