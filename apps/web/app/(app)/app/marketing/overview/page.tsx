@@ -171,7 +171,7 @@ export default function MarketingOverviewPage() {
     <div className="space-y-8">
       <section className="space-y-6 rounded-3xl border border-neutral-900 bg-neutral-950/70 p-6 shadow-[0_0_30px_rgba(0,0,0,0.25)]">
         <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="max-w-2xl space-y-3">
+          <div className="space-y-3">
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Маркетинговый хаб</p>
             <h1 className="text-3xl font-semibold text-white">Обзор маркетинга проекта</h1>
             <p className="text-sm text-neutral-400">
@@ -192,13 +192,13 @@ export default function MarketingOverviewPage() {
             ))}
           </div>
         </div>
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="cs-auto-grid gap-4">
           {connectedWorkspaces.map((workspace) => (
             <div
               key={workspace.id}
               className="flex flex-col justify-between gap-4 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4 sm:flex-row sm:items-center"
             >
-              <div className="max-w-md space-y-2">
+              <div className="space-y-2">
                 <p className="text-sm font-semibold text-white">{workspace.title}</p>
                 <p className="text-xs text-neutral-400">{workspace.description}</p>
               </div>

@@ -6,7 +6,7 @@ export default function MarketPublishPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Опубликовать' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Публикация в маркетплейсе</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Мастер публикации готовится к релизу. Здесь появятся шаги для загрузки шаблонов, проектов и пакетов
           услуг.
         </p>

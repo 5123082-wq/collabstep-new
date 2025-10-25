@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
+import type { CSSProperties } from 'react';
 
 type MarketingAction = {
   label: string;
@@ -59,16 +60,20 @@ function renderAction(action: MarketingAction) {
 }
 
 export default function MarketingHeader({ title, description, actions, metrics }: MarketingHeaderProps) {
+  const metricsGridStyle = {
+    '--cs-grid-gap': '12px'
+  } as CSSProperties;
+
   return (
     <section className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <h2 className="text-2xl font-semibold text-white">{title}</h2>
-          <p className="max-w-2xl text-sm text-neutral-400">{description}</p>
+          <p className="text-sm text-neutral-400">{description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">{actions.map(renderAction)}</div>
       </header>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="cs-auto-grid" style={metricsGridStyle}>
         {metrics.map((metric) => (
           <div key={metric.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-4">
             <p className="text-xs uppercase tracking-wide text-neutral-500">{metric.label}</p>

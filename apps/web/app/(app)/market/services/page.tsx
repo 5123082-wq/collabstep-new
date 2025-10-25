@@ -6,7 +6,7 @@ export default function MarketServicesPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Пакеты услуг' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Пакеты услуг</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Здесь будут пакетные предложения студий и команд с фиксированными сроками и стоимостью. Раздел получит
           листинг и лид-форму на следующих итерациях.
         </p>
