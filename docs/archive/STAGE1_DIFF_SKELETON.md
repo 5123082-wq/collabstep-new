@@ -1,3 +1,5 @@
+> **Status:** superseded (archived 2025-02-15). Retained for historical diff context from Stage 1 finance hardening.
+
 # Stage 1 — Diff Skeleton
 
 // [PLAN:S1-SKELETON]

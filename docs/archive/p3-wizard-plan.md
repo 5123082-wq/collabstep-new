@@ -1,6 +1,9 @@
+> **Status:** superseded (archived 2025-02-15). Decision captured in `docs/adr/ADR-0002-project-wizard.md`.
+
 # P3 Wizard Implementation Plan
 
 ## Target Files
+
 - apps/web/app/(app)/app/projects/create/page.tsx
 - apps/web/app/(app)/app/projects/create/wizard-page-client.tsx (new)
 - apps/web/app/(app)/app/projects/create/components/* (new UI for steps, navigation, summary)
@@ -17,6 +20,7 @@
 - playwright tests (apps/web/tests/e2e/project-create-wizard.spec.ts)
 
 ## Diff Skeleton
+
 - Replace placeholder dynamic import in create/page.tsx with wizard entry component guarded by flag. // [PLAN:S3-entry]
 - Implement client component managing steps, state machine, form validation. // [PLAN:S3-machine]
 - Step 1 component: template selection with skeleton placeholders when loading templates. // [PLAN:S3-step1]

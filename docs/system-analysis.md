@@ -1,32 +1,57 @@
+status: active
+last_reviewed: 2025-02-15
+owner: docs
+
 # Системный обзор Collabverse
+
+## Содержание
+
+- [Текущая клиентская архитектура и навигация](#текущая-клиентская-архитектура-и-навигация)
+  - [Маркетинговый слой](#маркетинговый-слой)
+  - [Приложение после логина](#приложение-после-логина)
+- [Состояние и используемые библиотеки](#состояние-и-используемые-библиотеки)
+- [Текущее API (Next.js route handlers)](#текущее-api-nextjs-route-handlers)
+  - [Аутентификация](#аутентификация)
+  - [Проекты и задачи (флаг feature_projects_v1)](#проекты-и-задачи-флаг-feature_projects_v1)
+- [Доменные сущности и связи](#доменные-сущности-и-связи)
+  - [Предлагаемая реляционная модель](#предлагаемая-реляционная-модель)
+  - [Ключевые связи](#ключевые-связи)
+- [API контракты для бэкенда (предложение)](#api-контракты-для-бэкенда-предложение)
+- [Авторизация и мультиаккаунт](#авторизация-и-мультиаккаунт)
 
 ## Текущая клиентская архитектура и навигация
 
 ### Маркетинговый слой
+
 - Layout маркетинговых страниц подключает шапку, футер и тосты только когда флаг `NAV_V1` активен, иначе отдаёт контент без навигации.【F:apps/web/app/(marketing)/layout.tsx†L1-L32】【F:apps/web/lib/feature-flags.ts†L1-L3】
 - Мегаменю и мобильное меню строятся на базе конфигурации `marketingMenu` с вложенными элементами и CTA, что определяет маршруты `/product/*`, `/audience`, `/projects`, `/specialists`, `/pricing`, `/blog` и авторизацию.【F:apps/web/config/MarketingMenu.config.ts†L1-L121】
 
 ### Приложение после логина
+
 - Сегмент `(app)` проверяет наличие demo-сессии в cookie `cv_session` и редиректит на `/login` при отсутствии токена.【F:apps/web/app/(app)/layout.tsx†L1-L14】【F:apps/web/lib/auth/demo-session.ts†L3-L68】
 - Клиентский layout собирает топбар, левое меню, контентную область, правую панель или hover-rail и управляет логаутом через вызов `/api/auth/logout`, используя roles, полученные из demo-сессии.【F:apps/web/components/app/AppLayoutClient.tsx†L29-L126】【F:apps/web/lib/auth/roles.ts†L3-L65】【F:apps/web/app/api/auth/logout/route.ts†L1-L15】
 - Левое меню построено на конфигурации `LeftMenu.config` с множеством разделов (проекты, маркетплейс, AI-хаб, документы, финансы и т.д.) и фильтрацией по ролям, а `Sidebar` управляет раскрытием групп через Zustand-хранилище с персистом в `localStorage`.【F:apps/web/components/app/LeftMenu.config.ts†L1-L200】【F:apps/web/lib/nav/menu-builder.ts†L1-L19】【F:apps/web/components/app/Sidebar.tsx†L1-L125】【F:apps/web/lib/state/ui-store.ts†L1-L76】
 - Быстрые действия в hover-rail используют моковую конфигурацию с экшенами (новый проект, задача, приглашение) и бейджами, зависящими от состояния UI-store.【F:apps/web/mocks/rail.ts†L1-L53】【F:apps/web/types/quickActions.ts†L1-L15】【F:apps/web/stores/ui.ts†L1-L40】
 
 ## Состояние и используемые библиотеки
+
 - Глобальный UI-store (`useUiStore`) хранит пресет фона, раскрытые группы меню и последний проект; данные персистятся через `zustand/middleware` с in-memory fallback на сервере.【F:apps/web/lib/state/ui-store.ts†L1-L76】
 - Клиентский `useUI` управляет состояниями правых панелей, диалогов и счётчиков уведомлений/чатов для hover-rail и drawers.【F:apps/web/stores/ui.ts†L1-L40】【F:apps/web/components/right-rail/CommunicationDrawer.tsx†L9-L40】
 - Магазин маркетплейса (`useMarketplaceStore`) реализует корзину, избранное и сигнал сброса фильтров, работая на Zustand без персиста.【F:apps/web/lib/marketplace/store.ts†L1-L67】
 - Основной стек фронтенда: Next.js 14, React 18, Zustand, Zod, TailwindCSS, Lucide icons, Fuse.js для поиска.【F:apps/web/package.json†L1-L32】
 
 ## Текущее API (Next.js route handlers)
+
 API реализовано в `app/api` и работает поверх in-memory мока `projects-memory`.
 
 ### Аутентификация
+
 - `POST /api/auth/login` — проверка демо-аккаунтов из ENV и установка cookie `cv_session` (base64 JSON).【F:apps/web/app/api/auth/login/route.ts†L1-L83】【F:apps/web/lib/auth/session-cookie.ts†L1-L34】
 - `POST /api/auth/register` — dev-регистрация: валидация payload, установка сессии с ролью `user` и редирект на `/app/dashboard`.【F:apps/web/app/api/auth/register/route.ts†L1-L39】
 - `POST /api/auth/logout` — очищение cookie и редирект (JSON/303).【F:apps/web/app/api/auth/logout/route.ts†L1-L15】
 
 ### Проекты и задачи (флаг `FEATURE_PROJECTS_V1`)
+
 - `GET/POST /api/projects` — список проектов с агрегацией задач и создание проекта с выбором стадии и дедлайна.【F:apps/web/app/api/projects/route.ts†L1-L90】
 - `GET/PATCH/DELETE /api/projects/:id` — чтение, частичное обновление и удаление проекта с каскадным очищением задач/итераций/воркфлоу.【F:apps/web/app/api/projects/[id]/route.ts†L1-L83】
 - `POST /api/projects/:id/archive` и `/unarchive` — флип статуса архива с timestamp.【F:apps/web/app/api/projects/[id]/archive/route.ts†L1-L35】【F:apps/web/app/api/projects/[id]/unarchive/route.ts†L1-L35】
@@ -40,9 +65,11 @@ API реализовано в `app/api` и работает поверх in-memo
 - `GET /api/templates` — список проектных шаблонов из мока.【F:apps/web/app/api/templates/route.ts†L1-L11】【F:apps/web/mocks/projects-memory.ts†L3-L76】
 
 ## Доменные сущности и связи
+
 Текущие типы домена охватывают проекты, задачи, workflow, итерации и участников.【F:apps/web/domain/projects/types.ts†L1-L51】 На основе существующего UI и roadmap предлагается следующая схема.
 
 ### Предлагаемая реляционная модель
+
 | Таблица | Ключевые поля | Связи |
 | --- | --- | --- |
 | `users` | `id`, `email`, `password_hash`, `display_name`, `locale` | 1:N с `sessions`, `user_accounts`, `project_members`, `task_assignments` |
@@ -70,12 +97,14 @@ API реализовано в `app/api` и работает поверх in-memo
 | `conversations` | `id`, `project_id`, `topic`, `last_message_at` | Источник данных для drawer «Чаты» |
 
 ### Ключевые связи
+
 - Пользователь может состоять в нескольких организациях и аккаунтах, поддерживая мультиаккаунтный доступ.
 - Проект принадлежит аккаунту (workspace) и может ссылаться на шаблон/workflow.
 - Задачи поддерживают иерархию (`parent_task_id`), статусы из workflow и множественные назначения.
 - Документы и файлы связаны через универсальную таблицу `project_files`, что покрывает секции «Документы и файлы» в меню.
 
 ## API контракты для бэкенда (предложение)
+
 Ниже сводный контракт, расширяющий текущие Next.js endpoints.
 
 | Метод и путь | Описание | Тело запроса | Ответ |
@@ -110,10 +139,12 @@ API сохраняет обратную совместимость с текущ
 ## Авторизация и мультиаккаунт
 
 ### Текущее состояние
+
 - Dev-режим использует cookie `cv_session` с base64 JSON `{ email, role, issuedAt }` и выставляет её через `withSessionCookie`, а очистка происходит в `logout` handler’е.【F:apps/web/lib/auth/demo-session.ts†L3-L68】【F:apps/web/lib/auth/session-cookie.ts†L1-L34】【F:apps/web/app/api/auth/login/route.ts†L19-L83】
 - Роли восстанавливаются из demo-сессии и кэшируются в `localStorage` для контроля навигации и прав (финансы/админка).【F:apps/web/lib/auth/roles.ts†L12-L65】
 
 ### Предлагаемый формат
+
 1. **Сессии и токены**
    - Заменить демо-формат на зашифрованный JWT/паспортный токен, подписанный server-side ключом; cookie `cv_session` оставить для совместимости, но payload расширить до `{ userId, activeAccountId, roles, issuedAt }`.
    - В Redis/БД хранить refresh-токены (`sessions`), что позволит отзыв сессий при выходе и переключении аккаунтов.
