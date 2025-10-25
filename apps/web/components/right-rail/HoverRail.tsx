@@ -1,17 +1,26 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DrawerManager } from './DrawerManager';
 import { DialogManager } from './DialogManager';
 import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
+import {
+  COLLAPSED_RAIL_WIDTH,
+  EXPANDED_RAIL_WIDTH,
+  HOVER_RAIL_DELAY,
+  RAIL_INNER_PADDING,
+} from './constants';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUI, type Dialog as DialogType, type Drawer as DrawerType } from '@/stores/ui';
+import { cn } from '@/lib/utils';
 
-const COLLAPSED_WIDTH = 56;
-const EXPANDED_WIDTH = 280;
-const HOVER_DELAY = 150;
+const COLLAPSED_WIDTH = COLLAPSED_RAIL_WIDTH;
+const EXPANDED_WIDTH = EXPANDED_RAIL_WIDTH;
+const HOVER_DELAY = HOVER_RAIL_DELAY;
+const INNER_COLLAPSED_WIDTH = COLLAPSED_WIDTH - RAIL_INNER_PADDING * 2;
 
 type HoverRailProps = {
   permissions?: string[];
@@ -172,6 +181,7 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
                     expanded={expanded}
                     onClick={() => handleAction(action)}
                     badge={action.badge}
+                    iconColumnWidth={INNER_COLLAPSED_WIDTH}
                   />
                 </Fragment>
               );
@@ -180,9 +190,14 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
               <button
                 type="button"
                 onClick={handleOpenSettings}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className={cn(
+                  'flex w-full items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-950/70 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  expanded ? 'gap-2 px-3 py-2' : 'h-12 px-0'
+                )}
+                aria-label="Настроить меню"
               >
-                Настроить меню
+                <Settings className="h-5 w-5" aria-hidden="true" />
+                {expanded ? <span>Настроить меню</span> : <span className="sr-only">Настроить меню</span>}
               </button>
             </div>
           </div>
