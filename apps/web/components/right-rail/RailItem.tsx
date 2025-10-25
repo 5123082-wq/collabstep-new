@@ -35,15 +35,15 @@ export function RailItem({ action, expanded, onClick, badge }: RailItemProps) {
       <span
         aria-hidden={!expanded}
         className={cn(
-          'block overflow-hidden whitespace-nowrap pr-3 text-right text-sm text-neutral-100/90 opacity-0 transition-[max-width,opacity,transform] duration-200 ease-out',
+          'block overflow-hidden whitespace-nowrap pr-3 text-right text-sm text-neutral-700 dark:text-neutral-200 opacity-0 transition-[max-width,opacity,transform] duration-200 ease-out',
           expanded ? 'max-w-[188px] opacity-100 translate-x-0' : 'max-w-0 -translate-x-1'
         )}
       >
         {action.label}
       </span>
-      <span className="flex h-10 w-14 items-center justify-center justify-self-center">
+      <span className="flex h-10 items-center justify-center justify-self-center" style={{ width: iconColumnWidth }}>
         <span className="relative flex h-10 w-10 items-center justify-center">
-          <Icon className="h-6 w-6 text-neutral-200" aria-hidden="true" />
+          <Icon className="h-[1.2rem] w-[1.2rem] text-neutral-700 dark:text-neutral-200" aria-hidden="true" />
           {showBadge ? (
             <span className="absolute -top-1 -right-1">
               <Badge className="px-1 py-0 text-[10px] leading-3">{badge}</Badge>

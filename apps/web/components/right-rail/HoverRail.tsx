@@ -183,13 +183,17 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
                 type="button"
                 onClick={handleOpenSettings}
                 className={cn(
-                  'flex w-full items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-950/70 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  'flex w-full items-center justify-center rounded-xl border border-neutral-800/70 bg-neutral-950/70 text-sm font-medium text-neutral-700 transition hover:border-indigo-500/40 hover:text-neutral-900 dark:text-neutral-200 dark:hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                   expanded ? 'gap-2 px-3 py-2' : 'h-12 px-0'
                 )}
                 aria-label="Настроить меню"
               >
-                <Settings className="h-5 w-5" aria-hidden="true" />
-                {expanded ? <span>Настроить меню</span> : <span className="sr-only">Настроить меню</span>}
+                <Settings className="h-[1.2rem] w-[1.2rem] text-neutral-700 dark:text-neutral-200" aria-hidden="true" />
+                {expanded ? (
+                  <span className="text-neutral-700 dark:text-neutral-200">Настроить меню</span>
+                ) : (
+                  <span className="sr-only">Настроить меню</span>
+                )}
               </button>
             </div>
           </div>
