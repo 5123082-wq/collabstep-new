@@ -2,12 +2,14 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Settings } from 'lucide-react';
 import { DrawerManager } from './DrawerManager';
 import { DialogManager } from './DialogManager';
 import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUI, type Dialog as DialogType, type Drawer as DrawerType } from '@/stores/ui';
+import { cn } from '@/lib/utils';
 
 const COLLAPSED_WIDTH = 56;
 const EXPANDED_WIDTH = 280;
@@ -180,9 +182,18 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
               <button
                 type="button"
                 onClick={handleOpenSettings}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                aria-label="Настроить меню"
               >
-                Настроить меню
+                <Settings className="h-5 w-5 text-neutral-300 transition-colors group-hover:text-white" aria-hidden="true" />
+                <span
+                  className={cn(
+                    'overflow-hidden whitespace-nowrap text-sm transition-[max-width,opacity] duration-200 ease-out',
+                    expanded ? 'max-w-[160px] opacity-100' : 'max-w-0 opacity-0'
+                  )}
+                >
+                  Настроить меню
+                </span>
               </button>
             </div>
           </div>
