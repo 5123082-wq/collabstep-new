@@ -58,7 +58,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
         <section className="space-y-8">
           <header className="space-y-4">
             <h1 className="text-3xl font-semibold sm:text-4xl">{template.title}</h1>
-            <p className="max-w-3xl text-neutral-300">{template.description}</p>
+            <p className="text-neutral-300">{template.description}</p>
           </header>
           <div className="grid gap-4 sm:grid-cols-2">
             {template.gallery.map((image) => (

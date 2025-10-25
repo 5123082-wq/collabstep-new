@@ -1108,7 +1108,7 @@ export default function ProjectsOverviewPageClient() {
 
         {showSkeletons ? (
           viewMode === 'grid' ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="cs-auto-grid gap-6">
               {Array.from({ length: GRID_SKELETON_COUNT }).map((_, index) => (
                 <GridSkeletonCard key={`grid-skeleton-${index}`} />
               ))}
@@ -1149,7 +1149,7 @@ export default function ProjectsOverviewPageClient() {
 
         {!showSkeletons && !showEmptyState && !error ? (
           viewMode === 'grid' ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="cs-auto-grid gap-6">
               {projects.map((project) => (
                 <ProjectGridCard
                   key={project.id}

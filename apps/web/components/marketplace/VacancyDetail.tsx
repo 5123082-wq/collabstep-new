@@ -268,7 +268,7 @@ export default function VacancyDetail({ vacancy }: VacancyDetailProps) {
           aria-label="Отклик на вакансию"
           className="fixed inset-0 z-[110] flex items-center justify-center bg-neutral-950/80 p-4 backdrop-blur"
         >
-          <div className="w-full max-w-xl rounded-3xl border border-neutral-900 bg-neutral-950/90 p-6">
+          <div className="w-full rounded-3xl border border-neutral-900 bg-neutral-950/90 p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-neutral-100">Отклик на вакансию</h2>
