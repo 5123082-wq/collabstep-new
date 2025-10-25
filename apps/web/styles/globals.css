@@ -25,6 +25,7 @@
   --theme-control-border-hover: rgba(129, 140, 248, 0.75);
   --theme-control-foreground: #cbd5ff;
   --theme-control-foreground-hover: #e2e8ff;
+  --content-inline-padding: 24px;
 }
 
 html[data-theme='dark'] {
@@ -439,4 +440,27 @@ html[data-theme='light'] .text-red-200,
 html[data-theme='light'] .text-red-300,
 html[data-theme='light'] .text-red-400 {
   color: #b91c1c !important;
+}
+
+[data-app-main],
+main[data-app-main] {
+  max-width: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding-inline: var(--content-inline-padding);
+}
+
+[data-app-main] .container,
+[data-app-main] [class*='max-w-'],
+[data-app-main].container {
+  max-width: none !important;
+  width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+[data-app-main] .cs-auto-grid {
+  display: grid;
+  gap: var(--cs-auto-grid-gap, 16px);
+  grid-template-columns: repeat(auto-fit, minmax(var(--cs-auto-grid-min, 280px), 1fr));
 }
