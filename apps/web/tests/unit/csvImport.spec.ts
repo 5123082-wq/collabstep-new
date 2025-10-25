@@ -9,7 +9,7 @@ describe('parseExpensesCsv', () => {
     expect(result.records).toHaveLength(1);
     expect(result.records[0]).toEqual({
       date: '2024-01-01',
-      amount: '1000',
+      amount: '1000.00',
       currency: 'RUB',
       category: 'Маркетинг',
       description: 'Кампания',
@@ -27,7 +27,7 @@ describe('parseExpensesCsv', () => {
     expect(result.records).toHaveLength(1);
     expect(result.records[0]).toEqual({
       date: '2024-02-15',
-      amount: '1,500',
+      amount: '1500.00',
       currency: 'USD',
       category: 'R&D',
       description: 'Прототип, этап 1',
@@ -47,5 +47,16 @@ describe('parseExpensesCsv', () => {
     expect(result.processed).toBe(2);
     expect(result.records).toHaveLength(1);
     expect(result.errors).toEqual([{ row: 3, reason: expect.stringContaining('Missing') }]);
+  });
+
+  it('validates date, currency and amount formats', () => {
+    const csv = `Date,Amount,Currency,Project\nnot-a-date,10,RUB,proj-1\n2024-02-01,abc,USD,proj-2\n2024-03-01,1000,XXXX,proj-3`;
+    const result = parseExpensesCsv(csv);
+    expect(result.records).toHaveLength(0);
+    expect(result.errors).toEqual([
+      { row: 2, reason: 'Некорректная дата' },
+      { row: 3, reason: 'Некорректная сумма' },
+      { row: 4, reason: 'Некорректная валюта' }
+    ]);
   });
 });

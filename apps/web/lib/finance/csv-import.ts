@@ -17,6 +17,76 @@ export type CsvParseResult = {
   processed: number;
 };
 
+import { parseAmountInput } from './format-money';
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeCsvDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (ISO_DATE_RE.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed.toISOString().slice(0, 10);
+}
+
+function normalizeCsvCurrency(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const upper = trimmed.toUpperCase();
+  return /^[A-Z]{3}$/.test(upper) ? upper : null;
+}
+
+function normalizeCsvAmount(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const compact = trimmed.replace(/\s+/g, '');
+  const lastComma = compact.lastIndexOf(',');
+  const lastDot = compact.lastIndexOf('.');
+  const lastSeparator = Math.max(lastComma, lastDot);
+  if (lastSeparator === -1) {
+    const parsed = Number(compact);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+    return parseAmountInput(compact);
+  }
+  const integerPartRaw = compact.slice(0, lastSeparator);
+  const fractionalPartRaw = compact.slice(lastSeparator + 1);
+  const integerDigits = integerPartRaw.replace(/[.,]/g, '');
+  const fractionalDigits = fractionalPartRaw.replace(/[.,]/g, '');
+  if (!/^-?\d*$/.test(integerDigits)) {
+    return null;
+  }
+  if (!/^\d*$/.test(fractionalDigits)) {
+    return null;
+  }
+  if (!fractionalDigits.length || fractionalDigits.length > 2) {
+    const merged = `${integerDigits}${fractionalDigits}`;
+    const parsed = Number(merged);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+    return parsed.toFixed(2);
+  }
+  const normalized = `${integerDigits}.${fractionalDigits}`;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return parsed.toFixed(2);
+}
+
 function splitCsvLine(line: string): string[] {
   const cells: string[] = [];
   let current = '';
@@ -111,10 +181,28 @@ export function parseExpensesCsv(input: string): CsvParseResult {
       continue;
     }
 
+    const normalizedDate = normalizeCsvDate(record.date);
+    if (!normalizedDate) {
+      errors.push({ row: rowNumber, reason: 'Некорректная дата' });
+      continue;
+    }
+
+    const normalizedAmount = normalizeCsvAmount(record.amount);
+    if (!normalizedAmount) {
+      errors.push({ row: rowNumber, reason: 'Некорректная сумма' });
+      continue;
+    }
+
+    const normalizedCurrency = normalizeCsvCurrency(record.currency);
+    if (!normalizedCurrency) {
+      errors.push({ row: rowNumber, reason: 'Некорректная валюта' });
+      continue;
+    }
+
     const nextRecord: CsvExpenseRecord = {
-      date: record.date,
-      amount: record.amount,
-      currency: record.currency.toUpperCase(),
+      date: normalizedDate,
+      amount: normalizedAmount,
+      currency: normalizedCurrency,
       project: record.project,
       rowNumber
     };

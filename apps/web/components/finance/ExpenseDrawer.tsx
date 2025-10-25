@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { getExpensePermissions } from '@/lib/finance/permissions';
+import { getExpensePermissions, mergeExpensePermissions, type ExpensePermissions } from '@/lib/finance/permissions';
 import { cn } from '@/lib/utils';
 import {
   STATUS_LABELS,
@@ -28,6 +28,8 @@ export type ExpenseDrawerProps = {
   onTabChange: (tab: DrawerState['tab']) => void;
   projectOptions?: ExpenseProjectOption[];
   projectSelectionDisabled?: boolean;
+  permissionOverrides?: Partial<ExpensePermissions>;
+  readOnlyMessage?: string | null;
 };
 
 export default function ExpenseDrawer({
@@ -39,9 +41,14 @@ export default function ExpenseDrawer({
   onStatusChange,
   onTabChange,
   projectOptions,
-  projectSelectionDisabled = false
+  projectSelectionDisabled = false,
+  permissionOverrides,
+  readOnlyMessage
 }: ExpenseDrawerProps) {
-  const permissions = useMemo(() => getExpensePermissions(role), [role]);
+  const permissions = useMemo(
+    () => mergeExpensePermissions(getExpensePermissions(role), permissionOverrides),
+    [permissionOverrides, role]
+  );
   const nextStatus = state.draft.status ? STATUS_NEXT[state.draft.status] : null;
   const canTransition = permissions.canChangeStatus && nextStatus;
 
@@ -256,6 +263,11 @@ export default function ExpenseDrawer({
         </div>
         {state.error ? <p className="mt-2 text-sm text-rose-400">{state.error}</p> : null}
         <div className="mt-4 flex flex-col gap-2 border-t border-neutral-900 pt-4">
+          {!permissions.canEdit && state.expense ? (
+            <p className="text-xs text-neutral-500">
+              {readOnlyMessage ?? 'Редактирование недоступно для этой траты.'}
+            </p>
+          ) : null}
           {permissions.canEdit ? (
             <button
               type="button"
