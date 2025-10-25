@@ -8,8 +8,9 @@ import { RailItem } from './RailItem';
 import { useRailConfig, type QuickActionWithBadge } from './useRailConfig';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useUI, type Dialog as DialogType, type Drawer as DrawerType } from '@/stores/ui';
+import { Settings2 } from 'lucide-react';
 
-const COLLAPSED_WIDTH = 56;
+const COLLAPSED_WIDTH = 72;
 const EXPANDED_WIDTH = 280;
 const HOVER_DELAY = 150;
 
@@ -180,9 +181,20 @@ export default function HoverRail({ permissions = [], featureFlags }: HoverRailP
               <button
                 type="button"
                 onClick={handleOpenSettings}
+                aria-label="Настроить меню"
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800/70 bg-neutral-950/70 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
               >
-                Настроить меню
+                {expanded ? (
+                  <>
+                    <Settings2 className="h-4 w-4" aria-hidden="true" />
+                    <span>Настроить меню</span>
+                  </>
+                ) : (
+                  <>
+                    <Settings2 className="h-5 w-5" aria-hidden="true" />
+                    <span className="sr-only">Настроить меню</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
