@@ -348,21 +348,6 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           >
             {resolveRoleLabel(profile.role)}
           </span>
-          <span className="text-xs text-[color:var(--text-tertiary)]">
-            {bgPreset === 'mesh'
-              ? 'Градиент Mesh'
-              : bgPreset === 'grid'
-                ? 'Сетка'
-                : bgPreset === 'halo'
-                  ? 'Гало'
-                  : bgPreset === 'sunrise'
-                    ? 'Рассвет'
-                    : bgPreset === 'mint'
-                      ? 'Мята'
-                      : bgPreset === 'lavender'
-                        ? 'Лаванда'
-                        : 'Пастель'}
-          </span>
         </div>
       </div>
     </header>

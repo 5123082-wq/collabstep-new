@@ -1,7 +1,7 @@
 'use client';
 
 import clsx from 'clsx';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/components/theme/ThemeContext';
 import { useUiStore, type WallpaperPreset } from '@/lib/state/ui-store';
 import type { DemoProfile } from './AppTopbar';
@@ -51,8 +51,10 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
     setBgPreset: state.setBgPreset
   }));
   const [isOpen, setOpen] = useState(false);
+  const [isWallpaperOpen, setWallpaperOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const wallpaperPanelId = useId();
 
   const initials = useMemo(() => {
     const [first = ''] = profile.email;
@@ -108,13 +110,33 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
           ref={menuRef}
           role="menu"
           aria-label="Настройки аккаунта"
-          className="absolute right-0 z-50 mt-3 w-80 origin-top-right overflow-hidden rounded-2xl border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-2xl"
+          className="absolute right-0 z-50 mt-3 w-[26rem] origin-top-right overflow-hidden rounded-2xl border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-2xl"
         >
           <div className="border-b border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-4 py-3">
-            <p className="text-sm font-semibold text-[color:var(--text-primary)]">{profile.email}</p>
-            <p className="text-xs text-[color:var(--text-secondary)]">{profile.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-[color:var(--text-primary)]">{profile.email}</p>
+                <p className="text-xs text-[color:var(--text-secondary)]">{profile.role === 'admin' ? 'Администратор' : 'Пользователь'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onLogout();
+                }}
+                disabled={isLoggingOut}
+                className={clsx(
+                  'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+                  isLoggingOut
+                    ? 'cursor-not-allowed border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)]'
+                    : 'border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] text-[color:var(--accent-foreground)] hover:border-[color:var(--accent-border-strong)] hover:bg-[color:var(--accent-bg-strong)]'
+                )}
+              >
+                {isLoggingOut ? 'Выход…' : 'Выйти'}
+              </button>
+            </div>
           </div>
-          <div className="space-y-5 px-4 py-4">
+          <div className="space-y-4 px-4 py-3">
             <section>
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">Тема</h3>
@@ -122,7 +144,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                   {mode === 'system' ? 'Авто' : resolvedTheme === 'dark' ? 'Тёмная' : 'Светлая'}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {themeOptions.map((option) => (
                   <button
                     key={option.id}
@@ -131,7 +153,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                     aria-checked={mode === option.id}
                     onClick={() => setMode(option.id)}
                     className={clsx(
-                      'flex flex-col items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
+                      'flex flex-col items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                       mode === option.id
                         ? 'border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] text-[color:var(--accent-foreground)] shadow-sm'
                         : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent-border)] hover:text-[color:var(--text-primary)]'
@@ -140,7 +162,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                     <svg
                       aria-hidden="true"
                       viewBox="0 0 24 24"
-                      className="h-5 w-5"
+                      className="h-4 w-4"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="1.6"
@@ -155,13 +177,34 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
               </div>
             </section>
             <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
-                  Обои
-                </h3>
-                <span className="text-xs text-[color:var(--text-tertiary)]">{wallpaperGallery.length} вариантов</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setWallpaperOpen((value) => !value)}
+                className="flex w-full items-center justify-between rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-left text-sm font-semibold text-[color:var(--text-primary)] transition hover:border-[color:var(--accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                aria-expanded={isWallpaperOpen}
+                aria-controls={wallpaperPanelId}
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">Обои</span>
+                <span className="flex items-center gap-2 text-[11px] text-[color:var(--text-tertiary)]">
+                  {wallpaperGallery.length} вариантов
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className={clsx('h-4 w-4 transition-transform', isWallpaperOpen ? 'rotate-180' : 'rotate-0')}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+              <div
+                id={wallpaperPanelId}
+                className={clsx('grid grid-cols-2 gap-3 pt-3', isWallpaperOpen ? 'mt-1' : 'mt-1 hidden')}
+              >
                 {wallpaperGallery.map((item) => (
                   <button
                     key={item.id}
@@ -205,24 +248,6 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                 ))}
               </div>
             </section>
-          </div>
-          <div className="border-t border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-4 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onLogout();
-              }}
-              disabled={isLoggingOut}
-              className={clsx(
-                'flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                isLoggingOut
-                  ? 'cursor-not-allowed border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)]'
-                  : 'border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] text-[color:var(--accent-foreground)] hover:border-[color:var(--accent-border-strong)] hover:bg-[color:var(--accent-bg-strong)]'
-              )}
-            >
-              {isLoggingOut ? 'Выход…' : 'Выйти из аккаунта'}
-            </button>
           </div>
         </div>
       ) : null}
