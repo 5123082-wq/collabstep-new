@@ -1,4 +1,4 @@
-import { Bell, ListTodo, MessageSquare, PlusCircle, UserPlus } from 'lucide-react';
+import { Bell, FilePlus2, ListTodo, MessageSquare, PlusCircle, UserPlus } from 'lucide-react';
 import AssistantIcon from '@/components/right-rail/AssistantIcon';
 import type { QuickAction } from '@/types/quickActions';
 
@@ -17,6 +17,14 @@ export const defaultRailConfig: QuickAction[] = [
     icon: ListTodo,
     intent: 'sheet',
     payload: { sheet: 'task' },
+    section: 'actions'
+  },
+  {
+    id: 'createDocument',
+    label: 'Документ',
+    icon: FilePlus2,
+    intent: 'sheet',
+    payload: { sheet: 'document' },
     section: 'actions'
   },
   {
