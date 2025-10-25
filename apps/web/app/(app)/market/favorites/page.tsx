@@ -8,7 +8,7 @@ export default function MarketFavoritesPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Избранное' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Избранное</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Сохраняйте шаблоны и проекты, чтобы быстро возвращаться к ним и собирать подборки для команды.
         </p>
       </header>

@@ -123,7 +123,7 @@ export default function ProjectPageFrame({
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">{resolvedLabel}</p>
             {resolvedTitle ? <h1 className="text-3xl font-semibold text-white">{resolvedTitle}</h1> : null}
             {resolvedDescription ? (
-              <p className="max-w-2xl text-sm text-neutral-400">{resolvedDescription}</p>
+              <p className="text-sm text-neutral-400">{resolvedDescription}</p>
             ) : null}
           </div>
           {actions ? <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
