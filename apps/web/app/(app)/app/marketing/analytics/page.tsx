@@ -101,7 +101,7 @@ export default function MarketingAnalyticsPage() {
         metrics={metrics}
       />
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      <div className="cs-auto-grid gap-4">
         <div className="space-y-4 xl:col-span-2">
           <MarketingCard
             title="Интеграции"

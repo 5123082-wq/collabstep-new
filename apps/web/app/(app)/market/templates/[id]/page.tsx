@@ -58,9 +58,9 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
         <section className="space-y-8">
           <header className="space-y-4">
             <h1 className="text-3xl font-semibold sm:text-4xl">{template.title}</h1>
-            <p className="max-w-3xl text-neutral-300">{template.description}</p>
+            <p className="text-neutral-300">{template.description}</p>
           </header>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="cs-auto-grid gap-4">
             {template.gallery.map((image) => (
               <div key={image} className="relative aspect-video overflow-hidden rounded-2xl border border-neutral-800/80">
                 <Image src={image} alt={template.title} fill className="object-cover" sizes="(min-width: 1280px) 480px, 100vw" />
@@ -103,7 +103,7 @@ export default function TemplateDetailPage({ params }: TemplateDetailPageProps) 
               Смотреть все
             </Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="cs-auto-grid gap-4">
             {related.map((item) => (
               <Link
                 key={item.id}

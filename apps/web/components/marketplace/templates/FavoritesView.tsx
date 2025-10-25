@@ -22,7 +22,7 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-neutral-800/80 bg-neutral-900/40 p-16 text-center">
         <h2 className="text-xl font-semibold text-neutral-100">Вы пока ничего не сохранили</h2>
-        <p className="max-w-md text-sm text-neutral-400">
+        <p className="text-sm text-neutral-400">
           Добавляйте понравившиеся шаблоны и проекты в избранное, чтобы быстро находить их и делиться с командой.
         </p>
         <Link
@@ -36,7 +36,7 @@ export default function FavoritesView({ templates }: FavoritesViewProps) {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="cs-auto-grid gap-4">
       {favoriteTemplates.map((template) => {
         const priceInfo = getTemplatePriceLabel(template);
 
