@@ -6,6 +6,7 @@ import type { QuickAction } from '@/types/quickActions';
 import { isFeatureEnabled } from '@/lib/utils';
 import { useUI } from '@/stores/ui';
 import { useRailPreferencesStore } from '@/stores/railPreferences';
+import { resolveRailIcon } from '@/config/railIcons';
 
 type UseRailConfigOptions = {
   permissions?: string[];
@@ -20,10 +21,27 @@ export function useRailConfig(options: UseRailConfigOptions = {}) {
   const unreadNotifications = useUI((state) => state.unreadNotifications);
 
   const enabledActionIds = useRailPreferencesStore((state) => state.enabledActionIds);
+  const customActions = useRailPreferencesStore((state) => state.customActions);
 
   return useMemo<QuickActionWithBadge[]>(() => {
     const permissionSet = new Set(permissions);
-    const availableMap = new Map(defaultRailConfig.map((action) => [action.id, action]));
+    const customQuickActions: QuickAction[] = customActions.map((action) => {
+      const base: QuickAction = {
+        id: action.id,
+        label: action.label,
+        icon: resolveRailIcon(action.icon),
+        intent: action.intent,
+        section: action.section ?? 'custom'
+      };
+      if (action.payload) {
+        base.payload = action.payload;
+      }
+      return base;
+    });
+
+    const availableMap = new Map(
+      [...defaultRailConfig, ...customQuickActions].map((action) => [action.id, action] as const)
+    );
 
     const orderedActions = enabledActionIds
       .map((id) => availableMap.get(id))
@@ -52,5 +70,12 @@ export function useRailConfig(options: UseRailConfigOptions = {}) {
         const normalizedBadge = Number.isFinite(badge) && badge > 0 ? badge : 0;
         return { ...action, badge: normalizedBadge };
       });
-  }, [enabledActionIds, featureFlags, permissions, unreadChats, unreadNotifications]);
+  }, [
+    customActions,
+    enabledActionIds,
+    featureFlags,
+    permissions,
+    unreadChats,
+    unreadNotifications
+  ]);
 }
