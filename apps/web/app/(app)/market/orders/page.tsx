@@ -6,7 +6,7 @@ export default function MarketOrdersPage() {
       <MarketBreadcrumbs items={[{ label: 'Маркетплейс', href: '/market' }, { label: 'Мои заказы' }]} />
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold text-neutral-50">Мои заказы</h1>
-        <p className="max-w-3xl text-neutral-400">
+        <p className="text-neutral-400">
           Здесь появится история покупок, статусы и защищённые ссылки на файлы. После интеграции оплаты раздел
           будет обновлён.
         </p>

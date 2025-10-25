@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppShellProvider } from '@/components/app/AppShellContext';
@@ -11,6 +11,7 @@ import CreateMenu from '@/components/app/CreateMenu';
 import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
+import { COLLAPSED_RAIL_WIDTH } from '@/components/right-rail/constants';
 import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
@@ -33,6 +34,8 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isLoggingOut, setLoggingOut] = useState(false);
   const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
   useQueryToast(TOAST_MESSAGES);
+
+  const collapsedRailSafeArea = COLLAPSED_RAIL_WIDTH + 5;
 
   const openCreateMenu = useCallback(() => {
     setCreateOpen(true);
@@ -113,7 +116,13 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
             isLoggingOut={isLoggingOut}
           />
           <div className="flex flex-1 min-h-0 overflow-hidden bg-neutral-950/70">
-            <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
+            <ContentContainer
+              style={
+                isHoverRailEnabled
+                  ? ({ '--content-rail-offset': `${collapsedRailSafeArea}px` } as CSSProperties)
+                  : undefined
+              }
+            >
               {children}
             </ContentContainer>
           </div>
