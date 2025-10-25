@@ -173,6 +173,14 @@ export default function Sidebar({ roles }: SidebarProps) {
         const active = isSectionActive(section.href, section.children);
         const isFlyoutOpen = activeFlyout === section.id;
 
+        const collapsedItemClasses = clsx(
+          'group flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-900/80 bg-neutral-950/50 text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+          active && 'border-indigo-500/40 bg-indigo-500/10 text-white'
+        );
+
+        const collapsedIconClasses =
+          'h-5 w-5 text-indigo-200 transition group-hover:text-indigo-100 group-focus-visible:text-indigo-100';
+
         return (
           <div
             key={section.id}
@@ -186,45 +194,47 @@ export default function Sidebar({ roles }: SidebarProps) {
               }
             }}
           >
-            {hasChildren ? (
-              <button
-                type="button"
-                className={clsx(
-                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                  active && 'border-indigo-500/40 text-white'
-                )}
+            {hasChildren && section.href ? (
+              <Link
+                href={section.href}
+                className={collapsedItemClasses}
                 aria-haspopup="true"
                 aria-expanded={isFlyoutOpen}
+                onPointerDown={(event) => {
+                  if (event.pointerType === 'touch' && activeFlyout !== section.id) {
+                    event.preventDefault();
+                    setActiveFlyout(section.id);
+                  }
+                }}
+                onClick={() => closeFlyout()}
+              >
+                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className={collapsedIconClasses} />
+                <span className="sr-only">{section.label}</span>
+              </Link>
+            ) : hasChildren ? (
+              <button
+                type="button"
+                className={collapsedItemClasses}
+                aria-haspopup="true"
+                aria-expanded={isFlyoutOpen}
+                onPointerDown={(event) => {
+                  if (event.pointerType === 'touch' && activeFlyout !== section.id) {
+                    event.preventDefault();
+                  }
+                }}
                 onClick={() => setActiveFlyout(isFlyoutOpen ? null : section.id)}
               >
-                <MenuIcon
-                  name={(section.icon ?? 'dashboard') as IconName}
-                  className="h-5 w-5 text-indigo-200 transition group-hover:text-indigo-100"
-                />
+                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className={collapsedIconClasses} />
                 <span className="sr-only">{section.label}</span>
               </button>
             ) : section.href ? (
-              <Link
-                href={section.href}
-                className={clsx(
-                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                  active && 'border-indigo-500/40 text-white'
-                )}
-              >
-                <MenuIcon
-                  name={(section.icon ?? 'dashboard') as IconName}
-                  className="h-5 w-5 text-indigo-200 transition group-hover:text-indigo-100"
-                />
+              <Link href={section.href} className={collapsedItemClasses} onClick={() => closeFlyout()}>
+                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className={collapsedIconClasses} />
                 <span className="sr-only">{section.label}</span>
               </Link>
             ) : (
-              <div
-                className={clsx(
-                  'flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-900/80 text-neutral-300',
-                  active && 'border-indigo-500/40 text-white'
-                )}
-              >
-                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className="h-5 w-5 text-indigo-200" />
+              <div className={collapsedItemClasses}>
+                <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className={collapsedIconClasses} />
                 <span className="sr-only">{section.label}</span>
               </div>
             )}
@@ -232,27 +242,20 @@ export default function Sidebar({ roles }: SidebarProps) {
             {hasChildren && (
               <div
                 className={clsx(
-                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden min-w-[220px] max-w-[260px] rounded-2xl border border-neutral-800 bg-neutral-950/95 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur',
+                  'pointer-events-none absolute left-full top-0 z-40 hidden w-[280px] translate-x-4 rounded-2xl border border-neutral-800/60 bg-neutral-900/60 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.45)] backdrop-blur',
                   isFlyoutOpen && 'pointer-events-auto block'
                 )}
+                role="dialog"
+                aria-label={`Подменю раздела ${section.label}`}
               >
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-white">{section.label}</span>
-                    <button
-                      type="button"
-                      className="rounded-full border border-neutral-800 bg-neutral-900/70 px-2 py-1 text-[10px] uppercase tracking-wide text-neutral-400 transition hover:border-indigo-500/40 hover:text-white"
-                      onClick={() => closeFlyout()}
-                    >
-                      Закрыть
-                    </button>
-                  </div>
+                <div className="flex flex-col gap-4">
+                  <span className="text-sm font-semibold text-white">{section.label}</span>
                   <div className="space-y-2">
                     {section.href && (
                       <Link
                         href={section.href}
                         className={clsx(
-                          'block rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          'block rounded-xl border border-neutral-800/60 bg-neutral-950/60 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                           isSectionActive(section.href) && 'border-indigo-500/40 bg-indigo-500/10 text-white'
                         )}
                         onClick={() => closeFlyout()}
@@ -271,8 +274,8 @@ export default function Sidebar({ roles }: SidebarProps) {
                             <Link
                               href={child.href}
                               className={clsx(
-                                'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                                normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                                'block rounded-xl border border-transparent px-3 py-2 text-sm text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                                normalizedPath === child.href && 'border-indigo-500/40 bg-indigo-500/10 text-white'
                               )}
                               onClick={() => closeFlyout()}
                             >
