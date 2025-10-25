@@ -123,7 +123,7 @@ export default function ProjectModulesPage() {
               <h2 id={`${module.id}-title`} className="text-xl font-semibold text-white">
                 {module.title}
               </h2>
-              <p className="max-w-2xl text-sm text-neutral-400">{module.description}</p>
+              <p className="text-sm text-neutral-400">{module.description}</p>
             </div>
             <span className="inline-flex items-center rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-200">
               В разработке
