@@ -18,7 +18,7 @@ export default function ProjectsLayoutShell({ children }: { children: ReactNode 
     <div className="flex min-h-full flex-col gap-6">
       <ProjectsTopbar />
       <div className="flex flex-1 flex-col gap-6 xl:flex-row">
-        <main className="flex-1 space-y-6" aria-label={getDrawerTitle(entityType)}>
+        <main className="flex-1 min-w-0 space-y-6" aria-label={getDrawerTitle(entityType)}>
           {children}
         </main>
         <aside

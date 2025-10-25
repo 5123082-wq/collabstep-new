@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import clsx from 'clsx';
 
 type MarketingCardProps = {
@@ -18,6 +18,13 @@ export default function MarketingCard({
   accent = 'neutral',
   columns = 1
 }: MarketingCardProps) {
+  const minColumnWidth =
+    columns === 4 ? '220px' : columns === 3 ? '260px' : columns === 2 ? '320px' : '100%';
+  const gridStyles = {
+    '--cs-auto-grid-gap': '12px',
+    '--cs-auto-grid-min': minColumnWidth
+  } as CSSProperties;
+
   return (
     <section
       className={clsx(
@@ -32,13 +39,7 @@ export default function MarketingCard({
         {description ? <p className="text-sm text-neutral-400">{description}</p> : null}
       </header>
       {children ? (
-        <div
-          className={clsx('grid gap-3', {
-            'md:grid-cols-2': columns === 2,
-            'md:grid-cols-2 lg:grid-cols-3': columns === 3,
-            'md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4': columns === 4
-          })}
-        >
+        <div className="cs-auto-grid" style={gridStyles}>
           {children}
         </div>
       ) : null}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -324,7 +324,7 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
             </div>
           ) : null}
         </div>
-        <div className="w-full max-w-sm space-y-4">
+        <div className="w-full space-y-4 lg:w-[24rem] lg:flex-none">
           <div>
             <p className="text-xs uppercase tracking-wide text-neutral-500">Прогресс</p>
             <div className="mt-2 h-2 w-full rounded-full bg-neutral-900">
@@ -905,6 +905,14 @@ export default function ProjectsOverviewPageClient() {
 
   const showSkeletons = loading && projects.length === 0;
   const showEmptyState = !loading && projects.length === 0 && !error;
+  const autoGridStyles = useMemo(
+    () =>
+      ({
+        '--cs-auto-grid-gap': '24px',
+        '--cs-auto-grid-min': '320px'
+      }) as CSSProperties,
+    []
+  );
 
   return (
     <div className="space-y-8">
@@ -1108,7 +1116,7 @@ export default function ProjectsOverviewPageClient() {
 
         {showSkeletons ? (
           viewMode === 'grid' ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="cs-auto-grid" style={autoGridStyles}>
               {Array.from({ length: GRID_SKELETON_COUNT }).map((_, index) => (
                 <GridSkeletonCard key={`grid-skeleton-${index}`} />
               ))}
@@ -1149,7 +1157,7 @@ export default function ProjectsOverviewPageClient() {
 
         {!showSkeletons && !showEmptyState && !error ? (
           viewMode === 'grid' ? (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="cs-auto-grid" style={autoGridStyles}>
               {projects.map((project) => (
                 <ProjectGridCard
                   key={project.id}
