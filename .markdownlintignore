@@ -1,0 +1,4 @@
+node_modules/
+apps/*/node_modules/
+docs/PLAN.md
+apps/web/docs/README_nav_ru.md
