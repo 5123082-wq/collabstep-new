@@ -18,7 +18,7 @@ export default function ProjectTemplatesPage() {
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Шаблоны</p>
         <h1 className="text-3xl font-semibold text-white">Шаблонов нет</h1>
-        <p className="mx-auto max-w-2xl text-base text-neutral-400">
+        <p className="text-base text-neutral-400">
           Опубликуйте первый шаблон из существующего проекта, чтобы команда могла быстро стартовать новые направления.
         </p>
       </div>

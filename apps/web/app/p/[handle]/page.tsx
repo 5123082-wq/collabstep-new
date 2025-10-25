@@ -1,6 +1,6 @@
 export default function PublicProfilePlaceholder({ params }: { params: { handle: string } }) {
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 py-12">
+    <main data-app-main className="flex flex-col gap-6 py-12">
       <header className="space-y-2 text-center">
         <p className="text-sm uppercase tracking-wide text-indigo-300">Публичная визитка</p>
         <h1 className="text-3xl font-semibold text-neutral-50">@{params.handle}</h1>
