@@ -6,7 +6,7 @@ export default function ProjectsArchivePage() {
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Архив</p>
         <h1 className="text-3xl font-semibold text-white">Архив пуст</h1>
-        <p className="mx-auto max-w-2xl text-base text-neutral-400">
+        <p className="text-base text-neutral-400">
           Когда вы отправите проекты в архив, они появятся здесь с возможностью восстановить их обратно в работу.
         </p>
       </div>
