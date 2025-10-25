@@ -113,7 +113,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
             isLoggingOut={isLoggingOut}
           />
           <div className="flex flex-1 min-h-0 overflow-hidden bg-neutral-950/70">
-            <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
+            <ContentContainer hasRailOffset={isHoverRailEnabled}>
               {children}
             </ContentContainer>
           </div>
