@@ -34,7 +34,7 @@ export const useUI = create<UIState>((set) => ({
   closeDialog: () => set({ dialog: null }),
 
   unreadChats: 2,
-  unreadNotifications: 7,
+  unreadNotifications: 0,
   setUnreadChats: (value) => set({ unreadChats: value }),
   setUnreadNotifications: (value) => set({ unreadNotifications: value })
 }));
