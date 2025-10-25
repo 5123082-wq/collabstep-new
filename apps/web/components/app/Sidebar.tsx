@@ -3,7 +3,8 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FocusEvent as ReactFocusEvent, MouseEvent as ReactMouseEvent } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
@@ -48,74 +49,308 @@ export default function Sidebar({ roles }: SidebarProps) {
     expandedGroups: state.expandedGroups,
     toggleGroup: state.toggleGroup
   }));
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activePopover, setActivePopover] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleClose = useCallback(() => {
+    cancelClose();
+    closeTimeoutRef.current = setTimeout(() => {
+      setActivePopover(null);
+    }, 120);
+  }, [cancelClose]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    setIsCollapsed(mediaQuery.matches);
+
+    const listener = (event: MediaQueryListEvent) => {
+      setIsCollapsed(event.matches);
+    };
+
+    mediaQuery.addEventListener('change', listener);
+    return () => {
+      mediaQuery.removeEventListener('change', listener);
+    };
+  }, []);
+
+  useEffect(() => () => cancelClose(), [cancelClose]);
+
+  useEffect(() => {
+    if (!isCollapsed) {
+      cancelClose();
+      setActivePopover(null);
+    }
+  }, [cancelClose, isCollapsed]);
+
+  const toggleCollapsed = () => {
+    cancelClose();
+    setActivePopover(null);
+    setIsCollapsed((prev) => !prev);
+  };
+
+  const handleCollapsedClick = useCallback(
+    (event: ReactMouseEvent<HTMLAnchorElement>, sectionId: string) => {
+      if (!isCollapsed) {
+        return;
+      }
+
+      if (activePopover !== sectionId) {
+        event.preventDefault();
+        cancelClose();
+        setActivePopover(sectionId);
+      }
+    },
+    [activePopover, cancelClose, isCollapsed]
+  );
 
   return (
-    <aside className="hidden h-full w-[288px] flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 px-4 py-6 lg:flex">
-      <div className="px-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>
+    <aside
+      className={clsx(
+        'flex h-full flex-shrink-0 flex-col border-r border-neutral-900/60 bg-neutral-950/80 py-6 transition-[width] duration-200 ease-in-out',
+        isCollapsed ? 'w-[72px] items-center px-2' : 'w-[288px] px-4'
+      )}
+    >
+      <div
+        className={clsx(
+          'flex w-full items-center px-2',
+          isCollapsed ? 'justify-center' : 'justify-between'
+        )}
+      >
+        {!isCollapsed && <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">Навигация</p>}
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          className={clsx(
+            'flex items-center justify-center rounded-full border border-neutral-800 bg-neutral-900/60 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+            isCollapsed ? 'h-8 w-8' : 'h-7 w-7'
+          )}
+          aria-label={isCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
+          aria-pressed={isCollapsed}
+        >
+          <span className="text-base leading-none">{isCollapsed ? '›' : '‹'}</span>
+        </button>
       </div>
-      <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
+      <nav
+        aria-label="Навигация приложения"
+        className={clsx('mt-6 flex flex-1 flex-col gap-2 overflow-y-auto', isCollapsed ? 'pr-0' : 'pr-2')}
+      >
         {menu.map((section) => {
           const isExpanded = expandedGroups.includes(section.id) || !section.children;
           const hasChildren = Boolean(section.children?.length);
           const isActive = (href?: string) => Boolean(href && normalizedPath.startsWith(href));
+          const hasActiveChild = Boolean(
+            section.children?.some(
+              (child) => child.type !== 'divider' && typeof child.href === 'string' && normalizedPath.startsWith(child.href)
+            )
+          );
+          const sectionIsActive = isActive(section.href) || hasActiveChild;
+          const showPopover = isCollapsed && activePopover === section.id;
+
+          const handleMouseEnter = () => {
+            if (!isCollapsed) {
+              return;
+            }
+            cancelClose();
+            setActivePopover(section.id);
+          };
+
+          const handleMouseLeave = () => {
+            if (!isCollapsed) {
+              return;
+            }
+            scheduleClose();
+          };
+
+          const handleFocus = () => {
+            if (!isCollapsed) {
+              return;
+            }
+            cancelClose();
+            setActivePopover(section.id);
+          };
+
+          const handleBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
+            if (!isCollapsed) {
+              return;
+            }
+            const next = event.relatedTarget as Node | null;
+            if (!next || !event.currentTarget.contains(next)) {
+              scheduleClose();
+            }
+          };
 
           return (
-            <div key={section.id} className="rounded-2xl border border-transparent hover:border-neutral-800/80">
-              <div className="flex items-center justify-between px-3 py-2">
-                {section.href ? (
-                  <Link
-                    href={section.href}
-                    className={clsx(
-                      'flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                      isActive(section.href) && 'text-white'
+            <div
+              key={section.id}
+              className={clsx(
+                'relative',
+                !isCollapsed && 'rounded-2xl border border-transparent hover:border-neutral-800/80'
+              )}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            >
+              {isCollapsed ? (
+                <div className="flex justify-center px-1 py-1">
+                  {section.href ? (
+                    <Link
+                      href={section.href}
+                      onClick={(event) => handleCollapsedClick(event, section.id)}
+                      className={clsx(
+                        'flex h-11 w-11 items-center justify-center rounded-2xl text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                        sectionIsActive && 'bg-indigo-500/20 text-white'
+                      )}
+                      aria-label={section.label}
+                      title={section.label}
+                    >
+                      <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      className={clsx(
+                        'flex h-11 w-11 items-center justify-center rounded-2xl text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                        sectionIsActive && 'bg-indigo-500/20 text-white'
+                      )}
+                      aria-label={section.label}
+                      onClick={() => {
+                        if (isCollapsed) {
+                          cancelClose();
+                          setActivePopover((prev) => (prev === section.id ? null : section.id));
+                        }
+                      }}
+                    >
+                      <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between px-3 py-2">
+                    {section.href ? (
+                      <Link
+                        href={section.href}
+                        className={clsx(
+                          'flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          isActive(section.href) && 'text-white'
+                        )}
+                      >
+                        <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                        {section.label}
+                      </Link>
+                    ) : (
+                      <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300">
+                        <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                        {section.label}
+                      </div>
                     )}
-                  >
-                    <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
-                    {section.label}
-                  </Link>
-                ) : (
-                  <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300">
-                    <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
-                    {section.label}
+                    {hasChildren && (
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(section.id)}
+                        aria-expanded={isExpanded}
+                        aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
+                        className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                      >
+                        {isExpanded ? '−' : '+'}
+                      </button>
+                    )}
                   </div>
-                )}
-                {hasChildren && (
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(section.id)}
-                    aria-expanded={isExpanded}
-                    aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
-                    className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
-                  >
-                    {isExpanded ? '−' : '+'}
-                  </button>
-                )}
-              </div>
-              {hasChildren && isExpanded && (
-                <ul className="space-y-1 px-3 pb-3">
-                  {section.children?.map((child) => {
-                    if (child.type === 'divider') {
-                      return (
-                        <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
-                      );
-                    }
+                  {hasChildren && isExpanded && (
+                    <ul className="space-y-1 px-3 pb-3">
+                      {section.children?.map((child) => {
+                        if (child.type === 'divider') {
+                          return (
+                            <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
+                          );
+                        }
 
-                    return (
-                      <li key={child.id}>
-                        <Link
-                          href={child.href}
-                          className={clsx(
-                            'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                            normalizedPath === child.href && 'bg-indigo-500/10 text-white'
-                          )}
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                        return (
+                          <li key={child.id}>
+                            <Link
+                              href={child.href}
+                              className={clsx(
+                                'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                                normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                              )}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              )}
+              {isCollapsed && showPopover && (
+                <div
+                  className="absolute left-full top-1/2 z-30 ml-3 w-60 -translate-y-1/2 rounded-2xl border border-neutral-900/60 bg-neutral-950/90 p-3 shadow-xl backdrop-blur"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                    <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
+                    <span>{section.label}</span>
+                  </div>
+                  {section.href && (
+                    <Link
+                      href={section.href}
+                      className={clsx(
+                        'mt-3 inline-flex w-full items-center justify-between rounded-xl border border-transparent bg-indigo-500/10 px-3 py-2 text-xs font-medium text-indigo-100 transition hover:border-indigo-400/40 hover:bg-indigo-500/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                        isActive(section.href) && 'border-indigo-400/40 text-white'
+                      )}
+                      onClick={() => {
+                        cancelClose();
+                        setActivePopover(null);
+                      }}
+                    >
+                      Перейти в раздел
+                      <span aria-hidden className="text-base leading-none">›</span>
+                    </Link>
+                  )}
+                  {hasChildren && (
+                    <ul className="mt-3 space-y-1 text-sm">
+                      {section.children?.map((child) => {
+                        if (child.type === 'divider') {
+                          return <li key={child.id} role="separator" className="my-2 border-t border-neutral-800/60" />;
+                        }
+
+                        const childActive = normalizedPath === child.href;
+                        return (
+                          <li key={child.id}>
+                            <Link
+                              href={child.href}
+                              className={clsx(
+                                'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                                childActive && 'bg-indigo-500/20 text-white'
+                              )}
+                              onClick={() => {
+                                cancelClose();
+                                setActivePopover(null);
+                              }}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
               )}
             </div>
           );
