@@ -22,4 +22,5 @@ declare module 'lucide-react' {
   export const Flame: LucideIcon;
   export const Calendar: LucideIcon;
   export const BookOpen: LucideIcon;
+  export const Settings: LucideIcon;
 }
