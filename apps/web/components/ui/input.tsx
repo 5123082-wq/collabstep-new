@@ -5,13 +5,20 @@ import { cn } from '@/lib/utils';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ className, type = 'text', ...props }, ref) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { className, type = 'text', ...props },
+  ref
+) {
   return (
     <input
       ref={ref}
       type={type}
       className={cn(
-        'flex h-10 w-full rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-tertiary)] focus-visible:border-[color:var(--accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-border-strong)]',
+        'flex h-11 w-full rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-2',
+        'text-sm text-[color:var(--text-primary)] placeholder:text-[color:var(--text-tertiary)] transition-colors duration-200',
+        'hover:border-[color:var(--surface-border-strong)] focus-visible:border-[color:var(--accent-border)]',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-border-strong)]',
+        'disabled:cursor-not-allowed disabled:border-[color:var(--surface-border-subtle)] disabled:bg-[color:var(--surface-muted)] disabled:text-[color:var(--text-tertiary)]',
         className
       )}
       {...props}
