@@ -3,7 +3,8 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import type { MouseEvent as ReactMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
@@ -27,6 +28,8 @@ const iconMap: Record<string, string> = {
 };
 
 type IconName = keyof typeof iconMap;
+
+const FLYOUT_POINTER_SAFE_PADDING = 32;
 
 function MenuIcon({ name, className }: { name: IconName; className?: string }) {
   return (
@@ -58,6 +61,9 @@ export default function Sidebar({ roles }: SidebarProps) {
     setSidebarCollapsed: state.setSidebarCollapsed
   }));
   const [activeFlyout, setActiveFlyout] = useState<string | null>(null);
+  const sectionRefs = useRef<Record<string, { trigger: HTMLElement | null; flyout: HTMLDivElement | null }>>({});
+  const closeTimerRef = useRef<number | null>(null);
+  const lastPointerTypeRef = useRef<'mouse' | 'touch' | 'pen' | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -91,11 +97,109 @@ export default function Sidebar({ roles }: SidebarProps) {
     return children.some((child) => child.type !== 'divider' && child.href && normalizedPath.startsWith(child.href));
   };
 
-  const closeFlyout = () => setActiveFlyout(null);
+  const cancelScheduledClose = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      if (typeof window !== 'undefined') {
+        window.clearTimeout(closeTimerRef.current);
+      }
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const closeFlyout = useCallback(() => {
+    cancelScheduledClose();
+    lastPointerTypeRef.current = null;
+    setActiveFlyout(null);
+  }, [cancelScheduledClose]);
+
+  const scheduleFlyoutClose = useCallback(() => {
+    cancelScheduledClose();
+
+    if (typeof window === 'undefined') {
+      setActiveFlyout(null);
+      return;
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setActiveFlyout(null);
+      closeTimerRef.current = null;
+    }, 180);
+  }, [cancelScheduledClose]);
 
   useEffect(() => {
-    setActiveFlyout(null);
-  }, [normalizedPath]);
+    closeFlyout();
+  }, [closeFlyout, normalizedPath]);
+
+  useEffect(() => {
+    return () => cancelScheduledClose();
+  }, [cancelScheduledClose]);
+
+  useEffect(() => {
+    if (!activeFlyout) {
+      return undefined;
+    }
+
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+
+      const refs = sectionRefs.current[activeFlyout];
+      if (!refs) {
+        return;
+      }
+
+      if (refs.trigger?.contains(target) || refs.flyout?.contains(target)) {
+        return;
+      }
+
+      closeFlyout();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    return () => document.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+  }, [activeFlyout, closeFlyout]);
+
+  const getSectionRefs = (id: string) => {
+    if (!sectionRefs.current[id]) {
+      sectionRefs.current[id] = { trigger: null, flyout: null };
+    }
+
+    return sectionRefs.current[id];
+  };
+
+  const handleMouseLeave = useCallback(
+    (sectionId: string) => (event: ReactMouseEvent<HTMLDivElement>) => {
+      const { clientX, clientY, relatedTarget } = event;
+
+      if (relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
+        return;
+      }
+
+      const refs = sectionRefs.current[sectionId];
+      const triggerRect = refs?.trigger?.getBoundingClientRect();
+      const flyoutRect = refs?.flyout?.getBoundingClientRect();
+
+      if (triggerRect) {
+        const safeLeft = Math.min(triggerRect.left, flyoutRect?.left ?? triggerRect.left) - FLYOUT_POINTER_SAFE_PADDING;
+        const safeRight = Math.max(triggerRect.right, flyoutRect?.right ?? triggerRect.right) + FLYOUT_POINTER_SAFE_PADDING;
+        const safeTop = Math.min(triggerRect.top, flyoutRect?.top ?? triggerRect.top) - FLYOUT_POINTER_SAFE_PADDING;
+        const safeBottom = Math.max(triggerRect.bottom, flyoutRect?.bottom ?? triggerRect.bottom) + FLYOUT_POINTER_SAFE_PADDING;
+
+        if (clientX >= safeLeft && clientX <= safeRight && clientY >= safeTop && clientY <= safeBottom) {
+          return;
+        }
+      }
+
+      scheduleFlyoutClose();
+    },
+    [scheduleFlyoutClose]
+  );
 
   const renderExpandedMenu = () => (
     <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
@@ -181,12 +285,41 @@ export default function Sidebar({ roles }: SidebarProps) {
           <div
             key={section.id}
             className="relative w-full"
-            onMouseLeave={() => closeFlyout()}
-            onMouseEnter={() => hasChildren && setActiveFlyout(section.id)}
-            onFocusCapture={() => hasChildren && setActiveFlyout(section.id)}
+            onPointerDown={(event) => {
+              if (!hasChildren) {
+                return;
+              }
+
+              lastPointerTypeRef.current = event.pointerType as 'mouse' | 'touch' | 'pen';
+            }}
+            onMouseLeave={hasChildren ? handleMouseLeave(section.id) : undefined}
+            onMouseEnter={() => {
+              if (!hasChildren) {
+                return;
+              }
+
+              cancelScheduledClose();
+              setActiveFlyout(section.id);
+            }}
+            onFocusCapture={() => {
+              if (!hasChildren) {
+                return;
+              }
+
+              if (lastPointerTypeRef.current === 'touch') {
+                return;
+              }
+
+              cancelScheduledClose();
+              setActiveFlyout(section.id);
+            }}
             onBlur={(event) => {
+              if (!hasChildren) {
+                return;
+              }
+
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                closeFlyout();
+                scheduleFlyoutClose();
               }
             }}
           >
@@ -199,6 +332,13 @@ export default function Sidebar({ roles }: SidebarProps) {
                 )}
                 aria-haspopup={hasChildren ? 'true' : undefined}
                 aria-expanded={hasChildren ? isFlyoutOpen : undefined}
+                ref={(node) => {
+                  if (!hasChildren) {
+                    return;
+                  }
+
+                  getSectionRefs(section.id).trigger = node;
+                }}
                 onClick={(event) => {
                   if (hasChildren && activeFlyout !== section.id) {
                     event.preventDefault();
@@ -221,6 +361,13 @@ export default function Sidebar({ roles }: SidebarProps) {
                   'flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-900/80 text-neutral-300',
                   active && 'border-indigo-500/40 text-white'
                 )}
+                ref={(node) => {
+                  if (!hasChildren) {
+                    return;
+                  }
+
+                  getSectionRefs(section.id).trigger = node;
+                }}
               >
                 <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className="h-5 w-5 text-indigo-200" />
                 <span className="sr-only">{section.label}</span>
@@ -230,9 +377,14 @@ export default function Sidebar({ roles }: SidebarProps) {
             {hasChildren && (
               <div
                 className={clsx(
-                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden w-[280px] rounded-2xl border border-neutral-800/60 bg-neutral-900/70 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm',
-                  isFlyoutOpen && 'pointer-events-auto block'
+                  'absolute left-[72px] top-0 z-40 w-[280px] rounded-2xl border border-neutral-800/60 bg-neutral-900/70 p-4 opacity-0 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm transition-all duration-200 ease-out data-[state=closed]:pointer-events-none data-[state=closed]:invisible data-[state=open]:pointer-events-auto data-[state=open]:visible data-[state=open]:opacity-100 data-[state=open]:translate-x-0 data-[state=closed]:translate-x-1',
+                  !isFlyoutOpen && 'translate-x-1'
                 )}
+                ref={(node) => {
+                  getSectionRefs(section.id).flyout = node;
+                }}
+                data-state={isFlyoutOpen ? 'open' : 'closed'}
+                aria-hidden={!isFlyoutOpen}
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-neutral-100">{section.label}</span>
@@ -284,7 +436,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   return (
     <aside
       className={clsx(
-        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 py-5 transition-[width] duration-300 ease-out',
+        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 py-5 transition-[width] duration-300 ease-in-out',
         sidebarCollapsed ? 'w-[72px] px-2' : 'w-[288px] px-4'
       )}
       data-collapsed={sidebarCollapsed}
