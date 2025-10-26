@@ -6,7 +6,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: getTailwindColorTokens(),
-      spacing: getTailwindSpacingTokens()
+      spacing: getTailwindSpacingTokens(),
+      fontFamily: {
+        sans: ["var(--font-sans)", 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica Neue', 'sans-serif']
+      }
     }
   },
   darkMode: 'class',
