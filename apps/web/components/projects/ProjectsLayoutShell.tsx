@@ -3,16 +3,10 @@
 import type { ReactNode } from 'react';
 import SideDrawer from './SideDrawer';
 import ProjectsTopbar from './ProjectsTopbar';
-import { useProjectsDrawerStore, getDrawerTitle } from '@/stores/projectsDrawer';
+import { useProjectDrawer } from '@/hooks/projects/useProjectDrawer';
 
 export default function ProjectsLayoutShell({ children }: { children: ReactNode }) {
-  const { isOpen, entityId, entityType, mode, closeDrawer } = useProjectsDrawerStore((state) => ({
-    isOpen: state.isOpen,
-    entityId: state.entityId,
-    entityType: state.entityType,
-    mode: state.mode,
-    closeDrawer: state.closeDrawer
-  }));
+  const { isOpen, entityId, entityType, mode, closeDrawer, getDrawerTitle } = useProjectDrawer();
 
   return (
     <div className="flex min-h-full flex-col gap-6">
