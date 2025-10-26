@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
-type DrawerMode = 'view' | 'edit' | 'create' | string;
+export type DrawerMode = 'view' | 'edit' | 'create' | string;
 
-type ProjectsDrawerState = {
+type ProjectDrawerState = {
   isOpen: boolean;
   entityType: string | null;
   entityId: string | null;
@@ -19,7 +19,7 @@ const initialState = {
   mode: null
 } as const;
 
-export const useProjectsDrawerStore = create<ProjectsDrawerState>((set) => ({
+export const useProjectDrawerStore = create<ProjectDrawerState>((set) => ({
   ...initialState,
   openDrawer: (entityType, entityId = null, mode = null) =>
     set({ isOpen: true, entityType, entityId, mode }),
@@ -64,3 +64,5 @@ export function createEscapeKeyHandler(onClose: () => void) {
     }
   };
 }
+
+export type { ProjectDrawerState };

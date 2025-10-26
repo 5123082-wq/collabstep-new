@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils';
-import { useProjectsDrawerStore } from '@/stores/projectsDrawer';
+import { useProjectDrawer } from '@/hooks/projects/useProjectDrawer';
 
 interface ProjectsDrawerTriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   entityType?: string;
@@ -18,7 +18,7 @@ export default function ProjectsDrawerTrigger({
   className,
   ...props
 }: ProjectsDrawerTriggerProps) {
-  const openDrawer = useProjectsDrawerStore((state) => state.openDrawer);
+  const { openDrawer } = useProjectDrawer();
 
   return (
     <button

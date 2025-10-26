@@ -1,4 +1,4 @@
-import { createEscapeKeyHandler, formatDrawerSubtitle, getDrawerTitle } from '@/stores/projectsDrawer';
+import { createEscapeKeyHandler, formatDrawerSubtitle, getDrawerTitle } from '@/stores/projectDrawer';
 
 describe('Projects drawer helpers', () => {
   it('возвращает корректные заголовки по типу сущности', () => {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, type ReactNode, type SVGProps } from 'react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { createEscapeKeyHandler, formatDrawerSubtitle, getDrawerTitle } from '@/stores/projectsDrawer';
+import { createEscapeKeyHandler, formatDrawerSubtitle, getDrawerTitle } from '@/stores/projectDrawer';
 
 export type SideDrawerTab = {
   id: string;
