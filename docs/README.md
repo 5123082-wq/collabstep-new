@@ -19,7 +19,7 @@
 
 - [Stage 1 diff skeleton](archive/STAGE1_DIFF_SKELETON.md)
 - [Stage 2 overview plan](archive/p2-overview-plan.md)
-- [Stage 3 wizard plan](archive/p3-wizard-plan.md)
+- [P3 wizard plan](archive/p3-wizard-plan.md)
 
 ## Reports
 

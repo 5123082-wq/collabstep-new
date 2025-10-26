@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { memo, useMemo, type SVGProps } from 'react';
+import SectionSurface from '@/components/common/SectionSurface';
+import ResponsiveStack from '@/components/common/layout/ResponsiveStack';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { isActivePath, TOPBAR_LINKS } from './projectsTopbar.config';
@@ -30,15 +32,34 @@ function ProjectsTopbarComponent({ searchPlaceholder = 'Поиск по прое
   );
 
   return (
-    <header className="rounded-3xl border border-neutral-900/70 bg-neutral-950/80 px-4 py-4 shadow-sm backdrop-blur">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-        <nav aria-label="Навигация по разделу проектов" className="flex flex-wrap items-center gap-2">
+    <SectionSurface
+      as="header"
+      padding="none"
+      className="projects-topbar"
+      data-testid="projects-topbar"
+    >
+      <ResponsiveStack
+        as="div"
+        gap="md"
+        breakpoint="(min-width: 1024px)"
+        desktopDirection="row"
+        mobileDirection="column"
+        desktopJustify="between"
+        desktopAlign="center"
+        className="projects-topbar__inner"
+        data-testid="projects-topbar-layout"
+      >
+        <nav
+          aria-label="Навигация по разделу проектов"
+          className="projects-topbar__nav layout-inline-scroll"
+          data-testid="projects-topbar-nav"
+        >
           {links.map((link) => (
             <Link
               key={link.id}
               href={link.href}
               className={cn(
-                'inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                'projects-topbar__link inline-flex items-center rounded-full font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                 link.active
                   ? 'bg-indigo-500 text-white shadow'
                   : 'border border-transparent bg-neutral-900/60 text-neutral-300 hover:border-neutral-700 hover:text-neutral-100'
@@ -49,31 +70,48 @@ function ProjectsTopbarComponent({ searchPlaceholder = 'Поиск по прое
             </Link>
           ))}
         </nav>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-          <div className="relative min-w-[220px] lg:min-w-[260px]">
+        <ResponsiveStack
+          as="div"
+          gap="sm"
+          breakpoint="(min-width: 1024px)"
+          desktopDirection="row"
+          mobileDirection="column"
+          mobileAlign="stretch"
+          desktopAlign="center"
+          mobileJustify="start"
+          desktopJustify="start"
+          className="projects-topbar__tools"
+          data-testid="projects-topbar-tools"
+        >
+          <div className="projects-topbar__search relative">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" aria-hidden="true" />
             <Input
               type="search"
               placeholder={searchPlaceholder}
-              className="pl-9"
+              className="projects-topbar__search-input pl-9"
               aria-label="Поиск по проектам"
               disabled
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div
+            className="projects-topbar__filters layout-inline-scroll"
+            data-testid="projects-topbar-filters"
+          >
             {QUICK_FILTERS.map((filter) => (
               <span
                 key={filter.id}
-                className="inline-flex items-center rounded-full border border-dashed border-neutral-800 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-500"
+                className="projects-topbar__filter inline-flex items-center rounded-full border border-dashed border-neutral-800 text-xs font-medium uppercase tracking-wide text-neutral-500"
               >
                 {filter.label}
               </span>
             ))}
-            <span className="text-xs uppercase tracking-[0.2em] text-neutral-600">Скоро</span>
+            <span className="projects-topbar__soon-label text-xs uppercase text-neutral-600">
+              Скоро
+            </span>
           </div>
-        </div>
-      </div>
-    </header>
+        </ResponsiveStack>
+      </ResponsiveStack>
+    </SectionSurface>
   );
 }
 
