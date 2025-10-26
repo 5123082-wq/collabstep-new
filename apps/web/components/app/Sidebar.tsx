@@ -3,7 +3,7 @@
 import clsx from 'clsx';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
@@ -58,6 +58,36 @@ export default function Sidebar({ roles }: SidebarProps) {
     setSidebarCollapsed: state.setSidebarCollapsed
   }));
   const [activeFlyout, setActiveFlyout] = useState<string | null>(null);
+  const asideRef = useRef<HTMLElement | null>(null);
+  const flyoutCloseTimeout = useRef<number | null>(null);
+  const lastPointerType = useRef<'mouse' | 'touch' | 'pen' | null>(null);
+  const pendingTouchOpen = useRef(false);
+
+  const cancelScheduledClose = useCallback(() => {
+    if (flyoutCloseTimeout.current !== null && typeof window !== 'undefined') {
+      window.clearTimeout(flyoutCloseTimeout.current);
+      flyoutCloseTimeout.current = null;
+    }
+  }, []);
+
+  const closeFlyout = useCallback(() => {
+    cancelScheduledClose();
+    pendingTouchOpen.current = false;
+    setActiveFlyout(null);
+  }, [cancelScheduledClose]);
+
+  const scheduleFlyoutClose = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setActiveFlyout(null);
+      return;
+    }
+
+    cancelScheduledClose();
+    flyoutCloseTimeout.current = window.setTimeout(() => {
+      setActiveFlyout(null);
+      flyoutCloseTimeout.current = null;
+    }, 200);
+  }, [cancelScheduledClose]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -91,11 +121,26 @@ export default function Sidebar({ roles }: SidebarProps) {
     return children.some((child) => child.type !== 'divider' && child.href && normalizedPath.startsWith(child.href));
   };
 
-  const closeFlyout = () => setActiveFlyout(null);
+  useEffect(() => {
+    closeFlyout();
+  }, [closeFlyout, normalizedPath]);
+
+  useEffect(() => () => cancelScheduledClose(), [cancelScheduledClose]);
 
   useEffect(() => {
-    setActiveFlyout(null);
-  }, [normalizedPath]);
+    if (!activeFlyout) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!asideRef.current?.contains(event.target as Node)) {
+        closeFlyout();
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [activeFlyout, closeFlyout]);
 
   const renderExpandedMenu = () => (
     <nav aria-label="Навигация приложения" className="mt-6 flex flex-1 flex-col gap-2 overflow-y-auto pr-2">
@@ -181,8 +226,17 @@ export default function Sidebar({ roles }: SidebarProps) {
           <div
             key={section.id}
             className="relative w-full"
-            onMouseLeave={() => closeFlyout()}
-            onMouseEnter={() => hasChildren && setActiveFlyout(section.id)}
+            onMouseLeave={() => {
+              if (hasChildren) {
+                scheduleFlyoutClose();
+              }
+            }}
+            onMouseEnter={() => {
+              if (hasChildren) {
+                cancelScheduledClose();
+                setActiveFlyout(section.id);
+              }
+            }}
             onFocusCapture={() => hasChildren && setActiveFlyout(section.id)}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -199,13 +253,54 @@ export default function Sidebar({ roles }: SidebarProps) {
                 )}
                 aria-haspopup={hasChildren ? 'true' : undefined}
                 aria-expanded={hasChildren ? isFlyoutOpen : undefined}
-                onClick={(event) => {
-                  if (hasChildren && activeFlyout !== section.id) {
-                    event.preventDefault();
-                    setActiveFlyout(section.id);
+                onMouseEnter={() => hasChildren && cancelScheduledClose()}
+                onPointerDown={(event) => {
+                  lastPointerType.current = event.pointerType as 'mouse' | 'touch' | 'pen';
+
+                  if (!hasChildren) {
+                    pendingTouchOpen.current = false;
                     return;
                   }
 
+                  if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+                    const shouldOpen = activeFlyout !== section.id;
+                    pendingTouchOpen.current = shouldOpen;
+
+                    if (shouldOpen) {
+                      cancelScheduledClose();
+                      setActiveFlyout(section.id);
+                    }
+
+                    return;
+                  }
+
+                  pendingTouchOpen.current = false;
+                }}
+                onClick={(event) => {
+                  const pointerType = lastPointerType.current;
+                  const isTouchLike = pointerType === 'touch' || pointerType === 'pen';
+
+                  if (hasChildren) {
+                    if (isTouchLike) {
+                      if (pendingTouchOpen.current) {
+                        event.preventDefault();
+                        pendingTouchOpen.current = false;
+                        return;
+                      }
+
+                      if (activeFlyout !== section.id) {
+                        event.preventDefault();
+                        setActiveFlyout(section.id);
+                        return;
+                      }
+                    } else if (activeFlyout !== section.id) {
+                      event.preventDefault();
+                      setActiveFlyout(section.id);
+                      return;
+                    }
+                  }
+
+                  pendingTouchOpen.current = false;
                   closeFlyout();
                 }}
               >
@@ -230,9 +325,14 @@ export default function Sidebar({ roles }: SidebarProps) {
             {hasChildren && (
               <div
                 className={clsx(
-                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden w-[280px] rounded-2xl border border-neutral-800/60 bg-neutral-900/70 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm',
-                  isFlyoutOpen && 'pointer-events-auto block'
+                  'pointer-events-none absolute left-[72px] top-0 z-40 w-[280px] rounded-2xl border border-neutral-800/60 bg-neutral-900/70 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm opacity-0 transition-[opacity,transform] duration-200 ease-out transform before:absolute before:-left-10 before:top-0 before:h-full before:w-10 before:pointer-events-none before:bg-transparent before:content-[""]',
+                  isFlyoutOpen && 'pointer-events-auto translate-x-0 translate-y-0 scale-100 opacity-100 before:pointer-events-auto',
+                  !isFlyoutOpen && '-translate-x-2 translate-y-1 scale-95'
                 )}
+                data-flyout={section.id}
+                aria-hidden={!isFlyoutOpen}
+                onMouseEnter={cancelScheduledClose}
+                onMouseLeave={scheduleFlyoutClose}
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-semibold text-neutral-100">{section.label}</span>
@@ -283,6 +383,7 @@ export default function Sidebar({ roles }: SidebarProps) {
 
   return (
     <aside
+      ref={asideRef}
       className={clsx(
         'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 py-5 transition-[width] duration-300 ease-out',
         sidebarCollapsed ? 'w-[72px] px-2' : 'w-[288px] px-4'
