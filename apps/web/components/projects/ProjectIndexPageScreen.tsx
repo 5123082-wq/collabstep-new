@@ -6,6 +6,7 @@ import SectionHeader from '@/components/common/SectionHeader';
 import ProjectCatalogActions from './ProjectCatalogActions';
 import ProjectCatalogFilters from './ProjectCatalogFilters';
 import ProjectCatalogList from './ProjectCatalogList';
+import { PROJECTS_LAYOUT_CLASSNAMES } from '@/components/common/layoutPresets';
 
 const ProjectDetailsPanel = dynamic(() => import('@/components/project/ProjectDetailsPanel'), {
   loading: () => (
@@ -47,7 +48,7 @@ export default function ProjectIndexPageScreen() {
     <div className="space-y-6">
       <SectionHeader title="Проекты" breadcrumbs={breadcrumbs} menuItems={menuItems} actions={<ProjectCatalogActions />} />
       <ProjectCatalogFilters />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className={PROJECTS_LAYOUT_CLASSNAMES.catalogGrid}>
         <ProjectCatalogList />
         <div className="space-y-6">
           <ProjectDetailsPanel />

@@ -3,6 +3,8 @@
 import { useCallback, type ChangeEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { useProjectCatalog } from '@/hooks/projects/useProjectCatalog';
+import { PROJECTS_LAYOUT_CLASSNAMES } from '@/components/common/layoutPresets';
+import { cn } from '@/lib/utils';
 
 export default function ProjectCatalogFilters() {
   const { searchQuery, setSearchQuery, loading } = useProjectCatalog();
@@ -17,9 +19,12 @@ export default function ProjectCatalogFilters() {
   return (
     <section
       aria-label="Фильтры списка проектов"
-      className="rounded-3xl border border-neutral-900/70 bg-neutral-950/60 p-4 shadow-sm shadow-neutral-950/10"
+      className={cn(
+        PROJECTS_LAYOUT_CLASSNAMES.filters,
+        'rounded-3xl border border-neutral-900/70 bg-neutral-950/60 p-4 shadow-sm shadow-neutral-950/10'
+      )}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
         <div className="w-full sm:max-w-sm">
           <label htmlFor="project-search" className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-neutral-500">
             Поиск
