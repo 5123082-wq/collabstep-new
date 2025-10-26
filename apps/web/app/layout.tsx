@@ -1,9 +1,16 @@
 import '@/styles/globals.css';
+import { Inter } from 'next/font/google';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import ConsoleFilter from '@/components/util/ConsoleFilter';
 import ThemeScript from '@/components/theme/ThemeScript';
 import { ThemeProvider } from '@/components/theme/ThemeContext';
+
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-sans',
+  display: 'swap'
+});
 
 export const metadata: Metadata = {
   title: 'Collabverse',
@@ -12,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ru">
+    <html lang="ru" className={inter.variable}>
       <head>
         <ThemeScript />
       </head>

@@ -6,7 +6,31 @@ const config: Config = {
   theme: {
     extend: {
       colors: getTailwindColorTokens(),
-      spacing: getTailwindSpacingTokens()
+      spacing: getTailwindSpacingTokens(),
+      fontFamily: {
+        sans: [
+          'var(--font-sans)',
+          'Inter',
+          'SF Pro Display',
+          'SF Pro Text',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif'
+        ],
+        heading: [
+          'var(--font-sans)',
+          'Inter',
+          'SF Pro Display',
+          'SF Pro Text',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif'
+        ]
+      }
     }
   },
   darkMode: 'class',

@@ -14,11 +14,69 @@ html[data-theme='light'] {
   color-scheme: light;
 }
 
+html {
+  font-family: var(--font-sans), 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', 'Arial', sans-serif;
+}
+
 body {
+  font-family: var(--font-sans), 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', 'Arial', sans-serif;
   background-color: var(--surface-canvas);
   color: var(--text-primary);
   background-attachment: fixed;
   transition: background 320ms ease, color 200ms ease;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+p,
+li,
+blockquote {
+  line-height: 1.7;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans), 'Inter', 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto',
+    'Helvetica Neue', 'Arial', sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+h1 {
+  font-size: clamp(2.75rem, 3vw + 1.5rem, 3.75rem);
+}
+
+h2 {
+  font-size: clamp(2.2rem, 2.5vw + 1rem, 3rem);
+  line-height: 1.15;
+}
+
+h3 {
+  font-size: clamp(1.8rem, 2vw + 0.85rem, 2.4rem);
+  line-height: 1.2;
+}
+
+h4 {
+  font-size: clamp(1.5rem, 1.75vw + 0.65rem, 2rem);
+  line-height: 1.25;
+}
+
+h5 {
+  font-size: clamp(1.3rem, 1.2vw + 0.7rem, 1.6rem);
+  line-height: 1.3;
+}
+
+h6 {
+  font-size: clamp(1.15rem, 0.9vw + 0.7rem, 1.35rem);
+  line-height: 1.35;
 }
 
 body.app-bg-mesh {
