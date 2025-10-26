@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { DEFAULT_THEME, applyThemeTokens, type ThemeName } from '@/design-tokens';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 type ResolvedTheme = 'light' | 'dark';
@@ -17,17 +18,9 @@ const STORAGE_KEY = 'cv-theme-mode';
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === 'undefined') {
-    return 'dark';
+    return DEFAULT_THEME;
   }
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function applyTheme(theme: ResolvedTheme) {
-  if (typeof document === 'undefined') {
-    return;
-  }
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
 }
 
 type ThemeProviderProps = {
@@ -36,7 +29,7 @@ type ThemeProviderProps = {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [mode, setMode] = useState<ThemeMode>(() => 'system');
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => 'dark');
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => DEFAULT_THEME);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -58,9 +51,9 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
 
     const systemTheme = getSystemTheme();
-    const nextTheme: ResolvedTheme = mode === 'system' ? systemTheme : mode;
+    const nextTheme: ResolvedTheme = mode === 'system' ? systemTheme : (mode as ThemeName);
     setResolvedTheme(nextTheme);
-    applyTheme(nextTheme);
+    applyThemeTokens(nextTheme);
 
     try {
       window.localStorage.setItem(STORAGE_KEY, mode);
@@ -72,7 +65,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       if (mode === 'system') {
         const updated: ResolvedTheme = event.matches ? 'dark' : 'light';
         setResolvedTheme(updated);
-        applyTheme(updated);
+        applyThemeTokens(updated);
       }
     };
 

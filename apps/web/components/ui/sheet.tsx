@@ -156,7 +156,7 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
     <div className="fixed inset-0 z-50 flex" data-side={actualSide}>
       <div
         className={cn(
-          'absolute inset-0 bg-neutral-950/60 backdrop-blur-sm transition-opacity duration-300 ease-out',
+          'absolute inset-0 bg-[color:var(--surface-overlay)] backdrop-blur-sm transition-opacity duration-300 ease-out',
           isVisible ? 'opacity-100' : 'opacity-0'
         )}
         aria-hidden="true"
@@ -169,7 +169,7 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
           aria-modal="true"
           tabIndex={-1}
           className={cn(
-            'pointer-events-auto border border-neutral-800 bg-neutral-900/95 shadow-2xl outline-none transition-transform duration-300 ease-out',
+            'pointer-events-auto border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-2xl outline-none transition-transform duration-300 ease-out',
             radiusClasses[actualSide],
             positionClass,
             translateClasses[actualSide],
@@ -186,9 +186,17 @@ export function SheetContent({ children, className, side, ...props }: SheetConte
 }
 
 export function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('space-y-1.5 border-b border-neutral-800 pb-4', className)} {...props} />;
+  return (
+    <div
+      className={cn(
+        'space-y-1.5 border-b border-[color:var(--surface-border-subtle)] pb-4',
+        className
+      )}
+      {...props}
+    />
+  );
 }
 
 export const SheetTitle = ({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) => (
-  <h2 className={cn('text-lg font-semibold text-neutral-50', className)} {...props} />
+  <h2 className={cn('text-lg font-semibold text-[color:var(--text-primary)]', className)} {...props} />
 );
