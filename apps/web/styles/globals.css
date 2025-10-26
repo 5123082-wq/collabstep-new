@@ -10,11 +10,11 @@
   --surface-popover: rgba(11, 16, 27, 0.96);
   --surface-border-subtle: rgba(148, 163, 184, 0.24);
   --surface-border-strong: rgba(165, 180, 203, 0.36);
-  --surface-chip: rgba(248, 250, 252, 0.92);
+  --surface-chip: #0f172a;
   --text-primary: #f8fafc;
   --text-secondary: #cbd5f5;
   --text-tertiary: #94a3b8;
-  --text-chip: #0f172a;
+  --text-chip: #e2e8f0;
   --accent-border: rgba(129, 140, 248, 0.55);
   --accent-border-strong: rgba(99, 102, 241, 0.75);
   --accent-bg: rgba(99, 102, 241, 0.16);
@@ -40,11 +40,11 @@ html[data-theme='dark'] {
   --surface-popover: rgba(11, 16, 27, 0.96);
   --surface-border-subtle: rgba(148, 163, 184, 0.24);
   --surface-border-strong: rgba(165, 180, 203, 0.36);
-  --surface-chip: rgba(248, 250, 252, 0.92);
+  --surface-chip: #0f172a;
   --text-primary: #f8fafc;
   --text-secondary: #cbd5f5;
   --text-tertiary: #94a3b8;
-  --text-chip: #0f172a;
+  --text-chip: #e2e8f0;
   --accent-border: rgba(129, 140, 248, 0.55);
   --accent-border-strong: rgba(99, 102, 241, 0.75);
   --accent-bg: rgba(99, 102, 241, 0.16);
