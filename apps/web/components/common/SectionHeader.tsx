@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { SECTION_MENU_CLASSNAMES } from './layoutPresets';
 
 export type SectionHeaderBreadcrumb = {
   label: string;
@@ -53,14 +54,18 @@ export default function SectionHeader({ title, actions, breadcrumbs, menuItems }
 
       {menuItems && menuItems.length > 0 ? (
         <div className="-mx-4 sm:mx-0">
-          <nav className="overflow-x-auto px-4 sm:px-0" aria-label={`Меню раздела ${title}`}>
-            <ul className="flex min-w-full snap-x items-center gap-1 sm:gap-2">
+          <nav
+            className={SECTION_MENU_CLASSNAMES.nav}
+            aria-label={`Меню раздела ${title}`}
+          >
+            <ul className={SECTION_MENU_CLASSNAMES.list}>
               {menuItems.map((item) => (
-                <li key={item.href} className="snap-start">
+                <li key={item.href} className={SECTION_MENU_CLASSNAMES.item}>
                   <Link
                     href={item.href}
                     className={cn(
-                      'inline-flex min-w-[120px] items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 sm:min-w-[unset] sm:px-5',
+                      SECTION_MENU_CLASSNAMES.link,
+                      'border text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500',
                       item.active
                         ? 'border-indigo-400/80 bg-indigo-500/20 text-white shadow-[0_16px_32px_-20px_rgba(99,102,241,0.55)]'
                         : 'border-transparent bg-neutral-900/60 text-neutral-300 hover:border-neutral-700 hover:text-neutral-100'
