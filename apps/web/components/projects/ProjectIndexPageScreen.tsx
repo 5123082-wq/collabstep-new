@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import SectionHeader from '@/components/common/SectionHeader';
+import SectionPageLayout from '@/components/common/SectionPageLayout';
+import { PROJECT_SECTION_LAYOUT_VARS } from '@/components/common/sectionLayoutTokens';
 import ProjectCatalogActions from './ProjectCatalogActions';
 import ProjectCatalogFilters from './ProjectCatalogFilters';
 import ProjectCatalogList from './ProjectCatalogList';
@@ -44,16 +46,24 @@ export default function ProjectIndexPageScreen() {
   );
 
   return (
-    <div className="space-y-6">
-      <SectionHeader title="Проекты" breadcrumbs={breadcrumbs} menuItems={menuItems} actions={<ProjectCatalogActions />} />
-      <ProjectCatalogFilters />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <ProjectCatalogList />
+    <SectionPageLayout
+      header={
+        <SectionHeader
+          title="Проекты"
+          breadcrumbs={breadcrumbs}
+          menuItems={menuItems}
+          actions={<ProjectCatalogActions />}
+        />
+      }
+      filters={<ProjectCatalogFilters />}
+      main={<ProjectCatalogList />}
+      secondary={
         <div className="space-y-6">
           <ProjectDetailsPanel />
           <ProjectActionsPanel />
         </div>
-      </div>
-    </div>
+      }
+      style={PROJECT_SECTION_LAYOUT_VARS}
+    />
   );
 }
