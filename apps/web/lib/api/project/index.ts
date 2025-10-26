@@ -28,16 +28,21 @@ function mapProjectToCatalogItem(project: Project): ProjectCatalogItem {
     )
   );
 
-  return {
+  const catalogItem: ProjectCatalogItem = {
     id: project.id,
     title: project.title,
     stage: project.stage ?? null,
     updatedAt: project.updatedAt,
     archived: project.archived,
     tasksCount: tasks.length,
-    labels,
-    description: project.description
+    labels
   };
+
+  if (project.description !== undefined) {
+    catalogItem.description = project.description;
+  }
+
+  return catalogItem;
 }
 
 async function ensureDelay() {
@@ -79,13 +84,20 @@ export const projectSectionApi: ProjectSectionAPI = {
     const project: Project = {
       id: baseId ? `${baseId}-${randomUUID().slice(0, 6)}` : randomUUID(),
       title: payload.title,
-      description: payload.description,
       ownerId: resolveOwnerId(payload.ownerId),
-      stage: payload.stage ?? null,
       archived: false,
       createdAt: now,
       updatedAt: now
     };
+
+    if (payload.description !== undefined) {
+      project.description = payload.description;
+    }
+
+    if (payload.stage !== undefined && payload.stage !== null) {
+      project.stage = payload.stage;
+    }
+
     memory.PROJECTS = [...(memory.PROJECTS ?? []), project];
     return cloneProject(project);
   },
@@ -96,15 +108,33 @@ export const projectSectionApi: ProjectSectionAPI = {
     if (index === -1) {
       throw new Error('Project not found');
     }
-    const current = projects[index];
+    const current = projects[index]!;
     const updated: Project = {
       ...current,
-      title: payload.title ?? current.title,
-      description: payload.description ?? current.description,
-      stage: payload.stage ?? current.stage ?? null,
       archived: payload.archived ?? current.archived,
       updatedAt: new Date().toISOString()
     };
+
+    if (payload.title !== undefined) {
+      updated.title = payload.title;
+    }
+
+    if (payload.description !== undefined) {
+      if (payload.description === null) {
+        delete updated.description;
+      } else {
+        updated.description = payload.description;
+      }
+    }
+
+    if (payload.stage !== undefined) {
+      if (payload.stage === null) {
+        delete updated.stage;
+      } else {
+        updated.stage = payload.stage;
+      }
+    }
+
     projects[index] = updated;
     memory.PROJECTS = [...projects];
     return cloneProject(updated);
