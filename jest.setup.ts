@@ -19,10 +19,10 @@ if (typeof global.matchMedia !== 'function') {
       media: query,
       matches,
       onchange: null,
-      addEventListener: (_event, listener) => {
+      addEventListener: (_event: string, listener: EventListenerOrEventListenerObject) => {
         listenersForQuery.add(listener as Listener);
       },
-      removeEventListener: (_event, listener) => {
+      removeEventListener: (_event: string, listener: EventListenerOrEventListenerObject) => {
         listenersForQuery.delete(listener as Listener);
       },
       addListener: (listener: Listener) => {
