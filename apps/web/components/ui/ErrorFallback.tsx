@@ -44,7 +44,7 @@ export default function ErrorFallback({ title, description, reset, links = [], o
         <button
           type="button"
           onClick={() => setRetrySignal((value) => value + 1)}
-          className="rounded-full border border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] px-4 py-2 text-sm font-semibold text-[color:var(--accent-foreground)] transition hover:bg-[color:var(--accent-bg-strong)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent-border-strong)]"
+          className="rounded-full border border-[color:var(--button-primary-border)] bg-[color:var(--button-primary-bg)] px-4 py-2 text-sm font-semibold text-[color:var(--button-primary-foreground)] transition hover:border-[color:var(--button-primary-border-strong)] hover:bg-[color:var(--button-primary-bg-hover)] active:border-[color:var(--button-primary-border-strong)] active:bg-[color:var(--button-primary-bg-active)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--button-primary-border-strong)]"
         >
           Повторить попытку
         </button>
