@@ -129,7 +129,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                   'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                   isLoggingOut
                     ? 'cursor-not-allowed border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)]'
-                    : 'border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] text-[color:var(--accent-foreground)] hover:border-[color:var(--accent-border-strong)] hover:bg-[color:var(--accent-bg-strong)]'
+                    : 'border-[color:var(--button-danger-border)] bg-[color:var(--button-danger-bg)] text-[color:var(--button-danger-foreground)] hover:border-[color:var(--button-danger-border-strong)] hover:bg-[color:var(--button-danger-bg-hover)] focus-visible:outline-[color:var(--button-danger-border-strong)]'
                 )}
               >
                 {isLoggingOut ? 'Выход…' : 'Выйти'}
@@ -155,8 +155,8 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                     className={clsx(
                       'flex flex-col items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                       mode === option.id
-                        ? 'border-[color:var(--accent-border)] bg-[color:var(--accent-bg)] text-[color:var(--accent-foreground)] shadow-sm'
-                        : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--accent-border)] hover:text-[color:var(--text-primary)]'
+                        ? 'border-[color:var(--button-primary-border)] bg-[color:var(--button-primary-bg)] text-[color:var(--button-primary-foreground)] shadow-sm focus-visible:outline-[color:var(--button-primary-border-strong)]'
+                        : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] text-[color:var(--text-secondary)] hover:border-[color:var(--button-primary-border)] hover:text-[color:var(--text-primary)] focus-visible:outline-[color:var(--surface-border-strong)]'
                     )}
                   >
                     <svg
