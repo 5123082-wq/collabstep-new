@@ -1,5 +1,9 @@
 type Listener = (event: { matches: boolean; media: string }) => void;
 const listeners = new Map<string, Set<Listener>>();
+const eventListenerWrappers = new Map<
+  string,
+  Map<EventListenerOrEventListenerObject, Listener>
+>();
 const mediaState = new Map<string, boolean>();
 
 if (typeof window !== 'undefined') {
@@ -15,15 +19,41 @@ if (typeof global.matchMedia !== 'function') {
     const listenersForQuery = listeners.get(query) ?? new Set<Listener>();
     listeners.set(query, listenersForQuery);
 
+    const resolveEventListener = (
+      listener: EventListenerOrEventListenerObject
+    ): Listener => {
+      if (typeof listener === 'function') {
+        return (event) => (listener as EventListener)(event as unknown as Event);
+      }
+
+      return (event) => {
+        if (typeof listener.handleEvent === 'function') {
+          listener.handleEvent(event as unknown as Event);
+        }
+      };
+    };
+
     const mediaQueryList: MediaQueryList = {
       media: query,
       matches,
       onchange: null,
       addEventListener: (_event: string, listener: EventListenerOrEventListenerObject) => {
-        listenersForQuery.add(listener as Listener);
+        const wrappersForQuery =
+          eventListenerWrappers.get(query) ??
+          new Map<EventListenerOrEventListenerObject, Listener>();
+        const wrapper = resolveEventListener(listener);
+        wrappersForQuery.set(listener, wrapper);
+        eventListenerWrappers.set(query, wrappersForQuery);
+        listenersForQuery.add(wrapper);
       },
       removeEventListener: (_event: string, listener: EventListenerOrEventListenerObject) => {
-        listenersForQuery.delete(listener as Listener);
+        const wrappersForQuery = eventListenerWrappers.get(query);
+        const wrapper = wrappersForQuery?.get(listener);
+        if (!wrapper) {
+          return;
+        }
+        listenersForQuery.delete(wrapper);
+        wrappersForQuery?.delete(listener);
       },
       addListener: (listener: Listener) => {
         listenersForQuery.add(listener);
