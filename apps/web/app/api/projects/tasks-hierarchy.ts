@@ -44,9 +44,10 @@ export function buildTaskHierarchy(tasks: Task[], filters: TaskHierarchyFilters 
   const byId = new Map<string, TaskHierarchyNode>();
   const baseNodes: TaskHierarchyNode[] = tasks.map((task) => {
     const baseChecklist = Array.isArray(task.checklist) ? task.checklist.map((item) => ({ ...item })) : undefined;
+    const { parentId, ...rest } = task;
     const node: TaskHierarchyNode = {
-      ...task,
-      parentId: task.parentId ?? undefined,
+      ...rest,
+      ...(typeof parentId === 'string' && parentId ? { parentId } : {}),
       checklist: baseChecklist,
       children: [],
       ancestors: [],
