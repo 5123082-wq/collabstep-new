@@ -101,6 +101,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!body.parentId) {
       delete existing.parentId;
     } else {
+      if (body.parentId === existing.id) {
+        return NextResponse.json({ error: 'cyclic_parent' }, { status: 400 });
+      }
+
+      const parent = memory.TASKS.find((task) => task.id === body.parentId);
+      if (!parent || parent.projectId !== existing.projectId) {
+        return NextResponse.json({ error: 'invalid_parent' }, { status: 400 });
+      }
+
+      const visited = new Set<string>();
+      let ancestor: typeof parent | undefined = parent;
+      while (ancestor?.parentId) {
+        if (ancestor.parentId === existing.id) {
+          return NextResponse.json({ error: 'cyclic_parent' }, { status: 400 });
+        }
+        if (visited.has(ancestor.parentId)) {
+          break;
+        }
+        visited.add(ancestor.parentId);
+        ancestor = memory.TASKS.find((task) => task.id === ancestor?.parentId);
+      }
+
       existing.parentId = body.parentId;
     }
   }
