@@ -11,6 +11,7 @@ import {
   WizardTeamSchema,
   createInitialWizardDraft,
   projectStageOptions,
+  projectTypeOptions,
   type WizardDetails,
   type WizardDraft,
   type WizardSelection,
@@ -42,6 +43,43 @@ const PAYMENT_OPTIONS: { value: PaymentValue; label: string }[] = [
   { value: 'time-and-materials', label: 'Time & Materials' },
   { value: 'retainer', label: 'Ретейнер' }
 ];
+
+type WorkspaceOption = {
+  id: string;
+  name: string;
+  visibility: WizardDetails['visibility'];
+};
+
+const PROJECT_TYPE_LABELS: Record<(typeof projectTypeOptions)[number], string> = {
+  product: 'Продукт',
+  marketing: 'Маркетинг',
+  operations: 'Операции',
+  service: 'Услуги',
+  internal: 'Внутренний'
+};
+
+const WORKFLOW_PRESETS = [
+  {
+    id: 'default',
+    title: 'Классический',
+    description: 'Новые → В работе → Проверка → Готово',
+    statuses: ['new', 'in_progress', 'review', 'done'] as const
+  },
+  {
+    id: 'delivery',
+    title: 'Сервисная доставка',
+    description: 'Новые → В работе → Блокеры → Проверка → Готово',
+    statuses: ['new', 'in_progress', 'blocked', 'review', 'done'] as const
+  },
+  {
+    id: 'fast-track',
+    title: 'Быстрый поток',
+    description: 'Новые → В работе → Готово',
+    statuses: ['new', 'in_progress', 'done'] as const
+  }
+] as const;
+
+type WorkflowPreset = (typeof WORKFLOW_PRESETS)[number];
 
 const INVITE_ALLOWED_ROLES = new Set<UserRole>(['FOUNDER', 'PM', 'ADMIN']);
 
@@ -95,6 +133,9 @@ export default function ProjectCreateWizardPageClient() {
   const [templates, setTemplates] = useState<TemplateOption[]>([]);
   const [templateFetchState, setTemplateFetchState] = useState<FetchState>('idle');
   const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+  const [workspaceFetchState, setWorkspaceFetchState] = useState<FetchState>('idle');
+  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const [inviteInput, setInviteInput] = useState('');
   const [teamError, setTeamError] = useState<string | null>(null);
@@ -118,6 +159,68 @@ export default function ProjectCreateWizardPageClient() {
     setLastSavedAt(new Date());
     setInviteLink(buildInviteLink(draft.details));
   }, [draft]);
+
+  useEffect(() => {
+    if (workspaceFetchState !== 'idle') {
+      return;
+    }
+    setWorkspaceFetchState('loading');
+    setWorkspacesError(null);
+
+    const controller = new AbortController();
+    fetch('/api/workspaces', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      cache: 'no-store'
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить рабочие пространства');
+        }
+        const payload = (await response.json()) as { items?: unknown };
+        const rawItems = Array.isArray(payload.items) ? payload.items : [];
+        const normalized: WorkspaceOption[] = [];
+        for (const item of rawItems) {
+          if (!item || typeof item !== 'object') {
+            continue;
+          }
+          const record = item as Record<string, unknown>;
+          const id = typeof record.id === 'string' ? record.id : null;
+          const name = typeof record.name === 'string' ? record.name : null;
+          const visibility = record.visibility === 'public' ? 'public' : 'private';
+          if (id && name) {
+            normalized.push({ id, name, visibility });
+          }
+        }
+        setWorkspaces(normalized);
+        setWorkspaceFetchState('success');
+        if (normalized.length > 0) {
+          setDraft((prev) => {
+            if (normalized.some((workspace) => workspace.id === prev.details.workspaceId)) {
+              return prev;
+            }
+            return {
+              ...prev,
+              details: {
+                ...prev.details,
+                workspaceId: normalized[0]?.id ?? prev.details.workspaceId
+              }
+            };
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+        console.error(error);
+        setWorkspacesError(error instanceof Error ? error.message : 'Неизвестная ошибка');
+        setWorkspaceFetchState('error');
+      });
+
+    return () => controller.abort();
+  }, [workspaceFetchState]);
 
   useEffect(() => {
     if (!restorationNotified && hasMeaningfulDraft(initialDraftRef.current ?? draft)) {
@@ -462,6 +565,17 @@ export default function ProjectCreateWizardPageClient() {
 
     setSubmitting(true);
     try {
+      const workflowPreset =
+        WORKFLOW_PRESETS.find((preset) => preset.id === draft.details.workflowPreset) ?? WORKFLOW_PRESETS[0];
+      const workflowPayload = {
+        id: workflowPreset.id,
+        statuses: Array.from(workflowPreset.statuses)
+      } satisfies { id: string; statuses: string[] };
+      const financePayload = {
+        budget: draft.details.finance.budget,
+        currency: draft.details.finance.currency ? draft.details.finance.currency.toUpperCase() : null
+      };
+
       let projectId: string | null = null;
       if (draft.selection.mode === 'template' && draft.selection.templateId) {
         const response = await fetch('/api/projects/from-template', {
@@ -469,7 +583,15 @@ export default function ProjectCreateWizardPageClient() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             templateId: draft.selection.templateId,
-            title: draft.details.name.trim()
+            title: draft.details.name.trim(),
+            description: draft.details.description ?? '',
+            stage: draft.details.stage,
+            deadline: draft.details.deadline ?? undefined,
+            visibility: draft.details.visibility,
+            workspaceId: draft.details.workspaceId,
+            type: draft.details.type,
+            workflow: workflowPayload,
+            finance: financePayload
           })
         });
         if (!response.ok) {
@@ -485,7 +607,12 @@ export default function ProjectCreateWizardPageClient() {
             title: draft.details.name.trim(),
             description: draft.details.description ?? '',
             stage: draft.details.stage,
-            deadline: draft.details.deadline ?? undefined
+            deadline: draft.details.deadline ?? undefined,
+            visibility: draft.details.visibility,
+            workspaceId: draft.details.workspaceId,
+            type: draft.details.type,
+            workflow: workflowPayload,
+            finance: financePayload
           })
         });
         if (!response.ok) {
@@ -621,10 +748,12 @@ export default function ProjectCreateWizardPageClient() {
     if (step === 1) {
       const issues = detailsValidation.success ? [] : detailsValidation.error.issues;
       const nameError = findIssueMessage(issues, 'name');
+      const workspaceError = findIssueMessage(issues, 'workspaceId');
       const deadlineError = findIssueMessage(issues, 'deadline');
       const budgetError = findIssueMessage(issues, 'finance.budget');
       const currencyError = findIssueMessage(issues, 'finance.currency');
       const tagsError = issues.find((issue) => issue.path[0] === 'tags')?.message ?? null;
+      const workflowPresetError = findIssueMessage(issues, 'workflowPreset');
 
       return (
         <div className="space-y-6">
@@ -666,6 +795,51 @@ export default function ProjectCreateWizardPageClient() {
                 })}
               </div>
             </label>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Рабочее пространство</span>
+              <select
+                value={draft.details.workspaceId}
+                onChange={(event) => handleDetailsChange('workspaceId', event.target.value)}
+                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                disabled={workspaceFetchState === 'loading'}
+              >
+                {workspaces.length === 0 ? (
+                  <option value={draft.details.workspaceId}>По умолчанию</option>
+                ) : (
+                  workspaces.map((workspace) => (
+                    <option key={workspace.id} value={workspace.id}>
+                      {workspace.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              {workspaceError ? <p className="text-xs text-red-400">{workspaceError}</p> : null}
+              {workspacesError ? <p className="text-xs text-red-400">{workspacesError}</p> : null}
+            </label>
+            <div className="space-y-2">
+              <span className="text-xs uppercase tracking-wide text-neutral-500">Тип проекта</span>
+              <div className="flex flex-wrap gap-2">
+                {projectTypeOptions.map((type) => {
+                  const active = draft.details.type === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => handleDetailsChange('type', type)}
+                      className={`rounded-xl border px-3 py-2 text-xs transition ${
+                        active
+                          ? 'border-indigo-400 bg-indigo-500/20 text-white'
+                          : 'border-neutral-800 bg-neutral-950/80 text-neutral-300 hover:border-neutral-700'
+                      }`}
+                    >
+                      {PROJECT_TYPE_LABELS[type]}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
           <label className="space-y-2">
             <span className="text-xs uppercase tracking-wide text-neutral-500">Описание</span>
@@ -788,6 +962,37 @@ export default function ProjectCreateWizardPageClient() {
             ) : (
               <p className="text-xs text-neutral-500">Используйте метки, чтобы группировать проекты и задачи.</p>
             )}
+          </div>
+          <div className="space-y-3">
+            <span className="text-xs uppercase tracking-wide text-neutral-500">Workflow</span>
+            <div className="grid gap-3 md:grid-cols-3">
+              {WORKFLOW_PRESETS.map((preset) => {
+                const active = draft.details.workflowPreset === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => handleDetailsChange('workflowPreset', preset.id)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      active
+                        ? 'border-indigo-400 bg-indigo-500/15 text-white'
+                        : 'border-neutral-800 bg-neutral-950/70 text-neutral-300 hover:border-neutral-700'
+                    }`}
+                  >
+                    <p className="text-sm font-semibold">{preset.title}</p>
+                    <p className="mt-1 text-xs text-neutral-400">{preset.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {preset.statuses.map((status) => (
+                        <span key={status} className="rounded-full bg-neutral-900 px-2 py-1 text-[10px] uppercase tracking-wide">
+                          {status}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {workflowPresetError ? <p className="text-xs text-red-400">{workflowPresetError}</p> : null}
           </div>
         </div>
       );

@@ -78,7 +78,7 @@ API реализовано в `app/api` и работает поверх in-memo
 | `accounts` | `id`, `organization_id`, `account_type` (`workspace`/`personal`), `label` | Определяет «рабочие пространства» для мультиаккаунта |
 | `user_accounts` | `user_id`, `account_id`, `default_role`, `last_active_at` | Пользователь ↔ аккаунты, хранит роль в workspace |
 | `projects` | `id`, `account_id`, `owner_id`, `title`, `description`, `stage`, `status`, `deadline`, `archived`, timestamps | FK на `accounts`, `users` |
-| `project_members` | `project_id`, `user_id`, `role` (`owner`/`coord`/`member`/`viewer`) | Маппинг людей к проектам |
+| `project_members` | `project_id`, `user_id`, `role` (`owner`/`admin`/`member`/`viewer`) | Маппинг людей к проектам |
 | `project_templates` | `id`, `title`, `summary`, `kind`, `visibility`, `author_account_id` | Источник для `project_template_tasks` |
 | `project_template_tasks` | `id`, `template_id`, `title`, `description`, `default_status`, `default_labels`, `offset_start_days`, `offset_due_days` | Переиспользуемые заготовки задач |
 | `project_workflows` | `project_id`, `name`, `is_default` | 1:N с `workflow_statuses` |

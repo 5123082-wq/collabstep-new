@@ -1,10 +1,11 @@
 export * from './types';
 export { memory } from './data/memory';
-export { DEFAULT_WORKSPACE_USER_ID } from './data/memory';
+export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from './data/memory';
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
 export { UsersRepository, usersRepository } from './repositories/users-repository';
+export { WorkspacesRepository, workspacesRepository } from './repositories/workspaces-repository';
 export {
   ProjectCatalogService,
   projectCatalogService,

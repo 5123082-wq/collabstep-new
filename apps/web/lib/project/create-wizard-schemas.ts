@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_WORKSPACE_ID } from '@collabverse/api';
 import type { ProjectStage } from '@/domain/projects/types';
 
 export const projectStageOptions = [
@@ -8,6 +9,8 @@ export const projectStageOptions = [
   'launch',
   'support'
 ] as const satisfies ProjectStage[];
+
+export const projectTypeOptions = ['product', 'marketing', 'operations', 'service', 'internal'] as const;
 
 const budgetStringSchema = z
   .string()
@@ -57,6 +60,8 @@ export const WizardDetailsSchema = z.object({
     .trim()
     .max(2000, 'Описание не должно превышать 2000 символов')
     .nullable(),
+  workspaceId: z.string().trim().min(1, 'Выберите рабочее пространство'),
+  type: z.enum(projectTypeOptions),
   visibility: z.enum(['private', 'public']),
   stage: z.enum(projectStageOptions),
   deadline: z
@@ -83,7 +88,8 @@ export const WizardDetailsSchema = z.object({
     budget: budgetStringSchema,
     currency: currencySchema,
     paymentType: z.enum(['fixed', 'time-and-materials', 'retainer']).nullable()
-  })
+  }),
+  workflowPreset: z.string().trim().min(1, 'Выберите шаблон workflow')
 });
 
 export const WizardTeamSchema = z.object({
@@ -123,6 +129,8 @@ export function createInitialWizardDraft(): WizardDraft {
     details: {
       name: '',
       description: null,
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      type: 'product',
       visibility: 'private',
       stage: 'discovery',
       deadline: null,
@@ -131,7 +139,8 @@ export function createInitialWizardDraft(): WizardDraft {
         budget: null,
         currency: 'RUB',
         paymentType: 'fixed'
-      }
+      },
+      workflowPreset: 'default'
     },
     team: {
       invites: [],

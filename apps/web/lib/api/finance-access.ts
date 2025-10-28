@@ -48,9 +48,6 @@ export function getProjectRole(projectId: string, userId: string): FinanceRole {
   if (!member) {
     return 'viewer';
   }
-  if (member.role === 'coord') {
-    return 'admin';
-  }
   if (member.role === 'owner' || member.role === 'admin' || member.role === 'member') {
     return member.role;
   }

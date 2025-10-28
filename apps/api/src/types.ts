@@ -1,6 +1,13 @@
 export type ID = string;
 
 export type ProjectStage = 'discovery' | 'design' | 'build' | 'launch' | 'support';
+export type ProjectVisibility = 'private' | 'public';
+export type ProjectType =
+  | 'product'
+  | 'marketing'
+  | 'operations'
+  | 'service'
+  | 'internal';
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
 export type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'payable' | 'closed';
 
@@ -19,11 +26,15 @@ export interface Iteration {
 
 export interface Project {
   id: ID;
+  workspaceId: ID;
   title: string;
   description?: string;
   ownerId: ID;
   deadline?: string;
   stage?: ProjectStage;
+  type?: ProjectType;
+  visibility: ProjectVisibility;
+  workflowId?: ID;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -38,7 +49,7 @@ export interface ProjectTemplate {
 
 export interface ProjectMember {
   userId: ID;
-  role: 'owner' | 'admin' | 'coord' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member' | 'viewer';
 }
 
 export interface Task {
@@ -162,10 +173,18 @@ export interface ProjectCardMember extends WorkspaceUser {
   role: ProjectMember['role'];
 }
 
+export interface ProjectCardWorkspace {
+  id: ID;
+  name: string;
+}
+
 export interface ProjectCard {
   id: ID;
+  workspace: ProjectCardWorkspace;
   title: string;
   description: string;
+  type?: ProjectType;
+  visibility: ProjectVisibility;
   status: ProjectStatus;
   owner: ProjectCardOwner;
   members: ProjectCardMember[];
@@ -187,6 +206,7 @@ export interface ProjectCard {
   };
   deadline?: string;
   stage?: ProjectStage;
+  workflowId?: ID;
 }
 
 export interface ProjectCardFilters {
@@ -197,4 +217,38 @@ export interface ProjectCardFilters {
   dateField?: 'createdAt' | 'deadline';
   dateFrom?: string | null;
   dateTo?: string | null;
+  workspaceIds?: ID[];
+  visibility?: ProjectVisibility | 'all';
+  types?: ProjectType[];
+}
+
+export interface Workspace {
+  id: ID;
+  accountId: ID;
+  name: string;
+  description?: string;
+  visibility: ProjectVisibility;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceMember {
+  workspaceId: ID;
+  userId: ID;
+  role: ProjectMember['role'];
+}
+
+export interface Account {
+  id: ID;
+  name: string;
+  ownerId: ID;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AccountMember {
+  accountId: ID;
+  userId: ID;
+  role: ProjectMember['role'];
 }

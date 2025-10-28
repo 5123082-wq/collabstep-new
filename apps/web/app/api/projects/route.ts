@@ -1,14 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import {
+  DEFAULT_WORKSPACE_ID,
   DEFAULT_WORKSPACE_USER_ID,
+  memory,
+  projectBudgetsRepository,
   projectCatalogService,
   projectsRepository,
   type ProjectCardFilters,
   type ProjectCardSort,
   type ProjectCardTab,
-  type ProjectStage
+  type ProjectStage,
+  type ProjectType,
+  type ProjectVisibility,
+  type TaskStatus
 } from '@collabverse/api';
+import { workspacesRepository } from '@collabverse/api';
 
 function parseArchivedFilter(value: string | null): boolean | null {
   if (!value) {
@@ -24,6 +31,8 @@ function parseArchivedFilter(value: string | null): boolean | null {
   }
   return null;
 }
+
+const allowedWorkflowStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
 function parseSort(value: string | null): ProjectCardSort | null {
   if (!value) {
@@ -76,6 +85,20 @@ function parseFiltersParam(value: string | null): ProjectCardFilters | null {
     }
     if (typeof parsed.dateTo === 'string') {
       result.dateTo = parsed.dateTo;
+    }
+    if (Array.isArray(parsed.workspaceIds)) {
+      result.workspaceIds = parsed.workspaceIds.filter(
+        (item): item is string => typeof item === 'string' && item.trim().length > 0
+      );
+    }
+    if (parsed.visibility === 'public' || parsed.visibility === 'private') {
+      result.visibility = parsed.visibility;
+    }
+    if (Array.isArray(parsed.types)) {
+      const allowedTypes: ProjectType[] = ['product', 'marketing', 'operations', 'service', 'internal'];
+      result.types = parsed.types.filter(
+        (item): item is ProjectType => typeof item === 'string' && allowedTypes.includes(item as ProjectType)
+      );
     }
     return result;
   } catch (err) {
@@ -130,6 +153,25 @@ export async function POST(req: NextRequest) {
   const allowedStages: ProjectStage[] = ['discovery', 'design', 'build', 'launch', 'support'];
   const requestedStage = typeof body.stage === 'string' ? (body.stage as ProjectStage) : undefined;
   const stage = requestedStage && allowedStages.includes(requestedStage) ? requestedStage : 'discovery';
+  const allowedTypes: ProjectType[] = ['product', 'marketing', 'operations', 'service', 'internal'];
+  const requestedType = typeof body.type === 'string' ? (body.type as ProjectType) : undefined;
+  const type = requestedType && allowedTypes.includes(requestedType) ? requestedType : 'internal';
+  const visibility: ProjectVisibility = body.visibility === 'public' ? 'public' : 'private';
+  const requestedWorkspaceId =
+    typeof body.workspaceId === 'string' && body.workspaceId.trim() ? body.workspaceId.trim() : DEFAULT_WORKSPACE_ID;
+  const workspace = workspacesRepository.findById(requestedWorkspaceId);
+  const workspaceId = workspace ? workspace.id : DEFAULT_WORKSPACE_ID;
+  const workflowStatusesInput = Array.isArray(body.workflow?.statuses)
+    ? body.workflow.statuses.filter((status: unknown): status is TaskStatus =>
+        typeof status === 'string' && allowedWorkflowStatuses.includes(status as TaskStatus)
+      )
+    : [];
+  const normalizedWorkflow: TaskStatus[] =
+    workflowStatusesInput.length >= 3
+      ? Array.from(new Set(workflowStatusesInput))
+      : ['new', 'in_progress', 'review', 'done'];
+  const workflowId = typeof body.workflow?.id === 'string' && body.workflow.id ? body.workflow.id : undefined;
+
   const project = projectsRepository.create({
     title: typeof body.title === 'string' && body.title.trim() ? body.title.trim() : 'Без названия',
     description: typeof body.description === 'string' ? body.description : '',
@@ -137,9 +179,32 @@ export async function POST(req: NextRequest) {
       typeof body.ownerId === 'string' && body.ownerId.trim()
         ? body.ownerId
         : DEFAULT_WORKSPACE_USER_ID,
+    workspaceId,
     stage,
-    deadline: typeof body.deadline === 'string' && body.deadline ? body.deadline : undefined
+    deadline: typeof body.deadline === 'string' && body.deadline ? body.deadline : undefined,
+    type,
+    visibility,
+    workflowId
   });
+
+  memory.WORKFLOWS[project.id] = {
+    projectId: project.id,
+    statuses: normalizedWorkflow
+  };
+
+  if (body.finance?.budget || body.finance?.currency) {
+    const planned = typeof body.finance?.budget === 'string' && body.finance?.budget ? body.finance.budget : null;
+    const currency = typeof body.finance?.currency === 'string' && body.finance?.currency ? body.finance.currency.toUpperCase() : null;
+    if (currency) {
+      const budget = {
+        projectId: project.id,
+        currency,
+        updatedAt: new Date().toISOString(),
+        ...(planned ? { total: planned } : {})
+      };
+      projectBudgetsRepository.upsert(budget);
+    }
+  }
 
   return NextResponse.json(project, { status: 201 });
 }
