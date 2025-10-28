@@ -4,16 +4,72 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
-import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
+import type {
+  Iteration,
+  ProjectWorkflow,
+  Task,
+  TaskChecklistItem,
+  TaskHierarchyNode,
+  TaskKind,
+  TaskStatus
+} from '@/domain/projects/types';
 
 type TaskItem = Pick<
   Task,
-  'id' | 'title' | 'status' | 'iterationId' | 'description' | 'assigneeId' | 'startAt' | 'dueAt' | 'labels'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'iterationId'
+  | 'description'
+  | 'assigneeId'
+  | 'startAt'
+  | 'dueAt'
+  | 'labels'
+  | 'order'
+  | 'parentId'
+  | 'kind'
+  | 'estimateMinutes'
+  | 'spentMinutes'
+  | 'checklist'
 >;
+
+type TaskNode = TaskHierarchyNode;
 
 type IterationItem = Pick<Iteration, 'id' | 'title'>;
 
-type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt';
+type BoardView = 'list' | 'kanban' | 'table' | 'calendar' | 'gantt';
+
+function compareTaskCard(a: Pick<TaskItem, 'order' | 'title'>, b: Pick<TaskItem, 'order' | 'title'>) {
+  const orderA = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+  const orderB = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+  if (orderA !== orderB) {
+    return orderA - orderB;
+  }
+  return a.title.localeCompare(b.title, 'ru');
+}
+
+function getChecklistStats(source?: { checklist?: TaskChecklistItem[] | null }) {
+  const checklist = Array.isArray(source?.checklist) ? source?.checklist ?? [] : [];
+  if (checklist.length === 0) {
+    return { total: 0, done: 0, percentage: null as number | null };
+  }
+  const done = checklist.filter((item) => item.done).length;
+  const percentage = Math.round((done / checklist.length) * 100);
+  return { total: checklist.length, done, percentage };
+}
+
+function formatEffort(estimate?: number | null, spent?: number | null) {
+  const toHours = (value?: number | null) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+      return '—';
+    }
+    return `${Math.round((value / 60) * 10) / 10} ч`;
+  };
+  if (typeof estimate === 'number' || typeof spent === 'number') {
+    return `${toHours(spent)} / ${toHours(estimate)}`;
+  }
+  return '—';
+}
 
 type ProjectTasksPageClientProps = {
   projectId: string;
@@ -31,6 +87,11 @@ type TaskUpdatePayload = {
   startAt?: string | null;
   dueAt?: string | null;
   labels?: string[];
+  parentId?: string | null;
+  kind?: TaskKind;
+  estimateMinutes?: number | null;
+  spentMinutes?: number | null;
+  checklist?: TaskChecklistItem[];
 };
 
 type IterationPayload = {
@@ -123,7 +184,7 @@ export default function ProjectTasksPageClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const availableViews = useMemo<BoardView[]>(() => {
-    return viewsEnabled ? ['list', 'kanban', 'calendar', 'gantt'] : ['list', 'kanban'];
+    return viewsEnabled ? ['list', 'kanban', 'table', 'calendar', 'gantt'] : ['list', 'kanban'];
   }, [viewsEnabled]);
   const defaultView: BoardView = useMemo(() => {
     const candidate = (initialView ?? '').toLowerCase();
@@ -132,6 +193,7 @@ export default function ProjectTasksPageClient({
 
   const [view, setView] = useState<BoardView>(defaultView);
   const [items, setItems] = useState<TaskItem[]>([]);
+  const [hierarchyFlat, setHierarchyFlat] = useState<TaskNode[]>([]);
   const [workflow, setWorkflow] = useState<ProjectWorkflow | null>(null);
   const [iterations, setIterations] = useState<IterationItem[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<string | 'all'>('all');
@@ -214,10 +276,15 @@ export default function ProjectTasksPageClient({
       if (!response.ok) {
         throw new Error('Не удалось загрузить задачи');
       }
-      const data = (await response.json()) as { items?: TaskItem[] };
+      const data = (await response.json()) as {
+        items?: TaskItem[];
+        hierarchy?: { tree?: TaskNode[]; flat?: TaskNode[] };
+      };
       setItems(Array.isArray(data.items) ? data.items : []);
+      setHierarchyFlat(Array.isArray(data.hierarchy?.flat) ? data.hierarchy?.flat ?? [] : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      setHierarchyFlat([]);
     } finally {
       setLoading(false);
     }
@@ -312,15 +379,27 @@ export default function ProjectTasksPageClient({
         }
       }
     }
+    for (const status of statuses) {
+      const bucket = map.get(status);
+      if (bucket) {
+        bucket.sort(compareTaskCard);
+      }
+    }
     return statuses.map((status) => ({ status, tasks: map.get(status) ?? [] }));
   }, [items, statuses]);
+
+  const matchingTaskIds = useMemo(() => new Set(items.map((task) => task.id)), [items]);
 
   const activeTask = useMemo(() => {
     if (!activeTaskId) {
       return null;
     }
-    return items.find((task) => task.id === activeTaskId) ?? null;
-  }, [activeTaskId, items]);
+    return (
+      hierarchyFlat.find((task) => task.id === activeTaskId) ??
+      (items.find((task) => task.id === activeTaskId) as TaskNode | undefined) ??
+      null
+    );
+  }, [activeTaskId, hierarchyFlat, items]);
 
   const isDndActive = viewsEnabled && view === 'kanban';
 
@@ -404,7 +483,15 @@ export default function ProjectTasksPageClient({
                 view === option ? 'bg-indigo-500 text-white' : 'hover:text-white'
               }`}
             >
-              {option === 'kanban' ? 'Канбан' : option === 'list' ? 'Список' : option === 'calendar' ? 'Календарь' : 'Гантт'}
+              {option === 'kanban'
+                ? 'Канбан'
+                : option === 'list'
+                ? 'Список'
+                : option === 'table'
+                ? 'Таблица'
+                : option === 'calendar'
+                ? 'Календарь'
+                : 'Гантт'}
             </button>
           ))}
         </div>
@@ -460,7 +547,7 @@ export default function ProjectTasksPageClient({
       <section className="space-y-3">
         {isLoading ? (
           <div className="rounded-xl border border-neutral-800 bg-neutral-950/80 p-4 text-sm text-neutral-400">Загрузка…</div>
-        ) : items.length === 0 ? (
+        ) : hierarchyFlat.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-sm text-neutral-400">
             Пока нет задач. Добавьте первую, чтобы начать работу.
           </div>
@@ -493,29 +580,40 @@ export default function ProjectTasksPageClient({
                   <p className="text-xs text-neutral-500">{column.tasks.length} задач</p>
                 </div>
                 <div className="space-y-3">
-                  {column.tasks.map((task) => (
-                    <article
-                      key={task.id}
-                      draggable={isDndActive}
-                      onDragStart={(event) => {
-                        if (!isDndActive) {
-                          return;
-                        }
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', task.id);
-                      }}
-                      onClick={() => handleTaskClick(task.id)}
-                      className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
-                    >
-                      <h3 className="text-sm font-semibold text-white">{task.title}</h3>
-                      {task.iterationId ? (
-                        <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
-                          {iterationNames.get(task.iterationId) ?? task.iterationId}
-                        </span>
-                      ) : null}
-                      {renderStatusControls(task)}
-                    </article>
-                  ))}
+                  {column.tasks.map((task) => {
+                    const stats = getChecklistStats(task);
+                    return (
+                      <article
+                        key={task.id}
+                        draggable={isDndActive}
+                        onDragStart={(event) => {
+                          if (!isDndActive) {
+                            return;
+                          }
+                          event.dataTransfer.effectAllowed = 'move';
+                          event.dataTransfer.setData('text/plain', task.id);
+                        }}
+                        onClick={() => handleTaskClick(task.id)}
+                        className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
+                      >
+                        <h3 className="text-sm font-semibold text-white">{task.title}</h3>
+                        {task.iterationId ? (
+                          <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
+                            {iterationNames.get(task.iterationId) ?? task.iterationId}
+                          </span>
+                        ) : null}
+                        {stats.total > 0 ? (
+                          <p className="text-xs text-neutral-400">Чек-лист: {stats.done}/{stats.total}</p>
+                        ) : null}
+                        {task.estimateMinutes || task.spentMinutes ? (
+                          <p className="text-xs text-neutral-500">
+                            Трудозатраты: {formatEffort(task.estimateMinutes ?? null, task.spentMinutes ?? null)}
+                          </p>
+                        ) : null}
+                        {renderStatusControls(task)}
+                      </article>
+                    );
+                  })}
                   {column.tasks.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-neutral-800 p-3 text-xs text-neutral-500">Нет задач</div>
                   ) : null}
@@ -524,28 +622,133 @@ export default function ProjectTasksPageClient({
             ))}
           </div>
         ) : view === 'list' ? (
-          <ul className="space-y-3">
-            {items.map((task) => (
-              <li
-                key={task.id}
-                onClick={() => handleTaskClick(task.id)}
-                className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-indigo-400"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{task.title}</div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
-                  </div>
-                  {task.iterationId ? (
-                    <span className="rounded-lg border border-neutral-800 px-2 py-1 text-xs text-neutral-400">
-                      Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
-                    </span>
-                  ) : null}
-                </div>
-                {renderStatusControls(task)}
-              </li>
-            ))}
+          <ul className="space-y-2">
+            {hierarchyFlat.map((task) => {
+              const stats = task.progress ?? getChecklistStats(task);
+              const isMatched = matchingTaskIds.has(task.id);
+              return (
+                <li key={task.id}>
+                  <article
+                    onClick={() => handleTaskClick(task.id)}
+                    style={{ marginLeft: `${task.depth * 1.25}rem` }}
+                    className={`space-y-3 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-indigo-400 ${
+                      isMatched ? '' : 'opacity-70'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-white">{task.title}</span>
+                          {task.kind ? (
+                            <span className="rounded-md border border-neutral-700 px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-neutral-400">
+                              {task.kind}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 text-right text-xs text-neutral-400">
+                        {task.iterationId ? (
+                          <span className="rounded-lg border border-neutral-800 px-2 py-1">
+                            Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
+                          </span>
+                        ) : null}
+                        {task.assigneeId ? <span>Исполнитель: {task.assigneeId}</span> : null}
+                      </div>
+                    </div>
+                    {stats.total > 0 ? (
+                      <div className="flex items-center gap-3 text-xs text-neutral-400">
+                        <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-neutral-800">
+                          <div
+                            className="absolute inset-y-0 left-0 bg-indigo-500"
+                            style={{ width: `${stats.percentage ?? 0}%` }}
+                          />
+                        </div>
+                        <span>
+                          {stats.done}/{stats.total}
+                        </span>
+                      </div>
+                    ) : null}
+                    <div className="grid gap-2 text-xs text-neutral-400 md:grid-cols-2">
+                      <p>Трудозатраты: {formatEffort(task.estimateMinutes ?? null, task.spentMinutes ?? null)}</p>
+                      <p>
+                        Дедлайн:{' '}
+                        {task.dueAt ? parseISODate(task.dueAt)?.toLocaleString() ?? task.dueAt : '—'}
+                      </p>
+                    </div>
+                    {renderStatusControls(task)}
+                  </article>
+                </li>
+              );
+            })}
           </ul>
+        ) : view === 'table' ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-800 text-sm text-neutral-200">
+              <thead className="bg-neutral-950/80 text-xs uppercase tracking-[0.2em] text-neutral-500">
+                <tr>
+                  <th className="px-4 py-2 text-left font-normal">Название</th>
+                  <th className="px-4 py-2 text-left font-normal">Статус</th>
+                  <th className="px-4 py-2 text-left font-normal">Тип</th>
+                  <th className="px-4 py-2 text-left font-normal">Исполнитель</th>
+                  <th className="px-4 py-2 text-left font-normal">Итерация</th>
+                  <th className="px-4 py-2 text-left font-normal">Сроки</th>
+                  <th className="px-4 py-2 text-left font-normal">Прогресс</th>
+                  <th className="px-4 py-2 text-left font-normal">Трудозатраты</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-900">
+                {hierarchyFlat.map((task) => {
+                  const stats = task.progress ?? getChecklistStats(task);
+                  const isMatched = matchingTaskIds.has(task.id);
+                  return (
+                    <tr
+                      key={task.id}
+                      className={`cursor-pointer transition hover:bg-neutral-900/60 ${isMatched ? '' : 'opacity-70'}`}
+                      onClick={() => handleTaskClick(task.id)}
+                    >
+                      <td className="px-4 py-3">
+                        <div style={{ paddingLeft: `${task.depth * 1.5}rem` }} className="flex flex-col gap-1">
+                          <span className="font-medium text-white">{task.title}</span>
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-neutral-600">{task.id}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</td>
+                      <td className="px-4 py-3 text-xs text-neutral-400">{task.kind ?? 'task'}</td>
+                      <td className="px-4 py-3 text-xs text-neutral-300">{task.assigneeId ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-neutral-300">
+                        {task.iterationId ? iterationNames.get(task.iterationId) ?? task.iterationId : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-neutral-300">
+                        {task.startAt ? parseISODate(task.startAt)?.toLocaleDateString() ?? task.startAt : '—'} →{' '}
+                        {task.dueAt ? parseISODate(task.dueAt)?.toLocaleDateString() ?? task.dueAt : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        {stats.total > 0 ? (
+                          <div className="flex items-center gap-2">
+                            <div className="relative h-1 w-full overflow-hidden rounded-full bg-neutral-800">
+                              <div
+                                className="absolute inset-y-0 left-0 bg-indigo-500"
+                                style={{ width: `${stats.percentage ?? 0}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-neutral-400">
+                              {stats.done}/{stats.total}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-neutral-500">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-neutral-300">
+                        {formatEffort(task.estimateMinutes ?? null, task.spentMinutes ?? null)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : view === 'calendar' ? (
           <CalendarView tasks={items} />
         ) : (
@@ -572,7 +775,7 @@ export default function ProjectTasksPageClient({
 }
 type TaskDrawerProps = {
   open: boolean;
-  task: TaskItem | null;
+  task: TaskNode | null;
   statuses: TaskStatus[];
   iterations: IterationItem[];
   onClose: () => void;
@@ -588,6 +791,10 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [labels, setLabels] = useState('');
+  const [kind, setKind] = useState<TaskKind>('task');
+  const [estimate, setEstimate] = useState('');
+  const [spent, setSpent] = useState('');
+  const [checklist, setChecklist] = useState<TaskChecklistItem[]>([]);
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -603,6 +810,18 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
     setStartAt(toInputDateTime(task.startAt));
     setDueAt(toInputDateTime(task.dueAt));
     setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
+    setKind(task.kind ?? 'task');
+    setEstimate(minutesToHoursInput(task.estimateMinutes));
+    setSpent(minutesToHoursInput(task.spentMinutes));
+    setChecklist(
+      Array.isArray(task.checklist)
+        ? task.checklist.map((item) => ({
+            id: item.id,
+            title: item.title,
+            done: Boolean(item.done)
+          }))
+        : []
+    );
     setError(null);
   }, [open, task]);
 
@@ -611,6 +830,24 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
       onClose();
     }
   }, [isSaving, onClose]);
+
+  const handleChecklistToggle = useCallback((id: string) => {
+    setChecklist((prev) => prev.map((item) => (item.id === id ? { ...item, done: !item.done } : item)));
+  }, []);
+
+  const handleChecklistTitle = useCallback((id: string, value: string) => {
+    setChecklist((prev) => prev.map((item) => (item.id === id ? { ...item, title: value } : item)));
+  }, []);
+
+  const handleChecklistRemove = useCallback((id: string) => {
+    setChecklist((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const handleChecklistAdd = useCallback(() => {
+    const identifier =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    setChecklist((prev) => [...prev, { id: identifier, title: 'Новый пункт', done: false }]);
+  }, []);
 
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -653,6 +890,22 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
         if (parsedLabels.join('|') !== currentLabels.join('|')) {
           payload.labels = parsedLabels;
         }
+        if (kind && kind !== (task.kind ?? 'task')) {
+          payload.kind = kind;
+        }
+        const nextEstimate = hoursInputToMinutes(estimate);
+        if (nextEstimate !== (task.estimateMinutes ?? null)) {
+          payload.estimateMinutes = nextEstimate;
+        }
+        const nextSpent = hoursInputToMinutes(spent);
+        if (nextSpent !== (task.spentMinutes ?? null)) {
+          payload.spentMinutes = nextSpent;
+        }
+        const normalizedChecklist = normalizeChecklistPayload(checklist);
+        const currentChecklist = normalizeChecklistPayload(task.checklist);
+        if (!areChecklistsEqual(currentChecklist, normalizedChecklist)) {
+          payload.checklist = normalizedChecklist;
+        }
 
         if (Object.keys(payload).length === 0) {
           onClose();
@@ -667,7 +920,23 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
         setSaving(false);
       }
     },
-    [assigneeId, description, dueAt, iterationId, labels, onClose, onSubmit, startAt, status, task, title]
+    [
+      assigneeId,
+      checklist,
+      description,
+      dueAt,
+      estimate,
+      iterationId,
+      kind,
+      labels,
+      onClose,
+      onSubmit,
+      spent,
+      startAt,
+      status,
+      task,
+      title
+    ]
   );
 
   return (
@@ -697,6 +966,18 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder="Markdown или обычный текст"
                 />
+              </label>
+              <label className="space-y-2 text-sm text-neutral-200">
+                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Тип</span>
+                <select
+                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                  value={kind}
+                  onChange={(event) => setKind(event.target.value as TaskKind)}
+                >
+                  <option value="epic">Эпик</option>
+                  <option value="task">Задача</option>
+                  <option value="subtask">Подзадача</option>
+                </select>
               </label>
               <label className="space-y-2 text-sm text-neutral-200">
                 <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Статус</span>
@@ -765,6 +1046,79 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
                   placeholder="product, design, urgent"
                 />
               </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Оценка, ч</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={estimate}
+                    onChange={(event) => setEstimate(event.target.value)}
+                    placeholder="Например, 8"
+                  />
+                </label>
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Затрачено, ч</span>
+                  <input
+                    type="number"
+                    step="0.25"
+                    min="0"
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={spent}
+                    onChange={(event) => setSpent(event.target.value)}
+                    placeholder="Например, 5.5"
+                  />
+                </label>
+              </div>
+              <section className="space-y-2 text-sm text-neutral-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Чек-лист</span>
+                  {task.progress ? (
+                    <span className="text-xs text-neutral-400">
+                      {task.progress.done}/{task.progress.total} выполнено
+                    </span>
+                  ) : null}
+                </div>
+                <div className="space-y-2">
+                  {checklist.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-neutral-800 p-3 text-xs text-neutral-500">
+                      Пункты пока не добавлены
+                    </p>
+                  ) : null}
+                  {checklist.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={item.done}
+                        onChange={() => handleChecklistToggle(item.id)}
+                        className="h-4 w-4 rounded border-neutral-700 bg-neutral-900 text-indigo-500 focus:ring-indigo-500"
+                      />
+                      <input
+                        className="flex-1 rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                        value={item.title}
+                        onChange={(event) => handleChecklistTitle(item.id, event.target.value)}
+                        placeholder="Опишите пункт"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleChecklistRemove(item.id)}
+                        className="rounded-lg border border-neutral-800 px-2 py-1 text-xs text-neutral-400 transition hover:border-red-500 hover:text-red-400"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={handleChecklistAdd}
+                    className="rounded-lg border border-dashed border-neutral-700 px-3 py-2 text-xs text-neutral-300 transition hover:border-indigo-400 hover:text-white"
+                  >
+                    + Добавить пункт
+                  </button>
+                </div>
+              </section>
               {error ? <p className="text-sm text-red-400">{error}</p> : null}
             </div>
           ) : (
@@ -791,6 +1145,53 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
       </SheetContent>
     </Sheet>
   );
+}
+
+function minutesToHoursInput(value?: number | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '';
+  }
+  return `${Math.round((value / 60) * 100) / 100}`;
+}
+
+function hoursInputToMinutes(value: string): number | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const normalized = trimmed.replace(',', '.');
+  const parsed = Number.parseFloat(normalized);
+  if (Number.isNaN(parsed) || parsed < 0) {
+    return null;
+  }
+  return Math.round(parsed * 60);
+}
+
+function normalizeChecklistPayload(items?: TaskChecklistItem[] | null): TaskChecklistItem[] {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+  return items
+    .map((item) => ({
+      id: item.id,
+      title: item.title.trim(),
+      done: Boolean(item.done)
+    }))
+    .filter((item) => item.title.length > 0);
+}
+
+function areChecklistsEqual(a: TaskChecklistItem[], b: TaskChecklistItem[]) {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (left.id !== right.id || left.title !== right.title || left.done !== right.done) {
+      return false;
+    }
+  }
+  return true;
 }
 type IterationModalProps = {
   open: boolean;

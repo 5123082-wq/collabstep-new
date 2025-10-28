@@ -132,6 +132,8 @@ export function createTemplateTasks(templateId: string, projectId: string, now: 
       projectId,
       title: blueprint.title,
       status: blueprint.status ?? 'new',
+      kind: 'task',
+      order: tasks.length,
       labels: blueprint.labels ?? [],
       createdAt,
       updatedAt: createdAt

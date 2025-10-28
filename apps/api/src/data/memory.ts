@@ -151,24 +151,119 @@ export const memory = {
   ] as Project[],
   TASKS: [
     {
+      id: 'task-admin-epic-foundation',
+      projectId: 'proj-admin-onboarding',
+      title: 'Эпик: Старт команды',
+      description: 'Подготовить инфраструктуру и рабочие ритуалы для команды запуска.',
+      status: 'in_progress',
+      assigneeId: DEFAULT_WORKSPACE_USER_ID,
+      labels: ['Стратегия'],
+      kind: 'epic',
+      order: 1,
+      estimateMinutes: 40 * 60,
+      spentMinutes: 22 * 60,
+      checklist: [
+        { id: 'task-admin-epic-foundation-check-brief', title: 'Утвердить цели спринта', done: true },
+        { id: 'task-admin-epic-foundation-check-rituals', title: 'Назначить фасилитаторов ритуалов', done: false }
+      ],
+      createdAt: '2024-05-01T09:00:00.000Z',
+      updatedAt: '2024-06-12T10:15:00.000Z'
+    },
+    {
       id: 'task-admin-brief',
       projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-epic-foundation',
       title: 'Подготовить бриф и дорожную карту',
       description: 'Сформировать цели, KPI и ритуалы команды.',
       status: 'in_progress',
       assigneeId: DEFAULT_WORKSPACE_USER_ID,
       labels: ['Стратегия', 'Команда'],
+      kind: 'task',
+      order: 2,
+      estimateMinutes: 16 * 60,
+      spentMinutes: 12 * 60,
+      checklist: [
+        { id: 'task-admin-brief-check-goals', title: 'Собрать входящие ожидания', done: true },
+        { id: 'task-admin-brief-check-risks', title: 'Зафиксировать ключевые риски', done: false }
+      ],
       createdAt: '2024-05-02T09:00:00.000Z',
       updatedAt: '2024-06-08T14:20:00.000Z'
     },
     {
+      id: 'task-admin-brief-research',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-brief',
+      title: 'Исследовать процессы команд',
+      description: 'Провести интервью с ключевыми стейкхолдерами и собрать боли.',
+      status: 'review',
+      assigneeId: 'researcher-1',
+      labels: ['Research'],
+      kind: 'subtask',
+      order: 3,
+      estimateMinutes: 8 * 60,
+      spentMinutes: 6 * 60,
+      checklist: [
+        { id: 'task-admin-brief-research-check-plan', title: 'Подготовить гайд интервью', done: true },
+        { id: 'task-admin-brief-research-check-sync', title: 'Согласовать выводы с командой', done: false }
+      ],
+      createdAt: '2024-05-04T11:30:00.000Z',
+      updatedAt: '2024-06-07T08:45:00.000Z'
+    },
+    {
+      id: 'task-admin-brief-rituals',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-brief',
+      title: 'Настроить командные ритуалы',
+      description: 'Внедрить еженедельные ретро и синки с понятной повесткой.',
+      status: 'new',
+      assigneeId: 'facilitator-1',
+      labels: ['Команда'],
+      kind: 'subtask',
+      order: 4,
+      estimateMinutes: 4 * 60,
+      checklist: [
+        { id: 'task-admin-brief-rituals-check-cadence', title: 'Определить расписание', done: false },
+        { id: 'task-admin-brief-rituals-check-tools', title: 'Подобрать инструменты', done: false }
+      ],
+      createdAt: '2024-05-05T09:45:00.000Z',
+      updatedAt: '2024-06-01T07:30:00.000Z'
+    },
+    {
+      id: 'task-admin-epic-experience',
+      projectId: 'proj-admin-onboarding',
+      title: 'Эпик: Опыт новичков',
+      description: 'Продумать визуальный язык и впечатление от первых дней.',
+      status: 'review',
+      assigneeId: 'designer-1',
+      labels: ['Дизайн'],
+      kind: 'epic',
+      order: 5,
+      estimateMinutes: 24 * 60,
+      spentMinutes: 10 * 60,
+      checklist: [
+        { id: 'task-admin-epic-experience-check-brief', title: 'Собрать бриф по тону коммуникаций', done: true },
+        { id: 'task-admin-epic-experience-check-assets', title: 'Подготовить шаблоны приветствий', done: false }
+      ],
+      createdAt: '2024-05-10T11:00:00.000Z',
+      updatedAt: '2024-06-09T10:30:00.000Z'
+    },
+    {
       id: 'task-admin-design',
       projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-epic-experience',
       title: 'Собрать дизайн-концепты',
       description: 'Подготовить варианты визуального языка продукта.',
       status: 'review',
       assigneeId: 'designer-1',
       labels: ['Дизайн'],
+      kind: 'task',
+      order: 6,
+      estimateMinutes: 12 * 60,
+      spentMinutes: 8 * 60,
+      checklist: [
+        { id: 'task-admin-design-check-moodboard', title: 'Собрать мудборд', done: true },
+        { id: 'task-admin-design-check-feedback', title: 'Провести сессию фидбэка', done: false }
+      ],
       createdAt: '2024-05-12T11:00:00.000Z',
       updatedAt: '2024-06-09T10:30:00.000Z'
     }

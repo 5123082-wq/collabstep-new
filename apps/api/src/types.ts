@@ -9,6 +9,13 @@ export type ProjectType =
   | 'service'
   | 'internal';
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
+export type TaskKind = 'epic' | 'task' | 'subtask';
+
+export interface TaskChecklistItem {
+  id: ID;
+  title: string;
+  done: boolean;
+}
 export type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'payable' | 'closed';
 
 export interface ProjectWorkflow {
@@ -65,6 +72,11 @@ export interface Task {
   dueAt?: string;
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
+  kind?: TaskKind;
+  order?: number;
+  estimateMinutes?: number;
+  spentMinutes?: number;
+  checklist?: TaskChecklistItem[];
   createdAt: string;
   updatedAt: string;
 }

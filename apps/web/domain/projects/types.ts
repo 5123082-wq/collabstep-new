@@ -2,6 +2,13 @@ export type ID = string;
 
 export type ProjectStage = 'discovery' | 'design' | 'build' | 'launch' | 'support';
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
+export type TaskKind = 'epic' | 'task' | 'subtask';
+
+export interface TaskChecklistItem {
+  id: ID;
+  title: string;
+  done: boolean;
+}
 
 export interface ProjectWorkflow {
   projectId: ID;
@@ -52,6 +59,22 @@ export interface Task {
   dueAt?: string;
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
+  kind?: TaskKind;
+  order?: number;
+  estimateMinutes?: number;
+  spentMinutes?: number;
+  checklist?: TaskChecklistItem[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TaskHierarchyNode extends Task {
+  depth: number;
+  ancestors: ID[];
+  children: TaskHierarchyNode[];
+  progress: {
+    total: number;
+    done: number;
+    percentage: number | null;
+  };
 }
