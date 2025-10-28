@@ -82,6 +82,30 @@ function formatBudgetAmount(value?: number | string | null): string {
   }
 }
 
+const PROJECT_TYPE_LABELS: Record<NonNullable<ProjectCard['type']> | 'internal', string> = {
+  product: 'Продукт',
+  marketing: 'Маркетинг',
+  operations: 'Операции',
+  service: 'Услуги',
+  internal: 'Внутренний'
+};
+
+const PROJECT_VISIBILITY_LABELS: Record<ProjectCard['visibility'], string> = {
+  private: 'Приватный',
+  public: 'Публичный'
+};
+
+function formatProjectType(value?: ProjectCard['type']): string {
+  if (!value) {
+    return PROJECT_TYPE_LABELS.internal;
+  }
+  return PROJECT_TYPE_LABELS[value] ?? PROJECT_TYPE_LABELS.internal;
+}
+
+function formatProjectVisibility(value: ProjectCard['visibility']): string {
+  return PROJECT_VISIBILITY_LABELS[value] ?? PROJECT_VISIBILITY_LABELS.private;
+}
+
 function Avatar({
   name,
   email,
@@ -138,6 +162,13 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
               )}
             >
               {isArchived ? 'В архиве' : 'Активен'}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
+            <span className="rounded-full bg-neutral-900 px-2 py-1">Пространство: {project.workspace.name}</span>
+            <span className="rounded-full bg-neutral-900 px-2 py-1">Тип: {formatProjectType(project.type)}</span>
+            <span className="rounded-full bg-neutral-900 px-2 py-1">
+              Доступ: {formatProjectVisibility(project.visibility)}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
@@ -289,6 +320,13 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
             </span>
           </div>
           <p className="text-sm text-neutral-400">{project.description || 'Описание появится позже.'}</p>
+          <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
+            <span className="rounded-full bg-neutral-900 px-2 py-1">Пространство: {project.workspace.name}</span>
+            <span className="rounded-full bg-neutral-900 px-2 py-1">Тип: {formatProjectType(project.type)}</span>
+            <span className="rounded-full bg-neutral-900 px-2 py-1">
+              Доступ: {formatProjectVisibility(project.visibility)}
+            </span>
+          </div>
           <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-400">
             <span>Создан: {formatDate(project.createdAt)}</span>
             <span>Дедлайн: {formatDate(project.deadline)}</span>

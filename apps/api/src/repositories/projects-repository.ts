@@ -1,5 +1,5 @@
 import { memory } from '../data/memory';
-import type { Project, ProjectMember, ProjectStage } from '../types';
+import type { Project, ProjectMember, ProjectStage, ProjectType, ProjectVisibility } from '../types';
 
 function cloneProject(project: Project): Project {
   return { ...project };
@@ -33,26 +33,49 @@ export class ProjectsRepository {
     title: string;
     description?: string;
     ownerId: string;
+    workspaceId: string;
     stage?: ProjectStage;
     deadline?: string;
+    type?: ProjectType;
+    visibility?: ProjectVisibility;
+    workflowId?: string;
   }): Project {
     const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    const workflowId = payload.workflowId ?? `wf-${id}`;
+    const allowedTypes: ProjectType[] = ['product', 'marketing', 'operations', 'service', 'internal'];
+    const type = payload.type && allowedTypes.includes(payload.type) ? payload.type : undefined;
+
+    const visibility: ProjectVisibility = payload.visibility === 'public' ? 'public' : 'private';
+
     const project: Project = {
-      id: crypto.randomUUID(),
+      id,
+      workspaceId: payload.workspaceId,
       title: payload.title,
       description: payload.description ?? '',
       ownerId: payload.ownerId,
+      visibility,
+      workflowId,
       archived: false,
       createdAt: now,
       updatedAt: now,
       ...(payload.stage ? { stage: payload.stage } : {}),
       ...(payload.deadline ? { deadline: payload.deadline } : {})
     };
+
+    if (type) {
+      project.type = type;
+    }
     memory.PROJECTS.push(project);
     return cloneProject(project);
   }
 
-  update(id: string, patch: Partial<Omit<Project, 'id' | 'ownerId' | 'createdAt'>>): Project | null {
+  update(
+    id: string,
+    patch: Partial<
+      Pick<Project, 'title' | 'description' | 'stage' | 'archived' | 'deadline' | 'type' | 'visibility' | 'workflowId'>
+    >
+  ): Project | null {
     const idx = memory.PROJECTS.findIndex((item) => item.id === id);
     if (idx === -1) {
       return null;
@@ -79,8 +102,23 @@ export class ProjectsRepository {
       next.stage = patch.stage as ProjectStage;
     }
 
+    if (
+      typeof patch.type === 'string' &&
+      ['product', 'marketing', 'operations', 'service', 'internal'].includes(patch.type)
+    ) {
+      next.type = patch.type as ProjectType;
+    }
+
     if (typeof patch.archived === 'boolean') {
       next.archived = patch.archived;
+    }
+
+    if (patch.visibility === 'private' || patch.visibility === 'public') {
+      next.visibility = patch.visibility;
+    }
+
+    if (typeof patch.workflowId === 'string' && patch.workflowId) {
+      next.workflowId = patch.workflowId;
     }
 
     if ('deadline' in patch) {
@@ -104,6 +142,7 @@ export class ProjectsRepository {
     memory.TASKS = memory.TASKS.filter((task) => task.projectId !== id);
     memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== id);
     delete memory.WORKFLOWS[id];
+    delete memory.PROJECT_MEMBERS[id];
     return true;
   }
 

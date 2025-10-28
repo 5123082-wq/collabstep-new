@@ -16,13 +16,19 @@ export interface Iteration {
   end?: string;
 }
 
+export type ProjectType = 'product' | 'marketing' | 'operations' | 'service' | 'internal';
+
 export interface Project {
   id: ID;
+  workspaceId: ID;
   title: string;
   description?: string;
   ownerId: ID;
   deadline?: string;
   stage?: ProjectStage;
+  type?: ProjectType;
+  visibility: 'private' | 'public';
+  workflowId?: ID;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -30,7 +36,7 @@ export interface Project {
 
 export interface ProjectMember {
   userId: ID;
-  role: 'owner' | 'coord' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member' | 'viewer';
 }
 
 export interface Task {

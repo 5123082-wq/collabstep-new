@@ -1,8 +1,9 @@
-import type {
-  ProjectCard,
-  ProjectCardFilters as ApiProjectCardFilters,
-  ProjectCardSort,
-  ProjectCardTab
+import {
+  DEFAULT_WORKSPACE_ID,
+  type ProjectCard,
+  type ProjectCardFilters as ApiProjectCardFilters,
+  type ProjectCardSort,
+  type ProjectCardTab
 } from '@collabverse/api';
 
 export type ProjectsOverviewTab = ProjectCardTab;
@@ -267,7 +268,10 @@ export function buildTagOptions(cards: ProjectCard[]): string[] {
 export function mapProjectCard(dto: ProjectCard): ProjectCard {
   return {
     ...dto,
+    workspace: dto.workspace ?? { id: DEFAULT_WORKSPACE_ID, name: 'Рабочее пространство' },
     description: dto.description ?? '',
+    visibility: dto.visibility ?? 'private',
+    type: dto.type ?? 'internal',
     members: dto.members ?? [],
     tags: dto.tags ?? [],
     tasks: {

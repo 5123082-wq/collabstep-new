@@ -16,6 +16,9 @@ export interface CreateProjectPayload {
   description?: string;
   ownerId?: ID;
   stage?: ProjectStage | null;
+  workspaceId?: ID;
+  visibility?: 'private' | 'public';
+  type?: 'product' | 'marketing' | 'operations' | 'service' | 'internal';
 }
 
 export interface UpdateProjectPayload {
@@ -24,6 +27,8 @@ export interface UpdateProjectPayload {
   description?: string | null;
   stage?: ProjectStage | null;
   archived?: boolean;
+  type?: 'product' | 'marketing' | 'operations' | 'service' | 'internal';
+  visibility?: 'private' | 'public';
 }
 
 export interface ProjectSectionAPI {

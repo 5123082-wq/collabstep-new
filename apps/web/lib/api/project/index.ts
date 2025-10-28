@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { DEFAULT_WORKSPACE_ID } from '@collabverse/api';
 import { memory } from '@/mocks/projects-memory';
 import type {
   CreateProjectPayload,
@@ -81,10 +82,15 @@ export const projectSectionApi: ProjectSectionAPI = {
     await ensureDelay();
     const now = new Date().toISOString();
     const baseId = payload.title?.trim().toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '') ?? '';
+    const generatedId = baseId ? `${baseId}-${randomUUID().slice(0, 6)}` : randomUUID();
     const project: Project = {
-      id: baseId ? `${baseId}-${randomUUID().slice(0, 6)}` : randomUUID(),
+      id: generatedId,
+      workspaceId: payload.workspaceId ?? DEFAULT_WORKSPACE_ID,
       title: payload.title,
       ownerId: resolveOwnerId(payload.ownerId),
+      visibility: payload.visibility ?? 'private',
+      workflowId: `wf-${generatedId}`,
+      type: payload.type ?? 'internal',
       archived: false,
       createdAt: now,
       updatedAt: now

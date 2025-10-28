@@ -1,4 +1,6 @@
 import type {
+  Account,
+  AccountMember,
   AuditLogEntry,
   DomainEvent,
   Expense,
@@ -9,12 +11,18 @@ import type {
   ProjectBudgetSnapshot,
   ProjectMember,
   ProjectTemplate,
+  ProjectType,
+  ProjectVisibility,
   ProjectWorkflow,
   Task,
+  Workspace,
+  WorkspaceMember,
   WorkspaceUser
 } from '../types';
 
 export const DEFAULT_WORKSPACE_USER_ID = 'admin.demo@collabverse.test';
+export const DEFAULT_ACCOUNT_ID = 'acct-collabverse';
+export const DEFAULT_WORKSPACE_ID = 'ws-collabverse-core';
 
 export const WORKSPACE_USERS: WorkspaceUser[] = [
   {
@@ -63,23 +71,79 @@ globalMemoryScope.__collabverseFinanceIdempotencyKeys__ = globalIdempotencyKeys;
 
 export const memory = {
   WORKSPACE_USERS,
+  ACCOUNTS: [
+    {
+      id: DEFAULT_ACCOUNT_ID,
+      name: 'Collabverse Demo Org',
+      ownerId: DEFAULT_WORKSPACE_USER_ID,
+      createdAt: '2024-01-10T08:00:00.000Z',
+      updatedAt: '2024-06-01T10:00:00.000Z'
+    }
+  ] as Account[],
+  ACCOUNT_MEMBERS: [
+    { accountId: DEFAULT_ACCOUNT_ID, userId: DEFAULT_WORKSPACE_USER_ID, role: 'owner' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: 'user.demo@collabverse.test', role: 'admin' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: 'finance.pm@collabverse.test', role: 'member' },
+    { accountId: DEFAULT_ACCOUNT_ID, userId: 'designer-1', role: 'viewer' }
+  ] as AccountMember[],
+  WORKSPACES: [
+    {
+      id: DEFAULT_WORKSPACE_ID,
+      accountId: DEFAULT_ACCOUNT_ID,
+      name: 'Core Product Team',
+      description: 'Рабочее пространство основной продуктовой команды.',
+      visibility: 'private' as ProjectVisibility,
+      archived: false,
+      createdAt: '2024-01-15T09:00:00.000Z',
+      updatedAt: '2024-06-01T10:00:00.000Z'
+    },
+    {
+      id: 'ws-marketing',
+      accountId: DEFAULT_ACCOUNT_ID,
+      name: 'Маркетинг и бренд',
+      description: 'Команда продвижения, контента и событий.',
+      visibility: 'public' as ProjectVisibility,
+      archived: false,
+      createdAt: '2024-02-01T09:00:00.000Z',
+      updatedAt: '2024-05-25T11:00:00.000Z'
+    }
+  ] as Workspace[],
+  WORKSPACE_MEMBERS: {
+    [DEFAULT_WORKSPACE_ID]: [
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: DEFAULT_WORKSPACE_USER_ID, role: 'owner' },
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: 'user.demo@collabverse.test', role: 'admin' },
+      { workspaceId: DEFAULT_WORKSPACE_ID, userId: 'finance.pm@collabverse.test', role: 'member' }
+    ],
+    'ws-marketing': [
+      { workspaceId: 'ws-marketing', userId: DEFAULT_WORKSPACE_USER_ID, role: 'admin' },
+      { workspaceId: 'ws-marketing', userId: 'designer-1', role: 'member' }
+    ]
+  } as Record<string, WorkspaceMember[]>,
   PROJECTS: [
     {
       id: 'proj-admin-onboarding',
+      workspaceId: DEFAULT_WORKSPACE_ID,
       title: 'Онбординг команды Collabstep',
       description: 'Первые шаги команды после запуска платформы.',
       ownerId: DEFAULT_WORKSPACE_USER_ID,
       stage: 'design',
+      type: 'product' as ProjectType,
+      visibility: 'private' as ProjectVisibility,
+      workflowId: 'wf-proj-admin-onboarding',
       archived: false,
       createdAt: '2024-05-01T08:30:00.000Z',
       updatedAt: '2024-06-10T12:15:00.000Z'
     },
     {
       id: 'proj-admin-landing-archive',
+      workspaceId: 'ws-marketing',
       title: 'Редизайн лендинга (архив)',
       description: 'Завершённая инициатива по обновлению главной страницы.',
       ownerId: DEFAULT_WORKSPACE_USER_ID,
       stage: 'launch',
+      type: 'marketing' as ProjectType,
+      visibility: 'public' as ProjectVisibility,
+      workflowId: 'wf-proj-admin-landing-archive',
       archived: true,
       createdAt: '2023-11-05T10:00:00.000Z',
       updatedAt: '2024-01-20T17:45:00.000Z'
@@ -113,6 +177,10 @@ export const memory = {
     'proj-admin-onboarding': {
       projectId: 'proj-admin-onboarding',
       statuses: ['new', 'in_progress', 'review', 'done']
+    },
+    'proj-admin-landing-archive': {
+      projectId: 'proj-admin-landing-archive',
+      statuses: ['new', 'in_progress', 'review', 'done']
     }
   } as Record<string, ProjectWorkflow>,
   ITERATIONS: [
@@ -143,7 +211,8 @@ export const memory = {
     ],
     'proj-admin-landing-archive': [
       { userId: 'admin.demo@collabverse.test', role: 'owner' },
-      { userId: 'finance.pm@collabverse.test', role: 'admin' }
+      { userId: 'finance.pm@collabverse.test', role: 'admin' },
+      { userId: 'designer-1', role: 'viewer' }
     ]
   } as Record<string, ProjectMember[]>,
   EXPENSES: [] as Expense[],

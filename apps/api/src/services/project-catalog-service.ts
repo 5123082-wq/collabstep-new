@@ -3,6 +3,7 @@ import { projectsRepository } from '../repositories/projects-repository';
 import { tasksRepository } from '../repositories/tasks-repository';
 import { templatesRepository } from '../repositories/templates-repository';
 import { usersRepository } from '../repositories/users-repository';
+import { workspacesRepository } from '../repositories/workspaces-repository';
 import type {
   CatalogProject,
   ProjectCard,
@@ -13,6 +14,8 @@ import type {
   ProjectMember,
   ProjectStatus,
   ProjectTemplate,
+  ProjectType,
+  ProjectVisibility,
   WorkspaceUser
 } from '../types';
 
@@ -39,6 +42,9 @@ interface InternalProjectCardFilters extends ProjectCardFilters {
   dateField: 'createdAt' | 'deadline';
   dateFrom: string | null;
   dateTo: string | null;
+  workspaceIds: string[];
+  visibility: ProjectVisibility | 'all';
+  types: ProjectType[];
 }
 
 function deduplicateLabels(values: string[] | undefined): string[] {
@@ -104,7 +110,20 @@ export class ProjectCatalogService {
       tags: Array.isArray(params.filters?.tags) ? params.filters?.tags.filter(Boolean) : [],
       dateField: params.filters?.dateField === 'deadline' ? 'deadline' : 'createdAt',
       dateFrom: params.filters?.dateFrom ?? null,
-      dateTo: params.filters?.dateTo ?? null
+      dateTo: params.filters?.dateTo ?? null,
+      workspaceIds: Array.isArray(params.filters?.workspaceIds)
+        ? params.filters?.workspaceIds.filter(Boolean)
+        : [],
+      visibility:
+        params.filters?.visibility === 'public' || params.filters?.visibility === 'private'
+          ? params.filters.visibility
+          : 'all',
+      types: Array.isArray(params.filters?.types)
+        ? (params.filters.types.filter((item): item is ProjectType =>
+            typeof item === 'string' &&
+            ['product', 'marketing', 'operations', 'service', 'internal'].includes(item)
+          ) as ProjectType[])
+        : []
     };
 
     const projects = projectsRepository.list();
@@ -182,6 +201,8 @@ export class ProjectCatalogService {
       return members;
     };
 
+    const workspaces = new Map(workspacesRepository.list().map((workspace) => [workspace.id, workspace]));
+
     const cards: ProjectCardItem[] = [];
     for (const project of projects) {
       const ownerProfile = resolveUser(project.ownerId);
@@ -200,7 +221,6 @@ export class ProjectCatalogService {
       const canCreateTask =
         effectiveRole === 'owner' ||
         effectiveRole === 'admin' ||
-        effectiveRole === 'coord' ||
         effectiveRole === 'member';
       const canView = Boolean(effectiveRole) || project.ownerId === currentUserId;
 
@@ -221,10 +241,16 @@ export class ProjectCatalogService {
       const tags = stats ? Array.from(stats.labels.values()).sort((a, b) => a.localeCompare(b, 'ru')) : [];
       const status: ProjectStatus = project.archived ? 'archived' : 'active';
 
+      const workspace = workspaces.get(project.workspaceId);
       const card: ProjectCardItem = {
         id: project.id,
+        workspace: {
+          id: project.workspaceId,
+          name: workspace?.name ?? 'Рабочее пространство'
+        },
         title: project.title,
         description: project.description ?? '',
+        visibility: project.visibility,
         status,
         owner,
         members,
@@ -248,6 +274,14 @@ export class ProjectCatalogService {
         }
       };
 
+      if (project.type) {
+        card.type = project.type;
+      }
+
+      if (project.workflowId) {
+        card.workflowId = project.workflowId;
+      }
+
       if (project.deadline) {
         card.deadline = project.deadline;
       }
@@ -264,6 +298,21 @@ export class ProjectCatalogService {
 
       if (filters.ownerIds.length > 0 && !filters.ownerIds.includes(project.ownerId)) {
         continue;
+      }
+
+      if (filters.workspaceIds.length > 0 && !filters.workspaceIds.includes(project.workspaceId)) {
+        continue;
+      }
+
+      if (filters.visibility !== 'all' && project.visibility !== filters.visibility) {
+        continue;
+      }
+
+      if (filters.types.length > 0) {
+        const projectType = project.type ?? 'internal';
+        if (!filters.types.includes(projectType as ProjectType)) {
+          continue;
+        }
       }
 
       if (filters.memberIds.length > 0) {
@@ -312,6 +361,14 @@ export class ProjectCatalogService {
             continue;
           }
         }
+      }
+
+      const isPrivate = project.visibility === 'private';
+      const isMember =
+        project.ownerId === currentUserId ||
+        rawMembers.some((member) => member.userId === currentUserId);
+      if (isPrivate && !isMember) {
+        continue;
       }
 
       cards.push(card);
