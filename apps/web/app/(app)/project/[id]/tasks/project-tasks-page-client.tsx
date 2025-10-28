@@ -1187,6 +1187,9 @@ function areChecklistsEqual(a: TaskChecklistItem[], b: TaskChecklistItem[]) {
   for (let index = 0; index < a.length; index += 1) {
     const left = a[index];
     const right = b[index];
+    if (!left || !right) {
+      return false;
+    }
     if (left.id !== right.id || left.title !== right.title || left.done !== right.done) {
       return false;
     }
