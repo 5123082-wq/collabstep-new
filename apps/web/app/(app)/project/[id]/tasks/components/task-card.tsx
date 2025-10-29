@@ -83,3 +83,5 @@ export function TaskCard({ task, onClick, className, footer }: TaskCardProps) {
 }
 
 export default TaskCard;
+
+

@@ -11,7 +11,7 @@ const CommentUpdateSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; taskId: string; commentId: string } }
+  { params }: { params: { id: string; 'task-id': string; 'comment-id': string } }
 ) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -25,7 +25,7 @@ export async function PATCH(
     ...(parsed.data.mentions !== undefined ? { mentions: parsed.data.mentions } : {}),
     ...(parsed.data.attachments !== undefined ? { attachments: parsed.data.attachments } : {})
   };
-  const updated = commentsRepository.update(params.commentId, patch);
+  const updated = commentsRepository.update(params['comment-id'], patch);
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -42,11 +42,14 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string; taskId: string; commentId: string } }
+  { params }: { params: { id: string; 'task-id': string; 'comment-id': string } }
 ) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  commentsRepository.delete(params.commentId);
+  commentsRepository.delete(params['comment-id']);
   return NextResponse.json({ ok: true });
 }
+
+
+

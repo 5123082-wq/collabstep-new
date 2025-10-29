@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
-import TaskRow from './TaskRow';
+import TaskRow from './task-row';
 
 type ListViewProps = {
   tree: TaskTreeNode[];
@@ -72,3 +72,5 @@ function ListNode({ node, depth, onTaskClick }: ListNodeProps) {
 }
 
 export default ListView;
+
+

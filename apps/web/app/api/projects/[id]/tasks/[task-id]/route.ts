@@ -20,17 +20,17 @@ const TaskPatchSchema = z.object({
   loggedTime: z.number().int().nonnegative().optional()
 });
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string; taskId: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string; 'task-id': string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const parsed = TaskPatchSchema.safeParse(await req.json().catch(() => ({})));
+  const parsed = TaskPatchSchema.safeParse(await req.json().catch(() => ({ } )));
   if (!parsed.success) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const idx = memory.TASKS.findIndex((task) => task.id === params.taskId && task.projectId === params.id);
+  const idx = memory.TASKS.findIndex((task) => task.id === params['task-id'] && task.projectId === params.id);
   if (idx === -1) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -119,3 +119,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   return NextResponse.json(existing);
 }
+
+
+

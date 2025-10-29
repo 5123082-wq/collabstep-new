@@ -63,7 +63,7 @@ async function parseRequest(req: NextRequest) {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; documentId: string } }
+  { params }: { params: { id: string; 'document-id': string } }
 ) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -88,7 +88,7 @@ export async function POST(
     return NextResponse.json({ error: 'file_not_found' }, { status: 404 });
   }
   const versionInput = {
-    documentId: params.documentId,
+    documentId: params['document-id'],
     fileId,
     createdBy: parsed.createdBy,
     ...(parsed.notes ? { notes: parsed.notes } : {})
@@ -101,8 +101,10 @@ export async function POST(
     projectId: params.id,
     fileId,
     linkedEntity: 'document',
-    entityId: params.documentId,
+    entityId: params['document-id'],
     createdBy: parsed.createdBy
   });
   return NextResponse.json({ document }, { status: 201 });
 }
+
+

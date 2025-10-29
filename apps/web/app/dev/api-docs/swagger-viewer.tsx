@@ -66,3 +66,5 @@ export function SwaggerViewer() {
 
   return <div id="swagger-ui" ref={ref} className="min-h-[70vh]" />;
 }
+
+

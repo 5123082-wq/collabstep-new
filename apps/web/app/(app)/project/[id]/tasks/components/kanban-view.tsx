@@ -14,7 +14,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, TaskStatus } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import TaskCard, { TASK_STATUS_LABELS } from './TaskCard';
+import TaskCard, { TASK_STATUS_LABELS } from './task-card';
 
 type KanbanViewProps = {
   statuses: TaskStatus[];
@@ -153,3 +153,5 @@ function DraggableTaskCard({ task, onTaskClick, isActive }: DraggableTaskCardPro
 }
 
 export default KanbanView;
+
+
