@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { attachmentsRepository, filesRepository, type AttachmentEntityType } from '@collabverse/api';
+import { attachmentsRepository, filesRepository, projectsRepository, type AttachmentEntityType } from '@collabverse/api';
 import { flags } from '@/lib/flags';
+import { recordAudit } from '@/lib/audit/log';
 
 const ExistingAttachmentSchema = z.object({
   fileId: z.string(),
@@ -185,6 +186,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     linkedEntity: parsed.mode === 'existing' ? parsed.linkedEntity : parsed.data.linkedEntity,
     entityId: parsed.mode === 'existing' ? parsed.entityId ?? null : parsed.data.entityId ?? null,
     createdBy: parsed.mode === 'existing' ? parsed.createdBy : parsed.data.uploaderId
+  });
+
+  const project = projectsRepository.findById(params.id);
+  recordAudit({
+    action: 'file.attached',
+    entity: { type: 'file', id: attachment.id },
+    projectId: params.id,
+    workspaceId: project?.workspaceId,
+    after: {
+      attachmentId: attachment.id,
+      fileId,
+      linkedEntity: attachment.linkedEntity,
+      entityId: attachment.entityId
+    }
   });
 
   return NextResponse.json(

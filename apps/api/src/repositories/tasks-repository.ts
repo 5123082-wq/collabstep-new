@@ -23,6 +23,8 @@ export type CreateTaskInput = {
   dueAt?: string;
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
+  estimatedTime?: number | null;
+  loggedTime?: number | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -103,7 +105,9 @@ export class TasksRepository {
       ...(input.startAt ? { startAt: input.startAt } : {}),
       ...(input.dueAt ? { dueAt: input.dueAt } : {}),
       ...(input.priority ? { priority: input.priority } : {}),
-      ...(Array.isArray(input.labels) ? { labels: [...input.labels] } : {})
+      ...(Array.isArray(input.labels) ? { labels: [...input.labels] } : {}),
+      ...(input.estimatedTime !== undefined ? { estimatedTime: input.estimatedTime } : {}),
+      ...(input.loggedTime !== undefined ? { loggedTime: input.loggedTime } : {})
     };
 
     memory.TASKS.push(task);

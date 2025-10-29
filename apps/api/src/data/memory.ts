@@ -243,6 +243,8 @@ export const memory = {
       status: 'in_progress',
       assigneeId: DEFAULT_WORKSPACE_USER_ID,
       labels: ['Стратегия', 'Команда'],
+      estimatedTime: 32,
+      loggedTime: 18,
       createdAt: '2024-05-02T09:00:00.000Z',
       updatedAt: '2024-06-08T14:20:00.000Z'
     },
@@ -254,6 +256,8 @@ export const memory = {
       description: 'Согласовать ключевые deliverables и зоны ответственности.',
       status: 'new',
       assigneeId: 'user.demo@collabverse.test',
+      estimatedTime: 6,
+      loggedTime: 0,
       createdAt: '2024-05-03T10:00:00.000Z',
       updatedAt: '2024-05-15T12:00:00.000Z'
     },
@@ -265,6 +269,8 @@ export const memory = {
       description: 'Интервьюировать ключевых участников и собрать потребности.',
       status: 'review',
       iterationId: 'iter-admin-onboarding-sprint-1',
+      estimatedTime: 14,
+      loggedTime: 12,
       createdAt: '2024-05-05T11:30:00.000Z',
       updatedAt: '2024-06-07T18:45:00.000Z'
     },
@@ -274,6 +280,8 @@ export const memory = {
       parentId: 'task-admin-brief-survey',
       title: 'Подготовить отчёт по интервью',
       status: 'in_progress',
+      estimatedTime: 10,
+      loggedTime: 5,
       createdAt: '2024-05-06T13:00:00.000Z',
       updatedAt: '2024-06-09T09:10:00.000Z'
     },
@@ -286,6 +294,8 @@ export const memory = {
       status: 'review',
       assigneeId: 'designer-1',
       labels: ['Дизайн'],
+      estimatedTime: 24,
+      loggedTime: 19,
       createdAt: '2024-05-12T11:00:00.000Z',
       updatedAt: '2024-06-09T10:30:00.000Z'
     },
@@ -297,6 +307,8 @@ export const memory = {
       description: 'Сверстать компоненты, состояния и адаптивные варианты.',
       status: 'in_progress',
       assigneeId: 'designer-1',
+      estimatedTime: 20,
+      loggedTime: 11,
       createdAt: '2024-05-13T09:30:00.000Z',
       updatedAt: '2024-06-09T11:00:00.000Z'
     },
@@ -307,6 +319,8 @@ export const memory = {
       title: 'Подготовить ассеты для презентации',
       description: 'Экспортировать макеты и сделать превью для команды.',
       status: 'new',
+      estimatedTime: 8,
+      loggedTime: 0,
       createdAt: '2024-05-14T12:15:00.000Z',
       updatedAt: '2024-06-09T11:10:00.000Z'
     },
@@ -317,6 +331,8 @@ export const memory = {
       title: 'Провести аудит контента',
       description: 'Собрать обратную связь и подготовить обновления.',
       status: 'done',
+      estimatedTime: 12,
+      loggedTime: 13,
       createdAt: '2023-10-15T08:00:00.000Z',
       updatedAt: '2023-11-10T16:00:00.000Z'
     }
@@ -366,7 +382,49 @@ export const memory = {
   EXPENSES: [] as Expense[],
   EXPENSE_ATTACHMENTS: [] as ExpenseAttachment[],
   PROJECT_BUDGETS: [] as (ProjectBudget | ProjectBudgetSnapshot)[],
-  AUDIT_LOG: [] as AuditLogEntry[],
+  AUDIT_LOG: [
+    {
+      id: 'audit-proj-onboarding-created',
+      actorId: DEFAULT_WORKSPACE_USER_ID,
+      action: 'project.created',
+      projectId: 'proj-admin-onboarding',
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      entity: { type: 'project', id: 'proj-admin-onboarding' },
+      after: { id: 'proj-admin-onboarding', title: 'Онбординг админ-команды' },
+      createdAt: '2024-05-01T08:30:00.000Z'
+    },
+    {
+      id: 'audit-task-brief-created',
+      actorId: DEFAULT_WORKSPACE_USER_ID,
+      action: 'task.created',
+      projectId: 'proj-admin-onboarding',
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      entity: { type: 'task', id: 'task-admin-brief' },
+      after: { title: 'Подготовить бриф и дорожную карту', status: 'in_progress' },
+      createdAt: '2024-05-02T09:05:00.000Z'
+    },
+    {
+      id: 'audit-task-design-status',
+      actorId: 'designer-1',
+      action: 'task.status_changed',
+      projectId: 'proj-admin-onboarding',
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      entity: { type: 'task', id: 'task-admin-design-library' },
+      before: { status: 'new' },
+      after: { status: 'in_progress' },
+      createdAt: '2024-05-18T10:00:00.000Z'
+    },
+    {
+      id: 'audit-task-brief-time',
+      actorId: DEFAULT_WORKSPACE_USER_ID,
+      action: 'task.time_updated',
+      projectId: 'proj-admin-onboarding',
+      workspaceId: DEFAULT_WORKSPACE_ID,
+      entity: { type: 'task', id: 'task-admin-brief-survey' },
+      after: { loggedTime: 12, estimatedTime: 14 },
+      createdAt: '2024-06-07T19:00:00.000Z'
+    }
+  ] as AuditLogEntry[],
   EVENTS: [] as DomainEvent[],
   IDEMPOTENCY_KEYS: globalIdempotencyKeys
 };

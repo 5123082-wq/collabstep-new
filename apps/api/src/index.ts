@@ -43,7 +43,7 @@ export {
   type ExpenseEntityRepository,
   type ExpenseIdempotencyRepository
 } from './repositories/expense-store';
-export { auditLogRepository } from './repositories/audit-log-repository';
+export { auditLogRepository, type AuditLogFilters } from './repositories/audit-log-repository';
 export { domainEventsRepository } from './repositories/domain-events-repository';
 export {
   financeService,

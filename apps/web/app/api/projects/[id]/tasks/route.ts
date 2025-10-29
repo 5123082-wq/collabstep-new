@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { tasksRepository } from '@collabverse/api';
+import { projectsRepository, tasksRepository } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
+import { recordAudit } from '@/lib/audit/log';
 
 function flattenTaskTree(tree: TaskTreeNode[]): Task[] {
   const result: Task[] = [];
@@ -66,7 +67,9 @@ const TaskCreate = z.object({
   startAt: z.string().datetime().optional(),
   dueAt: z.string().datetime().optional(),
   priority: z.enum(['low', 'med', 'high']).optional(),
-  labels: z.array(z.string()).optional()
+  labels: z.array(z.string()).optional(),
+  estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  loggedTime: z.number().int().nonnegative().optional()
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -96,8 +99,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ...(b.startAt ? { startAt: b.startAt } : {}),
     ...(b.dueAt ? { dueAt: b.dueAt } : {}),
     ...(b.priority ? { priority: b.priority } : {}),
-    ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
+    ...(Array.isArray(b.labels) ? { labels: b.labels } : {}),
+    ...(b.estimatedTime !== undefined ? { estimatedTime: b.estimatedTime } : {}),
+    ...(b.loggedTime !== undefined ? { loggedTime: b.loggedTime } : { loggedTime: 0 })
   }) as Task;
+
+  const project = projectsRepository.findById(params.id);
+  recordAudit({
+    action: 'task.created',
+    entity: { type: 'task', id: task.id },
+    projectId: params.id,
+    workspaceId: project?.workspaceId,
+    after: task
+  });
 
   return NextResponse.json(task, { status: 201 });
 }

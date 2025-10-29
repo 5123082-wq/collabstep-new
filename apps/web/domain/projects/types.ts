@@ -82,6 +82,8 @@ export interface Task {
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
   attachments?: FileObject[];
+  estimatedTime?: number | null;
+  loggedTime?: number | null;
   createdAt: string;
   updatedAt: string;
 }

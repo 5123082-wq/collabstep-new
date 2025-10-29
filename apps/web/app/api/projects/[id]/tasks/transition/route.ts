@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { projectsRepository } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
 import type { TaskStatus } from '@/domain/projects/types';
+import { recordAudit } from '@/lib/audit/log';
 
 const BodySchema = z.object({
   taskId: z.string().min(1),
@@ -34,8 +36,19 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!task) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
+  const before = { ...task };
   task.status = toStatus;
   task.updatedAt = new Date().toISOString();
+
+  const project = projectsRepository.findById(params.id);
+  recordAudit({
+    action: 'task.status_changed',
+    entity: { type: 'task', id: task.id },
+    projectId: params.id,
+    workspaceId: project?.workspaceId,
+    before,
+    after: task
+  });
 
   return NextResponse.json(task);
 }

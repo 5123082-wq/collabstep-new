@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import type { Project, ProjectStage } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
+import { recordAudit } from '@/lib/audit/log';
 
 function parseBudgetPatch(input: unknown): number | null | undefined {
   if (input === undefined) {
@@ -92,6 +93,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   memory.PROJECTS[idx] = merged;
 
+  recordAudit({
+    action: 'project.updated',
+    entity: { type: 'project', id: merged.id },
+    projectId: merged.id,
+    workspaceId: merged.workspaceId,
+    before: current,
+    after: merged
+  });
+
   return NextResponse.json(merged);
 }
 
@@ -105,10 +115,21 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  const existing = memory.PROJECTS[idx];
   memory.PROJECTS.splice(idx, 1);
   memory.TASKS = memory.TASKS.filter((task) => task.projectId !== params.id);
   memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== params.id);
   delete memory.WORKFLOWS[params.id];
+
+  if (existing) {
+    recordAudit({
+      action: 'project.deleted',
+      entity: { type: 'project', id: existing.id },
+      projectId: existing.id,
+      workspaceId: existing.workspaceId,
+      before: existing
+    });
+  }
 
   return NextResponse.json({ success: true });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { Project } from '@/domain/projects/types';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
+import { recordAudit } from '@/lib/audit/log';
 
 type RouteContext = {
   params: {
@@ -31,6 +32,15 @@ export async function POST(_: NextRequest, { params }: RouteContext) {
   };
 
   memory.PROJECTS[idx] = updated;
+
+  recordAudit({
+    action: 'project.archived',
+    entity: { type: 'project', id: updated.id },
+    projectId: updated.id,
+    workspaceId: updated.workspaceId,
+    before: current,
+    after: updated
+  });
 
   return NextResponse.json({ id: updated.id, archived: updated.archived, updatedAt: updated.updatedAt });
 }

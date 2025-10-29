@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { projectsRepository } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { TaskStatus } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
+import { recordAudit } from '@/lib/audit/log';
 
 const TaskPatchSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -13,7 +15,9 @@ const TaskPatchSchema = z.object({
   assigneeId: z.string().nullable().optional(),
   startAt: z.string().datetime().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
-  labels: z.array(z.string()).optional()
+  labels: z.array(z.string()).optional(),
+  estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  loggedTime: z.number().int().nonnegative().optional()
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string; taskId: string } }) {
@@ -37,6 +41,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   const body = parsed.data;
+  const before = { ...existing };
 
   if (typeof body.title === 'string') {
     existing.title = body.title;
@@ -91,8 +96,26 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
+  if (body.estimatedTime !== undefined) {
+    existing.estimatedTime = body.estimatedTime;
+  }
+
+  if (body.loggedTime !== undefined) {
+    existing.loggedTime = body.loggedTime;
+  }
+
   existing.updatedAt = new Date().toISOString();
   memory.TASKS[idx] = existing;
+
+  const project = projectsRepository.findById(params.id);
+  recordAudit({
+    action: 'task.updated',
+    entity: { type: 'task', id: existing.id },
+    projectId: params.id,
+    workspaceId: project?.workspaceId,
+    before,
+    after: existing
+  });
 
   return NextResponse.json(existing);
 }
