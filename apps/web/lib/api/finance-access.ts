@@ -1,4 +1,4 @@
-import { decodeDemoSession, DEMO_SESSION_COOKIE } from '@/lib/auth/demo-session';
+import { decodeDemoSession, DEMO_SESSION_COOKIE, isDemoAdminEmail } from '@/lib/auth/demo-session';
 import { projectsRepository } from '@collabverse/api';
 
 export type FinanceRole = 'owner' | 'admin' | 'member' | 'viewer';
@@ -36,14 +36,20 @@ export function getAuthFromRequest(request: Request): AuthContext | null {
     return null;
   }
 
+  const isAdmin = session.role === 'admin' || isDemoAdminEmail(session.email);
+
   return {
     userId: session.email,
     email: session.email,
-    role: session.role === 'admin' ? 'owner' : 'member'
+    role: isAdmin ? 'owner' : 'member'
   };
 }
 
 export function getProjectRole(projectId: string, userId: string): FinanceRole {
+  if (isDemoAdminEmail(userId)) {
+    return 'owner';
+  }
+
   const member = projectsRepository.getMember(projectId, userId);
   if (!member) {
     return 'viewer';

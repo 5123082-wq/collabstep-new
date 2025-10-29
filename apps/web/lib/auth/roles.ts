@@ -1,4 +1,5 @@
 import type { DemoRole } from '@/lib/auth/demo-session';
+import { isDemoAdminEmail } from '@/lib/auth/demo-session';
 
 export type UserRole =
   | 'FOUNDER'
@@ -11,6 +12,10 @@ export type UserRole =
 
 const DEFAULT_ROLES: UserRole[] = ['FOUNDER', 'PM'];
 const FULL_ADMIN_ROLES: UserRole[] = ['FOUNDER', 'PM', 'ADMIN', 'MODERATOR', 'SPECIALIST', 'CONTRACTOR', 'OBSERVER'];
+
+function uniqueRoles(roles: UserRole[]): UserRole[] {
+  return [...new Set(roles)];
+}
 
 const FINANCE_ALLOWED = new Set<UserRole>(['FOUNDER', 'PM', 'ADMIN']);
 const ADMIN_ALLOWED = new Set<UserRole>(['ADMIN', 'MODERATOR']);
@@ -41,10 +46,18 @@ export function setUserRoles(roles: UserRole[]): void {
 
 export function getRolesForDemoRole(role: DemoRole): UserRole[] {
   if (role === 'admin') {
-    return [...new Set(FULL_ADMIN_ROLES)];
+    return uniqueRoles(FULL_ADMIN_ROLES);
   }
 
-  return [...DEFAULT_ROLES];
+  return uniqueRoles(DEFAULT_ROLES);
+}
+
+export function getRolesForDemoAccount(email: string | null | undefined, role: DemoRole): UserRole[] {
+  if (isDemoAdminEmail(email)) {
+    return uniqueRoles(FULL_ADMIN_ROLES);
+  }
+
+  return getRolesForDemoRole(role);
 }
 
 export function canAccessFinance(roles: UserRole[]): boolean {

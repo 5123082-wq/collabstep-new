@@ -57,6 +57,10 @@ export function getDemoAccount(role: DemoRole): { email: string; password: strin
   return { email, password };
 }
 
+export function isDemoAdminEmail(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === DEMO_ADMIN_EMAIL.toLowerCase();
+}
+
 export function getDemoSessionFromCookies(): DemoSession | null {
   const store = cookies();
   const cookie = store.get(DEMO_SESSION_COOKIE);
@@ -69,5 +73,5 @@ export function isDemoAuthEnabled(): boolean {
 }
 
 export function isDemoAdminSession(session: DemoSession | null | undefined): session is DemoSession {
-  return Boolean(session && session.role === 'admin' && session.email === DEMO_ADMIN_EMAIL);
+  return Boolean(session && isDemoAdminEmail(session.email));
 }

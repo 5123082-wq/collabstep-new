@@ -77,7 +77,7 @@ export async function PATCH(
     action: 'task.time_updated',
     entity: { type: 'task', id: task.id },
     projectId: params.id,
-    workspaceId: project?.workspaceId,
+    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
     after: task
   });

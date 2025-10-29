@@ -16,6 +16,11 @@ if (!fs.existsSync(envPath)) {
 const requiredVars = new Map([
   ['NAV_V1', 'on'],
   ['APP_LOCALE', 'ru'],
+  ['FEATURE_PROJECTS_V1', '1'],
+  ['NEXT_PUBLIC_FEATURE_PROJECTS_V1', '1'],
+  ['NEXT_PUBLIC_FEATURE_CREATE_WIZARD', '1'],
+  ['NEXT_PUBLIC_FEATURE_PROJECT_DASHBOARD', '1'],
+  ['NEXT_PUBLIC_FEATURE_TASKS_WORKSPACE', '1'],
   ['AUTH_DEV', 'on'],
   ['DEMO_ADMIN_EMAIL', 'admin.demo@collabverse.test'],
   ['DEMO_ADMIN_PASSWORD', 'demo-admin'],

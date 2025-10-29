@@ -108,6 +108,19 @@ function describeTaskActivity(entry: AuditLogEntry): string {
   return `${entity.type} #${entity.id}`;
 }
 
+function formatAuditTimeValue(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return '—';
+}
+
 function parseISODate(value?: string | null): Date | null {
   if (!value) {
     return null;
@@ -1101,7 +1114,9 @@ function TaskActivityView({ projectId }: TaskActivityViewProps) {
           </p>
           {entry.action === 'task.time_updated' && typeof entry.after === 'object' && entry.after !== null ? (
             <p className="mt-1 text-xs text-neutral-400">
-              Время: {(entry.after as { loggedTime?: unknown }).loggedTime ?? '—'} / {(entry.after as { estimatedTime?: unknown }).estimatedTime ?? '—'} ч
+              Время:{' '}
+              {formatAuditTimeValue((entry.after as { loggedTime?: unknown }).loggedTime)} /{' '}
+              {formatAuditTimeValue((entry.after as { estimatedTime?: unknown }).estimatedTime)} ч
             </p>
           ) : null}
         </li>
