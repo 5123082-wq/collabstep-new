@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import ProjectLayoutClient from '@/components/project/ProjectLayoutClient';
-import { getDemoSessionFromCookies } from '@/lib/auth/demo-session';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 import { loadProjects } from '@/lib/mock/loaders';
 import type { Project } from '@/lib/schemas/project';
 
