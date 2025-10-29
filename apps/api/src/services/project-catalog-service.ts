@@ -264,7 +264,10 @@ export class ProjectCatalogService {
           important: stats?.important ?? 0,
           completed
         },
-        budget: { planned: null, spent: null },
+        budget: {
+          planned: project.budgetPlanned !== null ? project.budgetPlanned.toFixed(2) : null,
+          spent: project.budgetSpent !== null ? project.budgetSpent.toFixed(2) : null
+        },
         permissions: {
           // [PLAN:S2-111] Быстрые действия синхронизированы с ACL участников.
           canArchive: project.ownerId === currentUserId,

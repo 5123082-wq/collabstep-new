@@ -91,6 +91,8 @@ export const projectSectionApi: ProjectSectionAPI = {
       visibility: payload.visibility ?? 'private',
       workflowId: `wf-${generatedId}`,
       type: payload.type ?? 'internal',
+      budgetPlanned: null,
+      budgetSpent: null,
       archived: false,
       createdAt: now,
       updatedAt: now

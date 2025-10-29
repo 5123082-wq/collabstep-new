@@ -5,13 +5,35 @@ function cloneProject(project: Project): Project {
   return { ...project };
 }
 
+function normalizeBudgetValue(value: unknown): number | null {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().replace(',', '.');
+    if (!normalized) {
+      return null;
+    }
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 export class ProjectsRepository {
-  list(options: { archived?: boolean | null } = {}): Project[] {
-    const { archived = null } = options;
-    const items =
-      archived === null
-        ? memory.PROJECTS
-        : memory.PROJECTS.filter((project) => project.archived === archived);
+  list(options: { archived?: boolean | null; workspaceId?: string | null } = {}): Project[] {
+    const { archived = null, workspaceId = null } = options;
+    let items = memory.PROJECTS;
+    if (typeof workspaceId === 'string' && workspaceId.trim()) {
+      const targetWorkspaceId = workspaceId.trim();
+      items = items.filter((project) => project.workspaceId === targetWorkspaceId);
+    }
+    if (archived !== null) {
+      items = items.filter((project) => project.archived === archived);
+    }
     return items.map(cloneProject);
   }
 
@@ -39,6 +61,8 @@ export class ProjectsRepository {
     type?: ProjectType;
     visibility?: ProjectVisibility;
     workflowId?: string;
+    budgetPlanned?: number | string | null;
+    budgetSpent?: number | string | null;
   }): Project {
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -48,6 +72,9 @@ export class ProjectsRepository {
 
     const visibility: ProjectVisibility = payload.visibility === 'public' ? 'public' : 'private';
 
+    const budgetPlanned = normalizeBudgetValue(payload.budgetPlanned);
+    const budgetSpent = normalizeBudgetValue(payload.budgetSpent);
+
     const project: Project = {
       id,
       workspaceId: payload.workspaceId,
@@ -55,6 +82,8 @@ export class ProjectsRepository {
       description: payload.description ?? '',
       ownerId: payload.ownerId,
       visibility,
+      budgetPlanned,
+      budgetSpent,
       workflowId,
       archived: false,
       createdAt: now,
@@ -73,7 +102,19 @@ export class ProjectsRepository {
   update(
     id: string,
     patch: Partial<
-      Pick<Project, 'title' | 'description' | 'stage' | 'archived' | 'deadline' | 'type' | 'visibility' | 'workflowId'>
+      Pick<
+        Project,
+        | 'title'
+        | 'description'
+        | 'stage'
+        | 'archived'
+        | 'deadline'
+        | 'type'
+        | 'visibility'
+        | 'workflowId'
+        | 'budgetPlanned'
+        | 'budgetSpent'
+      >
     >
   ): Project | null {
     const idx = memory.PROJECTS.findIndex((item) => item.id === id);
@@ -127,6 +168,14 @@ export class ProjectsRepository {
       } else {
         delete next.deadline;
       }
+    }
+
+    if ('budgetPlanned' in patch) {
+      next.budgetPlanned = normalizeBudgetValue(patch.budgetPlanned);
+    }
+
+    if ('budgetSpent' in patch) {
+      next.budgetSpent = normalizeBudgetValue(patch.budgetSpent);
     }
 
     memory.PROJECTS[idx] = next;
