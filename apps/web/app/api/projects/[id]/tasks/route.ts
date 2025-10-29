@@ -4,6 +4,30 @@ import { tasksRepository } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
 
+function flattenTaskTree(tree: TaskTreeNode[]): Task[] {
+  const result: Task[] = [];
+
+  const visit = (node: TaskTreeNode) => {
+    const { children, ...rest } = node;
+    const normalized: Task = {
+      ...(rest as Task),
+      parentId: rest.parentId ?? null
+    };
+    result.push(normalized);
+    if (Array.isArray(children)) {
+      for (const child of children) {
+        visit(child);
+      }
+    }
+  };
+
+  for (const node of tree) {
+    visit(node);
+  }
+
+  return result;
+}
+
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -12,7 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sp = req.nextUrl.searchParams;
   const status = sp.get('status') as TaskStatus | null;
   const iterationId = sp.get('iterationId');
-  const view = sp.get('view') === 'tree' ? 'tree' : 'flat';
+  const viewParam = sp.get('view');
+  const view = viewParam === 'tree' ? 'tree' : 'list';
 
   const listOptions = {
     projectId: params.id,
@@ -21,12 +46,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   } as const;
 
   if (view === 'tree') {
-    const flat = tasksRepository.list({ ...listOptions });
     const tree = tasksRepository.list({ ...listOptions, view: 'tree' }) as TaskTreeNode[];
-    return NextResponse.json({ items: flat, tree });
+    const items = flattenTaskTree(tree);
+    return NextResponse.json({ tree, items });
   }
 
-  const items = tasksRepository.list({ ...listOptions });
+  const items = tasksRepository.list({ ...listOptions, view: 'list' }) as Task[];
 
   return NextResponse.json({ items });
 }

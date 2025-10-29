@@ -48,6 +48,34 @@ const defaultState = {
   iterations: [] as { id: string; title: string }[]
 };
 
+function flattenTree(tree: TaskTreeNode[] | undefined | null): Task[] {
+  if (!Array.isArray(tree)) {
+    return [];
+  }
+
+  const result: Task[] = [];
+
+  const visit = (node: TaskTreeNode) => {
+    const { children, ...rest } = node;
+    const normalized: Task = {
+      ...(rest as Task),
+      parentId: rest.parentId ?? null
+    };
+    result.push(normalized);
+    if (Array.isArray(children)) {
+      for (const child of children) {
+        visit(child);
+      }
+    }
+  };
+
+  for (const node of tree) {
+    visit(node);
+  }
+
+  return result;
+}
+
 async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const response = await fetch(input, init);
   if (!response.ok) {
@@ -120,9 +148,11 @@ export const useProjectTasksStore = create<ProjectTasksState>((set, get) => ({
       const data = await fetchJson<{ items?: Task[]; tree?: TaskTreeNode[] }>(
         `/api/projects/${projectId}/tasks?${params.toString()}`
       );
+      const tree = Array.isArray(data.tree) ? data.tree : [];
+      const items = Array.isArray(data.items) ? data.items : flattenTree(tree);
       set({
-        tasks: Array.isArray(data.items) ? data.items : [],
-        tree: Array.isArray(data.tree) ? data.tree : [],
+        tasks: items,
+        tree,
         isLoading: false
       });
     } catch (err) {

@@ -1,7 +1,7 @@
 import { memory } from '../data/memory';
 import type { Task, TaskStatus, TaskTreeNode } from '../types';
 
-type TaskListView = 'flat' | 'tree';
+type TaskListView = 'list' | 'tree';
 
 export type TaskListOptions = {
   projectId?: string;
@@ -39,10 +39,11 @@ function cloneTask(task: Task): Task {
 }
 
 export class TasksRepository {
-  list(options?: TaskListOptions & { view?: 'flat' }): Task[];
+  list(options?: TaskListOptions & { view?: 'list' }): Task[];
   list(options: TaskListOptions & { view: 'tree' }): TaskTreeNode[];
   list(options: TaskListOptions = {}): Task[] | TaskTreeNode[] {
-    const { projectId, status, iterationId, view = 'flat' } = options;
+    const { projectId, status, iterationId, view = 'list' } = options;
+    const normalizedView: TaskListView = view === 'tree' ? 'tree' : 'list';
     let items = memory.TASKS;
     if (projectId) {
       items = items.filter((task) => task.projectId === projectId);
@@ -55,7 +56,7 @@ export class TasksRepository {
     }
 
     const cloned = items.map(cloneTask);
-    if (view === 'tree') {
+    if (normalizedView === 'tree') {
       return buildTaskTree(cloned);
     }
     return cloned;
@@ -74,10 +75,10 @@ export class TasksRepository {
       projectId: input.projectId,
       title: input.title,
       description: input.description ?? '',
+      parentId: input.parentId ?? null,
       status: input.status,
       createdAt,
       updatedAt,
-      ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
       ...(input.iterationId ? { iterationId: input.iterationId } : {}),
       ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
       ...(input.startAt ? { startAt: input.startAt } : {}),
