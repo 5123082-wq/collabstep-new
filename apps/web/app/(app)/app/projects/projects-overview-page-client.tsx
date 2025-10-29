@@ -872,7 +872,7 @@ export default function ProjectsOverviewPageClient() {
   const handleOpenProject = useCallback(
     (projectId: string) => {
       trackEvent('projects.card.opened', { projectId });
-      router.push(`/app/projects/${projectId}/overview`);
+      router.push(`/project/${projectId}`);
     },
     [router]
   );
@@ -880,7 +880,7 @@ export default function ProjectsOverviewPageClient() {
   const handleCreateTask = useCallback(
     (projectId: string) => {
       trackEvent('projects.quickAction.clicked', { projectId, action: 'create-task' });
-      router.push(`/app/projects/${projectId}/tasks/new`);
+      router.push(`/project/${projectId}/tasks`);
     },
     [router]
   );
@@ -888,7 +888,7 @@ export default function ProjectsOverviewPageClient() {
   const handleInvite = useCallback(
     (projectId: string) => {
       trackEvent('projects.quickAction.clicked', { projectId, action: 'invite' });
-      router.push(`/app/projects/${projectId}/members`);
+      router.push(`/project/${projectId}/team`);
     },
     [router]
   );
