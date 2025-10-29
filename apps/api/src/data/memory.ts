@@ -157,6 +157,7 @@ export const memory = {
     {
       id: 'task-admin-brief',
       projectId: 'proj-admin-onboarding',
+      parentId: null,
       title: 'Подготовить бриф и дорожную карту',
       description: 'Сформировать цели, KPI и ритуалы команды.',
       status: 'in_progress',
@@ -166,8 +167,40 @@ export const memory = {
       updatedAt: '2024-06-08T14:20:00.000Z'
     },
     {
+      id: 'task-admin-brief-kickoff',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-brief',
+      title: 'Провести стартовую сессию',
+      description: 'Согласовать ключевые deliverables и зоны ответственности.',
+      status: 'new',
+      assigneeId: 'user.demo@collabverse.test',
+      createdAt: '2024-05-03T10:00:00.000Z',
+      updatedAt: '2024-05-15T12:00:00.000Z'
+    },
+    {
+      id: 'task-admin-brief-survey',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-brief',
+      title: 'Собрать ожидания стейкхолдеров',
+      description: 'Интервьюировать ключевых участников и собрать потребности.',
+      status: 'review',
+      iterationId: 'iter-admin-onboarding-sprint-1',
+      createdAt: '2024-05-05T11:30:00.000Z',
+      updatedAt: '2024-06-07T18:45:00.000Z'
+    },
+    {
+      id: 'task-admin-brief-survey-report',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-brief-survey',
+      title: 'Подготовить отчёт по интервью',
+      status: 'in_progress',
+      createdAt: '2024-05-06T13:00:00.000Z',
+      updatedAt: '2024-06-09T09:10:00.000Z'
+    },
+    {
       id: 'task-admin-design',
       projectId: 'proj-admin-onboarding',
+      parentId: null,
       title: 'Собрать дизайн-концепты',
       description: 'Подготовить варианты визуального языка продукта.',
       status: 'review',
@@ -175,6 +208,16 @@ export const memory = {
       labels: ['Дизайн'],
       createdAt: '2024-05-12T11:00:00.000Z',
       updatedAt: '2024-06-09T10:30:00.000Z'
+    },
+    {
+      id: 'task-admin-landing-archive-audit',
+      projectId: 'proj-admin-landing-archive',
+      parentId: null,
+      title: 'Провести аудит контента',
+      description: 'Собрать обратную связь и подготовить обновления.',
+      status: 'done',
+      createdAt: '2023-10-15T08:00:00.000Z',
+      updatedAt: '2023-11-10T16:00:00.000Z'
     }
   ] as Task[],
   WORKFLOWS: {

@@ -10,7 +10,7 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
