@@ -130,6 +130,7 @@ export function createTemplateTasks(templateId: string, projectId: string, now: 
     const task: Task = {
       id: crypto.randomUUID(),
       projectId,
+      parentId: null,
       title: blueprint.title,
       status: blueprint.status ?? 'new',
       labels: blueprint.labels ?? [],

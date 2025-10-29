@@ -72,12 +72,12 @@ export class TasksRepository {
     const task: Task = {
       id: input.id ?? crypto.randomUUID(),
       projectId: input.projectId,
+      parentId: input.parentId ?? null,
       title: input.title,
       description: input.description ?? '',
       status: input.status,
       createdAt,
       updatedAt,
-      ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
       ...(input.iterationId ? { iterationId: input.iterationId } : {}),
       ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
       ...(input.startAt ? { startAt: input.startAt } : {}),
