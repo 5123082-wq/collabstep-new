@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { TASK_STATUS_LABELS, TASK_STATUS_STYLES } from './TaskCard';
+import { TASK_STATUS_LABELS, TASK_STATUS_STYLES } from './task-card';
 
 type TaskRowProps = {
   task: TaskTreeNode;
@@ -93,3 +93,5 @@ export function TaskRow({ task, depth = 0, onSelect, children, isExpanded, onTog
 }
 
 export default TaskRow;
+
+

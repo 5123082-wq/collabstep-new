@@ -13,13 +13,13 @@ const TimePatchSchema = z.object({
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: { id: string; 'task-id': string } }
 ) {
   if (!flags.PROJECTS_V1 && !flags.TASK_TIME_TRACKING) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const task = memory.TASKS.find((item) => item.id === params.taskId && item.projectId === params.id);
+  const task = memory.TASKS.find((item) => item.id === params['task-id'] && item.projectId === params.id);
   if (!task) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -32,18 +32,18 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: { id: string; 'task-id': string } }
 ) {
   if (!flags.PROJECTS_V1 && !flags.TASK_TIME_TRACKING) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const parsed = TimePatchSchema.safeParse(await req.json().catch(() => ({})));
+  const parsed = TimePatchSchema.safeParse(await req.json().catch(() => ({ } )));
   if (!parsed.success) {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const idx = memory.TASKS.findIndex((task) => task.id === params.taskId && task.projectId === params.id);
+  const idx = memory.TASKS.findIndex((task) => task.id === params['task-id'] && task.projectId === params.id);
   if (idx === -1) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -87,3 +87,5 @@ export async function PATCH(
     loggedTime: task.loggedTime ?? 0
   });
 }
+
+

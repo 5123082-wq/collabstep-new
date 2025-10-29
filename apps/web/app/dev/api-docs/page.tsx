@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { SwaggerViewer } from './SwaggerViewer';
+import { SwaggerViewer } from './swagger-viewer';
 
 export const dynamic = 'force-dynamic';
 

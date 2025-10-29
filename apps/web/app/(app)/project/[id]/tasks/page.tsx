@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import ProjectTasksPageV1 from './project-tasks-page-v1';
-import ProjectTasksWorkspaceClient from './ProjectTasksWorkspaceClient';
+import ProjectTasksWorkspaceClient from './project-tasks-workspace-client';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';

@@ -28,19 +28,19 @@ function hydrateAuthors(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: { id: string; 'task-id': string } }
 ) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  const comments = commentsRepository.listByTask(params.id, params.taskId);
+  const comments = commentsRepository.listByTask(params.id, params['task-id']);
   const items = hydrateAuthors(comments);
   return NextResponse.json({ items });
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string; taskId: string } }
+  { params }: { params: { id: string; 'task-id': string } }
 ) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -51,7 +51,7 @@ export async function POST(
   }
   const comment = commentsRepository.create({
     projectId: params.id,
-    taskId: params.taskId,
+    taskId: params['task-id'],
     body: parsed.data.body,
     authorId: parsed.data.authorId,
     parentId: parsed.data.parentId ?? null,
@@ -68,3 +68,5 @@ export async function POST(
     }
   }, { status: 201 });
 }
+
+

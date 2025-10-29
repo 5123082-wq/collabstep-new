@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import type { TaskStatus } from '@/domain/projects/types';
-import { KanbanView } from './components/KanbanView';
-import { ListView } from './components/ListView';
+import { KanbanView } from './components/kanban-view';
+import { ListView } from './components/list-view';
 import { useProjectTasksStore } from '@/stores/projectTasksStore';
 import { cn } from '@/lib/utils';
-import { TASK_STATUS_LABELS } from './components/TaskCard';
+import { TASK_STATUS_LABELS } from './components/task-card';
 
 type ProjectTasksWorkspaceClientProps = {
   projectId: string;
@@ -220,3 +220,5 @@ function SegmentedControl({ value, onChange, options }: SegmentedControlProps) {
 }
 
 export default ProjectTasksWorkspaceClient;
+
+

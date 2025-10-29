@@ -24,8 +24,13 @@ function checkNode(targetPath, relative = '') {
     const relativePath = path.join(relative, entry.name);
     const cleanName = sanitizeName(entry.isFile() ? entry.name.replace(/\.[^/.]+$/, '') : entry.name);
 
-    if (cleanName && cleanName !== cleanName.toLowerCase()) {
-      invalidEntries.push(relativePath);
+    // Skip case enforcement under API routes
+    const isInApi = relativePath.startsWith('api' + path.sep) || relative.startsWith('api' + path.sep) || relative === 'api';
+
+    if (!isInApi) {
+      if (cleanName && cleanName !== cleanName.toLowerCase()) {
+        invalidEntries.push(relativePath);
+      }
     }
 
     if (entry.isDirectory()) {
