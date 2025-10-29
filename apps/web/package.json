@@ -11,6 +11,8 @@
     "check:routes": "node scripts/check-app-routes.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/utilities": "^3.2.1",
     "@tanstack/react-virtual": "^3.10.8",
     "clsx": "^2.1.1",
     "fuse.js": "^7.1.0",

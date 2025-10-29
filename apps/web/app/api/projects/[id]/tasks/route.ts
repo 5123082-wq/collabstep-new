@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { tasksRepository } from '@collabverse/api';
 import { flags } from '@/lib/flags';
-import type { Task, TaskStatus } from '@/domain/projects/types';
-import { memory } from '@/mocks/projects-memory';
+import type { Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const sp = req.nextUrl.searchParams;
   const status = sp.get('status') as TaskStatus | null;
   const iterationId = sp.get('iterationId');
+  const view = sp.get('view') === 'tree' ? 'tree' : 'flat';
 
-  let items = memory.TASKS.filter((task) => task.projectId === params.id);
-  if (status) {
-    items = items.filter((task) => task.status === status);
+  const listOptions = {
+    projectId: params.id,
+    ...(status ? { status } : {}),
+    ...(iterationId ? { iterationId } : {})
+  } as const;
+
+  if (view === 'tree') {
+    const flat = tasksRepository.list({ ...listOptions });
+    const tree = tasksRepository.list({ ...listOptions, view: 'tree' }) as TaskTreeNode[];
+    return NextResponse.json({ items: flat, tree });
   }
-  if (iterationId) {
-    items = items.filter((task) => task.iterationId === iterationId);
-  }
+
+  const items = tasksRepository.list({ ...listOptions });
 
   return NextResponse.json({ items });
 }
@@ -28,7 +35,7 @@ const TaskCreate = z.object({
   title: z.string().trim().min(1).optional(),
   description: z.string().optional(),
   status: z.enum(['new', 'in_progress', 'review', 'done', 'blocked']).optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().nullable().optional(),
   iterationId: z.string().optional(),
   assigneeId: z.string().optional(),
   startAt: z.string().datetime().optional(),
@@ -38,7 +45,7 @@ const TaskCreate = z.object({
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -51,28 +58,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const now = new Date().toISOString();
   const status: TaskStatus = b.status ?? 'new';
 
-  const base = {
-    id: crypto.randomUUID(),
+  const task = tasksRepository.create({
     projectId: params.id,
     title: b.title ?? 'Новая задача',
-    description: b.description ?? '',
     status,
     createdAt: now,
-    updatedAt: now
-  };
-
-  const task: Task = {
-    ...base,
-    ...(b.parentId ? { parentId: b.parentId } : {}),
+    updatedAt: now,
+    parentId: b.parentId ?? null,
+    ...(b.description !== undefined ? { description: b.description } : {}),
     ...(b.iterationId ? { iterationId: b.iterationId } : {}),
     ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
     ...(b.startAt ? { startAt: b.startAt } : {}),
     ...(b.dueAt ? { dueAt: b.dueAt } : {}),
     ...(b.priority ? { priority: b.priority } : {}),
     ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
-  } satisfies Task;
-
-  memory.TASKS.push(task);
+  }) as Task;
 
   return NextResponse.json(task, { status: 201 });
 }

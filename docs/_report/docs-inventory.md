@@ -13,7 +13,7 @@
 | docs/adr/ADR-0002-project-wizard.md | ADR capturing Stage P3 project wizard decisions. | 2025-02-15 (pending) | docs/README.md:L13; docs/archive/p3-wizard-plan.md:L1 | — |
 | docs/archive/STAGE1_DIFF_SKELETON.md | Archived Stage 1 diff skeleton with superseded notice. | 2025-02-15 (pending) | docs/README.md:L16 | — |
 | docs/archive/p2-overview-plan.md | Archived Stage 2 plan, superseded by ADR-0001. | 2025-02-15 (pending) | docs/README.md:L17 | — |
-| docs/archive/p3-wizard-plan.md | Archived Stage 3 plan, superseded by ADR-0002. | 2025-02-15 (pending) | docs/README.md:L18 | — |
+| docs/archive/p3-wizard-plan.md | Archived Stage III plan, superseded by ADR-0002. | 2025-02-15 (pending) | docs/README.md:L18 | — |
 | docs/_report/docs-inventory.md | Audit inventory for docs scope (this file). | 2025-02-15 (pending) | docs/README.md:L21 | — |
 | docs/_report/p4-conflict-report.md | Report describing conflicting Stage P4 statements. | 2025-02-15 (pending) | docs/README.md:L22 | — |
 | docs/flags-snapshot.json | Generated snapshot of feature flag defaults per stage. | 2025-10-24 | docs/archive/p2-overview-plan.md:L18; docs/archive/p3-wizard-plan.md:L17; docs/_report/p4-conflict-report.md:L5 | scripts/run-vercel-build.mjs:L13; scripts/flags-snapshot.mjs:L12 |

@@ -57,7 +57,7 @@ export interface ProjectMember {
 export interface Task {
   id: ID;
   projectId: ID;
-  parentId?: ID;
+  parentId?: ID | null;
   title: string;
   description?: string;
   status: TaskStatus;
@@ -69,6 +69,10 @@ export interface Task {
   labels?: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface TaskTreeNode extends Task {
+  children?: TaskTreeNode[];
 }
 
 export interface CatalogProject extends Project {

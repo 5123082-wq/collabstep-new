@@ -8,7 +8,7 @@ const DEFAULT: TaskStatus[] = ['new', 'in_progress', 'review', 'done'];
 const ALLOWED: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -21,7 +21,7 @@ const WorkflowSchema = z.object({
 });
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

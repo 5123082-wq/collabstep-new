@@ -1,5 +1,8 @@
+import { notFound } from 'next/navigation';
 import ProjectTasksPageV1 from './project-tasks-page-v1';
+import ProjectTasksWorkspaceClient from './ProjectTasksWorkspaceClient';
 import { flags } from '@/lib/flags';
+import { memory } from '@/mocks/projects-memory';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import { ProjectSection, ProjectStatePreview } from '@/components/project/ProjectSection';
 
@@ -22,17 +25,12 @@ const REPORTS = [
   { id: 'bugs', title: 'Defects', value: '4 открыто', trend: '+1' }
 ];
 
-export default function ProjectTasksPage({
-  params,
-  searchParams
-}: {
+type PageProps = {
   params: { id: string };
-  searchParams: { view?: string };
-}) {
-  if (flags.PROJECTS_V1) {
-    return <ProjectTasksPageV1 params={params} searchParams={searchParams} />;
-  }
+  searchParams?: { view?: string };
+};
 
+function LegacyTasksLanding() {
   return (
     <ProjectPageFrame slug="tasks">
       <ProjectSection
@@ -97,4 +95,25 @@ export default function ProjectTasksPage({
       </ProjectSection>
     </ProjectPageFrame>
   );
+}
+
+export default function ProjectTasksPage({ params, searchParams }: PageProps) {
+  const project = memory.PROJECTS.find((candidate) => candidate.id === params.id);
+
+  if (!project && flags.TASKS_WORKSPACE) {
+    notFound();
+  }
+
+  if (flags.TASKS_WORKSPACE && project) {
+    const initialView = searchParams?.view === 'list' ? 'list' : 'kanban';
+    return (
+      <ProjectTasksWorkspaceClient projectId={project.id} projectTitle={project.title} initialView={initialView} />
+    );
+  }
+
+  if (flags.PROJECTS_V1) {
+    return <ProjectTasksPageV1 params={params} searchParams={searchParams ?? {}} />;
+  }
+
+  return <LegacyTasksLanding />;
 }

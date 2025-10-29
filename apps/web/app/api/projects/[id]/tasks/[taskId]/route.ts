@@ -8,6 +8,7 @@ const TaskPatchSchema = z.object({
   title: z.string().trim().min(1).optional(),
   description: z.string().nullable().optional(),
   status: z.enum(['new', 'in_progress', 'review', 'done', 'blocked'] as [TaskStatus, ...TaskStatus[]]).optional(),
+  parentId: z.string().nullable().optional(),
   iterationId: z.string().nullable().optional(),
   assigneeId: z.string().nullable().optional(),
   startAt: z.string().datetime().nullable().optional(),
@@ -16,7 +17,7 @@ const TaskPatchSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string; taskId: string } }) {
-  if (!flags.PROJECTS_V1) {
+  if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
@@ -80,6 +81,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
   if (body.labels !== undefined) {
     existing.labels = body.labels;
+  }
+
+  if (body.parentId !== undefined) {
+    if (body.parentId === null || body.parentId === '') {
+      existing.parentId = null;
+    } else {
+      existing.parentId = body.parentId;
+    }
   }
 
   existing.updatedAt = new Date().toISOString();
