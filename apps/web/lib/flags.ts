@@ -29,7 +29,11 @@ export const flags = {
   TASKS_WORKSPACE: isFeatureEnabled('tasksWorkspace'),
   BUDGET_LIMITS: isFeatureEnabled('budgetLimits'),
   FINANCE_AUTOMATIONS: isFeatureEnabled('financeAutomations'),
-  FINANCE_GLOBAL: isFeatureEnabled('financeGlobal')
+  FINANCE_GLOBAL: isFeatureEnabled('financeGlobal'),
+  PROJECT_ATTACHMENTS: resolveLegacyBooleanFlag([
+    'NEXT_PUBLIC_FEATURE_PROJECT_ATTACHMENTS',
+    'FEATURE_PROJECT_ATTACHMENTS'
+  ])
 } as const;
 
 export type FlagName = keyof typeof flags;

@@ -6,6 +6,11 @@ import type {
   Expense,
   ExpenseAttachment,
   Iteration,
+  Attachment,
+  Document,
+  DocumentVersion,
+  FileObject,
+  TaskComment,
   Project,
   ProjectBudget,
   ProjectBudgetSnapshot,
@@ -119,6 +124,81 @@ export const memory = {
       { workspaceId: 'ws-marketing', userId: 'designer-1', role: 'member' }
     ]
   } as Record<string, WorkspaceMember[]>,
+  FILES: [
+    {
+      id: 'file-team-brief',
+      uploaderId: DEFAULT_WORKSPACE_USER_ID,
+      filename: 'Командный бриф.pdf',
+      mimeType: 'application/pdf',
+      sizeBytes: 248_123,
+      storageUrl: '/mock/files/team-brief.pdf',
+      uploadedAt: '2024-05-04T09:00:00.000Z'
+    },
+    {
+      id: 'file-design-assets',
+      uploaderId: 'designer-1',
+      filename: 'design-assets.zip',
+      mimeType: 'application/zip',
+      sizeBytes: 1_024_512,
+      storageUrl: '/mock/files/design-assets.zip',
+      uploadedAt: '2024-05-15T10:15:00.000Z'
+    }
+  ] as FileObject[],
+  ATTACHMENTS: [
+    {
+      id: 'attach-task-brief',
+      projectId: 'proj-admin-onboarding',
+      fileId: 'file-team-brief',
+      linkedEntity: 'task',
+      entityId: 'task-admin-brief',
+      createdAt: '2024-05-04T09:05:00.000Z',
+      createdBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'attach-task-design-assets',
+      projectId: 'proj-admin-onboarding',
+      fileId: 'file-design-assets',
+      linkedEntity: 'task',
+      entityId: 'task-admin-design-library-assets',
+      createdAt: '2024-05-16T11:30:00.000Z',
+      createdBy: 'designer-1'
+    }
+  ] as Attachment[],
+  DOCUMENTS: [
+    {
+      id: 'doc-kickoff-notes',
+      projectId: 'proj-admin-onboarding',
+      title: 'Протокол встречи по онбордингу',
+      status: 'active',
+      createdAt: '2024-05-02T11:00:00.000Z',
+      updatedAt: '2024-05-17T09:00:00.000Z'
+    }
+  ] as Document[],
+  DOCUMENT_VERSIONS: [
+    {
+      id: 'doc-kickoff-v1',
+      documentId: 'doc-kickoff-notes',
+      fileId: 'file-team-brief',
+      version: 1,
+      createdAt: '2024-05-02T11:00:00.000Z',
+      createdBy: DEFAULT_WORKSPACE_USER_ID,
+      notes: 'Первичный draft'
+    }
+  ] as DocumentVersion[],
+  TASK_COMMENTS: [
+    {
+      id: 'comment-brief-1',
+      projectId: 'proj-admin-onboarding',
+      taskId: 'task-admin-brief',
+      parentId: null,
+      body: 'Команда, проверьте, пожалуйста, бриф перед завтрашней встречей.',
+      mentions: ['user.demo@collabverse.test'],
+      authorId: DEFAULT_WORKSPACE_USER_ID,
+      attachments: ['file-team-brief'],
+      createdAt: '2024-05-04T09:10:00.000Z',
+      updatedAt: '2024-05-04T09:10:00.000Z'
+    }
+  ] as TaskComment[],
   PROJECTS: [
     {
       id: 'proj-admin-onboarding',

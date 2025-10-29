@@ -4,6 +4,22 @@ export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } f
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
+export {
+  FilesRepository,
+  filesRepository,
+  AttachmentsRepository,
+  attachmentsRepository
+} from './repositories/files-repository';
+export {
+  DocumentsRepository,
+  documentsRepository,
+  type DocumentWithVersions
+} from './repositories/documents-repository';
+export {
+  CommentsRepository,
+  commentsRepository,
+  type TaskCommentNode
+} from './repositories/comments-repository';
 export { UsersRepository, usersRepository } from './repositories/users-repository';
 export { WorkspacesRepository, workspacesRepository } from './repositories/workspaces-repository';
 export {
