@@ -109,7 +109,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     action: 'task.created',
     entity: { type: 'task', id: task.id },
     projectId: params.id,
-    workspaceId: project?.workspaceId,
+    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
     after: task
   });
 

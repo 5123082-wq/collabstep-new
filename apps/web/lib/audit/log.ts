@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { DEFAULT_WORKSPACE_USER_ID, auditLogRepository } from '@collabverse/api';
 import type { AuditLogEntry } from '@collabverse/api';
-import { getDemoSessionFromCookies } from '@/lib/auth/demo-session';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 type RecordAuditParams = {
   action: string;

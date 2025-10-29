@@ -112,7 +112,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     action: 'task.updated',
     entity: { type: 'task', id: existing.id },
     projectId: params.id,
-    workspaceId: project?.workspaceId,
+    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
     after: existing
   });

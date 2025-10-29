@@ -1,5 +1,3 @@
-import { cookies } from 'next/headers';
-
 export type DemoRole = 'admin' | 'user';
 
 export type DemoSession = {
@@ -57,10 +55,8 @@ export function getDemoAccount(role: DemoRole): { email: string; password: strin
   return { email, password };
 }
 
-export function getDemoSessionFromCookies(): DemoSession | null {
-  const store = cookies();
-  const cookie = store.get(DEMO_SESSION_COOKIE);
-  return decodeDemoSession(cookie?.value ?? null);
+export function isDemoAdminEmail(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === DEMO_ADMIN_EMAIL.toLowerCase();
 }
 
 export function isDemoAuthEnabled(): boolean {
@@ -69,5 +65,5 @@ export function isDemoAuthEnabled(): boolean {
 }
 
 export function isDemoAdminSession(session: DemoSession | null | undefined): session is DemoSession {
-  return Boolean(session && session.role === 'admin' && session.email === DEMO_ADMIN_EMAIL);
+  return Boolean(session && isDemoAdminEmail(session.email));
 }

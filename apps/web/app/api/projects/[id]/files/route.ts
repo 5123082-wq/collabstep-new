@@ -193,7 +193,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     action: 'file.attached',
     entity: { type: 'file', id: attachment.id },
     projectId: params.id,
-    workspaceId: project?.workspaceId,
+    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
     after: {
       attachmentId: attachment.id,
       fileId,

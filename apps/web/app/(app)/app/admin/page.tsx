@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import AppSection from '@/components/app/AppSection';
-import { getDemoSessionFromCookies } from '@/lib/auth/demo-session';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 export default function AdminPage() {
   const session = getDemoSessionFromCookies();

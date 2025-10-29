@@ -12,7 +12,7 @@ import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
 import type { DemoSession } from '@/lib/auth/demo-session';
-import { getRolesForDemoRole, setUserRoles } from '@/lib/auth/roles';
+import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
 import { useQueryToast } from '@/lib/ui/useQueryToast';
 
@@ -31,7 +31,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
-  const roles = useMemo(() => getRolesForDemoRole(session.role), [session.role]);
+  const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
   useQueryToast(TOAST_MESSAGES);
 
   const openCreateMenu = useCallback(() => {
