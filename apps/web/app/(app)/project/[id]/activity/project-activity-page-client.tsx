@@ -156,7 +156,7 @@ export default function ProjectActivityPageClient({ projectId, projectTitle }: P
   return (
     <ProjectPageFrame
       slug="activity"
-      title={projectTitle}
+      title={projectTitle ?? null}
       description="Актуальная активность проекта и задач."
       filters={filters}
     >
