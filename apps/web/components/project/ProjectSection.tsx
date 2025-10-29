@@ -68,6 +68,7 @@ export function ProjectSection({ id, title, description, actions, children }: Pr
   const router = useRouter();
   const { openCreateMenu } = useAppShell();
   const openDrawer = useUI((state) => state.openDrawer);
+  const openTaskDrawer = useUI((state) => state.openTaskDrawer);
   const openDialog = useUI((state) => state.openDialog);
 
   const handleAction = useCallback(
@@ -75,7 +76,11 @@ export function ProjectSection({ id, title, description, actions, children }: Pr
       const intent = resolveIntent(action);
       if (intent) {
         if (intent.type === 'drawer' && intent.drawer) {
-          openDrawer(intent.drawer);
+          if (intent.drawer === 'task') {
+            openTaskDrawer({ projectId: 'proj-admin-onboarding', taskId: 'task-admin-brief' });
+          } else {
+            openDrawer(intent.drawer);
+          }
           return;
         }
         if (intent.type === 'dialog' && intent.dialog) {
@@ -98,7 +103,7 @@ export function ProjectSection({ id, title, description, actions, children }: Pr
         toast('Действие скоро будет доступно');
       }
     },
-    [openCreateMenu, openDialog, openDrawer, router]
+    [openCreateMenu, openDialog, openDrawer, openTaskDrawer, router]
   );
 
   return (

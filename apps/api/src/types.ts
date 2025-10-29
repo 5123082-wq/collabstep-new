@@ -54,6 +54,63 @@ export interface ProjectMember {
   role: 'owner' | 'admin' | 'member' | 'viewer';
 }
 
+export interface FileObject {
+  id: ID;
+  uploaderId: ID;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageUrl: string;
+  sha256?: string;
+  description?: string;
+  uploadedAt: string;
+}
+
+export type AttachmentEntityType = 'project' | 'task' | 'comment' | 'document';
+
+export interface Attachment {
+  id: ID;
+  projectId: ID;
+  fileId: ID;
+  linkedEntity: AttachmentEntityType;
+  entityId: ID | null;
+  createdAt: string;
+  createdBy: ID;
+}
+
+export interface Document {
+  id: ID;
+  projectId: ID;
+  title: string;
+  type?: string;
+  status?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentVersion {
+  id: ID;
+  documentId: ID;
+  fileId: ID;
+  version: number;
+  createdBy: ID;
+  createdAt: string;
+  notes?: string;
+}
+
+export interface TaskComment {
+  id: ID;
+  projectId: ID;
+  taskId: ID;
+  parentId: ID | null;
+  body: string;
+  mentions: ID[];
+  authorId: ID;
+  attachments: ID[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Task {
   id: ID;
   projectId: ID;
@@ -67,6 +124,7 @@ export interface Task {
   dueAt?: string;
   priority?: 'low' | 'med' | 'high';
   labels?: string[];
+  attachments?: FileObject[];
   createdAt: string;
   updatedAt: string;
 }

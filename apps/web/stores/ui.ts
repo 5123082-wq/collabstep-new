@@ -9,6 +9,7 @@ type UIState = {
 
   drawer: Drawer;
   openDrawer: (drawer: Drawer) => void;
+  openTaskDrawer: (context: { projectId: string; taskId: string }) => void;
   closeDrawer: () => void;
 
   dialog: Dialog;
@@ -19,6 +20,7 @@ type UIState = {
   unreadNotifications: number;
   setUnreadChats: (value: number) => void;
   setUnreadNotifications: (value: number) => void;
+  taskContext: { projectId: string; taskId: string } | null;
 };
 
 export const useUI = create<UIState>((set) => ({
@@ -27,7 +29,8 @@ export const useUI = create<UIState>((set) => ({
 
   drawer: null,
   openDrawer: (drawer) => set({ drawer }),
-  closeDrawer: () => set({ drawer: null }),
+  openTaskDrawer: (context) => set({ drawer: 'task', taskContext: context }),
+  closeDrawer: () => set({ drawer: null, taskContext: null }),
 
   dialog: null,
   openDialog: (dialog) => set({ dialog }),
@@ -36,5 +39,6 @@ export const useUI = create<UIState>((set) => ({
   unreadChats: 0,
   unreadNotifications: 0,
   setUnreadChats: (value) => set({ unreadChats: value }),
-  setUnreadNotifications: (value) => set({ unreadNotifications: value })
+  setUnreadNotifications: (value) => set({ unreadNotifications: value }),
+  taskContext: null
 }));

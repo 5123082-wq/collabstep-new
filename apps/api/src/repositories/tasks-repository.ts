@@ -1,5 +1,5 @@
 import { memory } from '../data/memory';
-import type { Task, TaskStatus, TaskTreeNode } from '../types';
+import type { FileObject, Task, TaskStatus, TaskTreeNode } from '../types';
 
 type TaskListView = 'list' | 'tree';
 
@@ -27,7 +27,7 @@ export type CreateTaskInput = {
   updatedAt?: string;
 };
 
-function cloneTask(task: Task): Task {
+function enrichTask(task: Task): Task {
   const { labels, ...rest } = task;
   const clone: Task = { ...(rest as Task) };
   if (Array.isArray(labels)) {
@@ -35,7 +35,26 @@ function cloneTask(task: Task): Task {
   } else {
     delete (clone as { labels?: string[] }).labels;
   }
+  clone.attachments = resolveTaskAttachments(task.id);
   return clone;
+}
+
+function resolveTaskAttachments(taskId: string): FileObject[] {
+  const attachments = memory.ATTACHMENTS.filter(
+    (attachment) => attachment.linkedEntity === 'task' && attachment.entityId === taskId
+  );
+  if (attachments.length === 0) {
+    return [];
+  }
+  const fileLookup = new Map(memory.FILES.map((file) => [file.id, file] as const));
+  return attachments
+    .map((attachment) => fileLookup.get(attachment.fileId))
+    .filter((file): file is FileObject => Boolean(file))
+    .map(cloneFileObject);
+}
+
+function cloneFileObject(file: FileObject): FileObject {
+  return { ...file };
 }
 
 export class TasksRepository {
@@ -55,7 +74,7 @@ export class TasksRepository {
       items = items.filter((task) => task.iterationId === iterationId);
     }
 
-    const cloned = items.map(cloneTask);
+    const cloned = items.map(enrichTask);
     if (normalizedView === 'tree') {
       return buildTaskTree(cloned);
     }
@@ -88,7 +107,7 @@ export class TasksRepository {
     };
 
     memory.TASKS.push(task);
-    return cloneTask(task);
+    return enrichTask(task);
   }
 }
 
