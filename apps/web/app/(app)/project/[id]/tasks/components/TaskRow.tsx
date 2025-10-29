@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
 import { TASK_STATUS_LABELS, TASK_STATUS_STYLES } from './TaskCard';
@@ -10,11 +11,21 @@ type TaskRowProps = {
   depth?: number;
   onSelect?: (taskId: string) => void;
   children?: ReactNode;
+  hasChildren?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
 };
 
-export function TaskRow({ task, depth = 0, onSelect, children }: TaskRowProps) {
+export function TaskRow({
+  task,
+  depth = 0,
+  onSelect,
+  children,
+  hasChildren = false,
+  expanded = true,
+  onToggle
+}: TaskRowProps) {
   const indent = Math.max(depth, 0) * 16;
-  const hasChildren = Array.isArray(task.children) && task.children.length > 0;
   return (
     <div className="flex flex-col" style={{ paddingLeft: indent }}>
       <div
@@ -36,16 +47,39 @@ export function TaskRow({ task, depth = 0, onSelect, children }: TaskRowProps) {
             : undefined
         }
       >
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-start gap-3">
+          <div className="flex items-center pt-1">
+            {hasChildren ? (
+              <button
+                type="button"
+                aria-label={expanded ? 'Свернуть подзадачи' : 'Развернуть подзадачи'}
+                aria-expanded={expanded}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggle?.();
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded-md border border-neutral-900 bg-neutral-950/60 text-neutral-400 transition hover:border-indigo-500/50 hover:text-neutral-100"
+              >
+                <ChevronDown
+                  className={cn(
+                    'h-3.5 w-3.5 transition-transform',
+                    expanded ? 'text-indigo-200' : '-rotate-90 text-neutral-400'
+                  )}
+                />
+              </button>
+            ) : (
+              <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center" aria-hidden="true" />
+            )}
+          </div>
+          <div className="flex-1">
             <p className="font-medium text-neutral-100">{task.title}</p>
             {hasChildren ? (
               <span className="rounded-full border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
                 {task.children?.length} подзадач{task.children && task.children.length === 1 ? 'а' : ''}
               </span>
             ) : null}
+            {task.description ? <p className="mt-1 text-xs text-neutral-500">{task.description}</p> : null}
           </div>
-          {task.description ? <p className="mt-1 text-xs text-neutral-500">{task.description}</p> : null}
         </div>
         <span
           className={cn(
@@ -56,7 +90,7 @@ export function TaskRow({ task, depth = 0, onSelect, children }: TaskRowProps) {
           {TASK_STATUS_LABELS[task.status]}
         </span>
       </div>
-      {children}
+      {expanded ? children : null}
     </div>
   );
 }

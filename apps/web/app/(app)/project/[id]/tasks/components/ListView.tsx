@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import TaskRow from './TaskRow';
 
@@ -43,11 +44,21 @@ type ListNodeProps = {
 };
 
 function ListNode({ node, depth, onTaskClick }: ListNodeProps) {
-  const children = node.children;
+  const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+  const [expanded, setExpanded] = useState(true);
+  const toggle = hasChildren ? () => setExpanded((prev) => !prev) : undefined;
+
   return (
-    <TaskRow task={node} depth={depth} {...(onTaskClick ? { onSelect: onTaskClick } : {})}>
-      {children && children.length > 0
-        ? children.map((child) => (
+    <TaskRow
+      task={node}
+      depth={depth}
+      hasChildren={hasChildren}
+      expanded={expanded}
+      {...(toggle ? { onToggle: toggle } : {})}
+      {...(onTaskClick ? { onSelect: onTaskClick } : {})}
+    >
+      {hasChildren && expanded
+        ? node.children?.map((child) => (
             <ListNode key={child.id} node={child} depth={depth + 1} {...(onTaskClick ? { onTaskClick } : {})} />
           ))
         : null}

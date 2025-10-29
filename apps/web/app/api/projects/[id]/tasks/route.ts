@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const sp = req.nextUrl.searchParams;
   const status = sp.get('status') as TaskStatus | null;
   const iterationId = sp.get('iterationId');
-  const view = sp.get('view') === 'tree' ? 'tree' : 'flat';
+  const view = sp.get('view') === 'tree' ? 'tree' : 'list';
 
   const listOptions = {
     projectId: params.id,
@@ -20,15 +20,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     ...(iterationId ? { iterationId } : {})
   } as const;
 
-  if (view === 'tree') {
-    const flat = tasksRepository.list({ ...listOptions });
-    const tree = tasksRepository.list({ ...listOptions, view: 'tree' }) as TaskTreeNode[];
-    return NextResponse.json({ items: flat, tree });
+  try {
+    if (view === 'tree') {
+      const tree = tasksRepository.list({ ...listOptions, view: 'tree' }) as TaskTreeNode[];
+      return NextResponse.json({ tree });
+    }
+
+    const items = tasksRepository.list({ ...listOptions, view: 'list' }) as Task[];
+    return NextResponse.json({ items });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to fetch tasks';
+    return NextResponse.json({ error: 'bad_request', message }, { status: 400 });
   }
-
-  const items = tasksRepository.list({ ...listOptions });
-
-  return NextResponse.json({ items });
 }
 
 const TaskCreate = z.object({
@@ -58,21 +61,26 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const now = new Date().toISOString();
   const status: TaskStatus = b.status ?? 'new';
 
-  const task = tasksRepository.create({
-    projectId: params.id,
-    title: b.title ?? 'Новая задача',
-    status,
-    createdAt: now,
-    updatedAt: now,
-    parentId: b.parentId ?? null,
-    ...(b.description !== undefined ? { description: b.description } : {}),
-    ...(b.iterationId ? { iterationId: b.iterationId } : {}),
-    ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
-    ...(b.startAt ? { startAt: b.startAt } : {}),
-    ...(b.dueAt ? { dueAt: b.dueAt } : {}),
-    ...(b.priority ? { priority: b.priority } : {}),
-    ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
-  }) as Task;
+  try {
+    const task = tasksRepository.create({
+      projectId: params.id,
+      title: b.title ?? 'Новая задача',
+      status,
+      createdAt: now,
+      updatedAt: now,
+      parentId: b.parentId ?? null,
+      ...(b.description !== undefined ? { description: b.description } : {}),
+      ...(b.iterationId ? { iterationId: b.iterationId } : {}),
+      ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
+      ...(b.startAt ? { startAt: b.startAt } : {}),
+      ...(b.dueAt ? { dueAt: b.dueAt } : {}),
+      ...(b.priority ? { priority: b.priority } : {}),
+      ...(Array.isArray(b.labels) ? { labels: b.labels } : {})
+    }) as Task;
 
-  return NextResponse.json(task, { status: 201 });
+    return NextResponse.json(task, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to create task';
+    return NextResponse.json({ error: 'bad_request', message }, { status: 400 });
+  }
 }

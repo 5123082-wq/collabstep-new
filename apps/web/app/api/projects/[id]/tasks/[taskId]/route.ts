@@ -87,7 +87,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (body.parentId === null || body.parentId === '') {
       existing.parentId = null;
     } else {
-      existing.parentId = body.parentId;
+      const parentId = body.parentId;
+      if (parentId === existing.id) {
+        return NextResponse.json({ error: 'invalid_parent' }, { status: 400 });
+      }
+
+      const visited = new Set<string>([existing.id]);
+      let currentId: string | null = parentId;
+      while (currentId) {
+        if (visited.has(currentId)) {
+          return NextResponse.json({ error: 'invalid_parent' }, { status: 400 });
+        }
+        visited.add(currentId);
+
+        const parent = memory.TASKS.find((task) => task.id === currentId);
+        if (!parent || parent.projectId !== params.id) {
+          return NextResponse.json({ error: 'invalid_parent' }, { status: 400 });
+        }
+
+        currentId = parent.parentId ?? null;
+      }
+
+      existing.parentId = parentId;
     }
   }
 

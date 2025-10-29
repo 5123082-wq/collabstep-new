@@ -23,4 +23,6 @@ declare module 'lucide-react' {
   export const Calendar: LucideIcon;
   export const BookOpen: LucideIcon;
   export const Settings: LucideIcon;
+  export const ChevronDown: LucideIcon;
+  export const ChevronRight: LucideIcon;
 }

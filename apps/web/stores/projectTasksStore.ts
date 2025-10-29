@@ -57,6 +57,47 @@ async function fetchJson<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   return (await response.json()) as T;
 }
 
+function flattenTaskTree(nodes: TaskTreeNode[]): Task[] {
+  const result: Task[] = [];
+
+  const walk = (node: TaskTreeNode) => {
+    const { children, ...task } = node;
+    result.push({ ...(task as Task) });
+    if (Array.isArray(children)) {
+      children.forEach((child) => walk(child));
+    }
+  };
+
+  nodes.forEach((node) => walk(node));
+  return result;
+}
+
+function buildTaskTreeFromFlat(items: Task[]): TaskTreeNode[] {
+  const nodes = new Map<string, TaskTreeNode>();
+  const roots: TaskTreeNode[] = [];
+
+  items.forEach((task) => {
+    nodes.set(task.id, { ...task });
+  });
+
+  nodes.forEach((node) => {
+    const parentId = node.parentId ?? null;
+    if (parentId && nodes.has(parentId)) {
+      const parent = nodes.get(parentId);
+      if (parent) {
+        if (!parent.children) {
+          parent.children = [];
+        }
+        parent.children.push(node);
+      }
+    } else {
+      roots.push(node);
+    }
+  });
+
+  return roots;
+}
+
 export const useProjectTasksStore = create<ProjectTasksState>((set, get) => ({
   ...defaultState,
   setProject: (projectId) => set({ projectId }),
@@ -120,11 +161,17 @@ export const useProjectTasksStore = create<ProjectTasksState>((set, get) => ({
       const data = await fetchJson<{ items?: Task[]; tree?: TaskTreeNode[] }>(
         `/api/projects/${projectId}/tasks?${params.toString()}`
       );
-      set({
-        tasks: Array.isArray(data.items) ? data.items : [],
-        tree: Array.isArray(data.tree) ? data.tree : [],
-        isLoading: false
-      });
+
+      const tree = Array.isArray(data.tree)
+        ? data.tree
+        : Array.isArray(data.items)
+          ? buildTaskTreeFromFlat(data.items)
+          : [];
+      const tasks = Array.isArray(data.items)
+        ? data.items
+        : flattenTaskTree(tree);
+
+      set({ tasks, tree, isLoading: false });
     } catch (err) {
       console.error(err);
       set({

@@ -1,7 +1,7 @@
 import { memory } from '../data/memory';
 import type { Task, TaskStatus, TaskTreeNode } from '../types';
 
-type TaskListView = 'flat' | 'tree';
+type TaskListView = 'list' | 'tree';
 
 export type TaskListOptions = {
   projectId?: string;
@@ -39,10 +39,10 @@ function cloneTask(task: Task): Task {
 }
 
 export class TasksRepository {
-  list(options?: TaskListOptions & { view?: 'flat' }): Task[];
+  list(options?: TaskListOptions & { view?: 'list' }): Task[];
   list(options: TaskListOptions & { view: 'tree' }): TaskTreeNode[];
   list(options: TaskListOptions = {}): Task[] | TaskTreeNode[] {
-    const { projectId, status, iterationId, view = 'flat' } = options;
+    const { projectId, status, iterationId, view = 'list' } = options;
     let items = memory.TASKS;
     if (projectId) {
       items = items.filter((task) => task.projectId === projectId);
@@ -69,15 +69,22 @@ export class TasksRepository {
     const now = new Date().toISOString();
     const createdAt = input.createdAt ?? now;
     const updatedAt = input.updatedAt ?? createdAt;
+    const id = input.id ?? crypto.randomUUID();
+    const parentId = input.parentId ?? null;
+
+    if (parentId) {
+      assertValidParent(parentId, input.projectId, id);
+    }
+
     const task: Task = {
-      id: input.id ?? crypto.randomUUID(),
+      id,
       projectId: input.projectId,
+      parentId,
       title: input.title,
       description: input.description ?? '',
       status: input.status,
       createdAt,
       updatedAt,
-      ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
       ...(input.iterationId ? { iterationId: input.iterationId } : {}),
       ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
       ...(input.startAt ? { startAt: input.startAt } : {}),
@@ -92,6 +99,32 @@ export class TasksRepository {
 }
 
 export const tasksRepository = new TasksRepository();
+
+function assertValidParent(parentId: string, projectId: string, childId?: string): void {
+  const visited = new Set<string>();
+  let currentId: string | null = parentId;
+
+  while (currentId) {
+    if (visited.has(currentId)) {
+      throw new Error('Task hierarchy cycle detected');
+    }
+    visited.add(currentId);
+
+    if (childId && currentId === childId) {
+      throw new Error('Task cannot be its own parent');
+    }
+
+    const parent = memory.TASKS.find((task) => task.id === currentId);
+    if (!parent) {
+      throw new Error('Parent task not found');
+    }
+    if (parent.projectId !== projectId) {
+      throw new Error('Parent task must belong to the same project');
+    }
+
+    currentId = parent.parentId ?? null;
+  }
+}
 
 function buildTaskTree(tasks: Task[]): TaskTreeNode[] {
   const nodes = new Map<string, TaskTreeNode>();

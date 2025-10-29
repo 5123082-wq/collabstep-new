@@ -57,7 +57,7 @@ export interface ProjectMember {
 export interface Task {
   id: ID;
   projectId: ID;
-  parentId?: ID | null;
+  parentId: ID | null;
   title: string;
   description?: string;
   status: TaskStatus;
