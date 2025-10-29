@@ -28,6 +28,8 @@ export interface Project {
   stage?: ProjectStage;
   type?: ProjectType;
   visibility: 'private' | 'public';
+  budgetPlanned: number | null;
+  budgetSpent: number | null;
   workflowId?: ID;
   archived: boolean;
   createdAt: string;

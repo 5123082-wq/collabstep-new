@@ -17,6 +17,24 @@ const stageValues = ['discovery', 'design', 'build', 'launch', 'support'] as con
 const typeValues = ['product', 'marketing', 'operations', 'service', 'internal'] as const;
 const allowedTaskStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
+function parseBudgetValue(input: unknown): number | null {
+  if (input === null || input === undefined) {
+    return null;
+  }
+  if (typeof input === 'number') {
+    return Number.isFinite(input) ? input : null;
+  }
+  if (typeof input === 'string') {
+    const normalized = input.trim().replace(',', '.');
+    if (!normalized) {
+      return null;
+    }
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 const createFromTemplateSchema = z.object({
   templateId: z.string().min(1),
   title: z
@@ -99,6 +117,7 @@ export async function POST(req: NextRequest) {
 
   const projectId = crypto.randomUUID();
   const workflowId = workflow?.id ?? `wf-${projectId}`;
+  const budgetPlanned = parseBudgetValue(finance?.budget ?? null);
 
   const project: Project = {
     id: projectId,
@@ -110,6 +129,8 @@ export async function POST(req: NextRequest) {
     type,
     visibility,
     workflowId,
+    budgetPlanned,
+    budgetSpent: budgetPlanned !== null ? 0 : null,
     archived: false,
     createdAt: nowISO,
     updatedAt: nowISO
@@ -142,6 +163,8 @@ export async function POST(req: NextRequest) {
     };
     if (finance.budget) {
       budget.total = finance.budget;
+    } else if (budgetPlanned !== null) {
+      budget.total = budgetPlanned.toFixed(2);
     }
     projectBudgetsRepository.upsert(budget);
   }

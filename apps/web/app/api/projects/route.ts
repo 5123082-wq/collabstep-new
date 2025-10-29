@@ -34,6 +34,24 @@ function parseArchivedFilter(value: string | null): boolean | null {
 
 const allowedWorkflowStatuses: TaskStatus[] = ['new', 'in_progress', 'review', 'done', 'blocked'];
 
+function parseBudgetValue(input: unknown): number | null {
+  if (input === null) {
+    return null;
+  }
+  if (typeof input === 'number') {
+    return Number.isFinite(input) ? input : null;
+  }
+  if (typeof input === 'string') {
+    const normalized = input.trim().replace(',', '.');
+    if (!normalized) {
+      return null;
+    }
+    const parsed = Number.parseFloat(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function parseSort(value: string | null): ProjectCardSort | null {
   if (!value) {
     return null;
@@ -172,6 +190,11 @@ export async function POST(req: NextRequest) {
       : ['new', 'in_progress', 'review', 'done'];
   const workflowId = typeof body.workflow?.id === 'string' && body.workflow.id ? body.workflow.id : undefined;
 
+  const requestedBudget = parseBudgetValue(body.budgetPlanned);
+  const financeBudget = parseBudgetValue(body.finance?.budget ?? null);
+  const budgetPlanned = requestedBudget !== null ? requestedBudget : financeBudget;
+  const budgetSpent = parseBudgetValue(body.budgetSpent);
+
   const project = projectsRepository.create({
     title: typeof body.title === 'string' && body.title.trim() ? body.title.trim() : 'Без названия',
     description: typeof body.description === 'string' ? body.description : '',
@@ -184,7 +207,9 @@ export async function POST(req: NextRequest) {
     deadline: typeof body.deadline === 'string' && body.deadline ? body.deadline : undefined,
     type,
     visibility,
-    workflowId
+    workflowId,
+    budgetPlanned,
+    budgetSpent
   });
 
   memory.WORKFLOWS[project.id] = {
@@ -192,10 +217,15 @@ export async function POST(req: NextRequest) {
     statuses: normalizedWorkflow
   };
 
-  if (body.finance?.budget || body.finance?.currency) {
-    const planned = typeof body.finance?.budget === 'string' && body.finance?.budget ? body.finance.budget : null;
-    const currency = typeof body.finance?.currency === 'string' && body.finance?.currency ? body.finance.currency.toUpperCase() : null;
+  if (body.finance?.budget || body.finance?.currency || budgetPlanned !== null) {
+    const plannedFromFinance =
+      typeof body.finance?.budget === 'string' && body.finance?.budget ? body.finance.budget : null;
+    const currency =
+      typeof body.finance?.currency === 'string' && body.finance?.currency
+        ? body.finance.currency.toUpperCase()
+        : null;
     if (currency) {
+      const planned = plannedFromFinance ?? (budgetPlanned !== null ? budgetPlanned.toFixed(2) : null);
       const budget = {
         projectId: project.id,
         currency,
