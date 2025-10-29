@@ -16,6 +16,7 @@ import {
   type TaskStatus
 } from '@collabverse/api';
 import { workspacesRepository } from '@collabverse/api';
+import { recordAudit } from '@/lib/audit/log';
 
 function parseArchivedFilter(value: string | null): boolean | null {
   if (!value) {
@@ -235,6 +236,14 @@ export async function POST(req: NextRequest) {
       projectBudgetsRepository.upsert(budget);
     }
   }
+
+  recordAudit({
+    action: 'project.created',
+    entity: { type: 'project', id: project.id },
+    projectId: project.id,
+    workspaceId: project.workspaceId,
+    after: project
+  });
 
   return NextResponse.json(project, { status: 201 });
 }

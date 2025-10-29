@@ -1,4 +1,5 @@
 import type { UserRole } from '@/lib/auth/roles';
+import { flags, type FlagName } from '@/lib/flags';
 
 export type ProjectMenuTab = {
   id: string;
@@ -12,6 +13,7 @@ export type ProjectMenuItem = {
   description: string;
   roles?: UserRole[];
   tabs: ProjectMenuTab[];
+  featureFlag?: FlagName;
 };
 
 const baseMenu: ProjectMenuItem[] = [
@@ -24,6 +26,17 @@ const baseMenu: ProjectMenuItem[] = [
       { id: 'stages', label: 'Карта стадий' },
       { id: 'kpi', label: 'KPI / Сроки / Бюджет' },
       { id: 'risks', label: 'Риски' }
+    ]
+  },
+  {
+    id: 'activity',
+    label: 'Активность',
+    slug: 'activity',
+    description: 'История событий, лог аудита и изменения статусов.',
+    featureFlag: 'PROJECT_ACTIVITY_AUDIT',
+    tabs: [
+      { id: 'timeline', label: 'Лента изменений' },
+      { id: 'filters', label: 'Фильтры' }
     ]
   },
   {
@@ -154,6 +167,9 @@ const baseMenu: ProjectMenuItem[] = [
 
 export function getProjectMenuForRoles(roles: UserRole[]): ProjectMenuItem[] {
   return baseMenu.filter((item) => {
+    if (item.featureFlag && !flags[item.featureFlag]) {
+      return false;
+    }
     if (!item.roles || item.roles.length === 0) {
       return true;
     }

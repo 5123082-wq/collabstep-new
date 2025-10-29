@@ -10,6 +10,10 @@ const PROJECT_PAGE_METADATA: Record<string, { label: string; description?: strin
     label: 'Обзор проекта',
     description: 'Сводка статуса, ключевые показатели и риски проекта.'
   },
+  activity: {
+    label: 'Активность',
+    description: 'Хронология изменений, действий команды и лог аудита.'
+  },
   brief: {
     label: 'Бриф и вводные',
     description: 'Контекст, цели и ключевые вводные для команды.'

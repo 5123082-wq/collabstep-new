@@ -2,18 +2,30 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { AuditLogEntry } from '@collabverse/api';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
+import { flags } from '@/lib/flags';
 
 type TaskItem = Pick<
   Task,
-  'id' | 'title' | 'status' | 'iterationId' | 'description' | 'assigneeId' | 'startAt' | 'dueAt' | 'labels'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'iterationId'
+  | 'description'
+  | 'assigneeId'
+  | 'startAt'
+  | 'dueAt'
+  | 'labels'
+  | 'estimatedTime'
+  | 'loggedTime'
 >;
 
 type IterationItem = Pick<Iteration, 'id' | 'title'>;
 
-type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt';
+type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt' | 'activity';
 
 type ProjectTasksPageClientProps = {
   projectId: string;
@@ -42,6 +54,59 @@ type IterationPayload = {
 const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done'];
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+const TASK_ACTIVITY_LABELS: Record<string, string> = {
+  'task.created': 'Создана задача',
+  'task.updated': 'Обновлена задача',
+  'task.status_changed': 'Изменён статус задачи',
+  'task.time_updated': 'Обновлено время',
+  'file.attached': 'Прикреплён файл',
+  'project.updated': 'Изменения в проекте'
+};
+
+const activityDateFormatter = new Intl.DateTimeFormat('ru-RU', {
+  day: '2-digit',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit'
+});
+
+function getViewLabel(view: BoardView): string {
+  switch (view) {
+    case 'kanban':
+      return 'Канбан';
+    case 'calendar':
+      return 'Календарь';
+    case 'gantt':
+      return 'Гантт';
+    case 'activity':
+      return 'Активность';
+    case 'list':
+    default:
+      return 'Список';
+  }
+}
+
+function getTaskActivityLabel(action: string): string {
+  return TASK_ACTIVITY_LABELS[action] ?? action;
+}
+
+function describeTaskActivity(entry: AuditLogEntry): string {
+  const { entity } = entry;
+  if (!entity) {
+    return '';
+  }
+  if (entity.type === 'task') {
+    return `Задача #${entity.id}`;
+  }
+  if (entity.type === 'file') {
+    return `Файл #${entity.id}`;
+  }
+  if (entity.type === 'project') {
+    return `Проект #${entity.id}`;
+  }
+  return `${entity.type} #${entity.id}`;
+}
 
 function parseISODate(value?: string | null): Date | null {
   if (!value) {
@@ -123,7 +188,14 @@ export default function ProjectTasksPageClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const availableViews = useMemo<BoardView[]>(() => {
-    return viewsEnabled ? ['list', 'kanban', 'calendar', 'gantt'] : ['list', 'kanban'];
+    const base: BoardView[] = ['list', 'kanban'];
+    if (viewsEnabled) {
+      base.push('calendar', 'gantt');
+    }
+    if (flags.PROJECT_ACTIVITY_AUDIT) {
+      base.push('activity');
+    }
+    return base;
   }, [viewsEnabled]);
   const defaultView: BoardView = useMemo(() => {
     const candidate = (initialView ?? '').toLowerCase();
@@ -404,7 +476,7 @@ export default function ProjectTasksPageClient({
                 view === option ? 'bg-indigo-500 text-white' : 'hover:text-white'
               }`}
             >
-              {option === 'kanban' ? 'Канбан' : option === 'list' ? 'Список' : option === 'calendar' ? 'Календарь' : 'Гантт'}
+              {getViewLabel(option)}
             </button>
           ))}
         </div>
@@ -458,7 +530,9 @@ export default function ProjectTasksPageClient({
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
       <section className="space-y-3">
-        {isLoading ? (
+        {view === 'activity' ? (
+          <TaskActivityView projectId={projectId} />
+        ) : isLoading ? (
           <div className="rounded-xl border border-neutral-800 bg-neutral-950/80 p-4 text-sm text-neutral-400">Загрузка…</div>
         ) : items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-sm text-neutral-400">
@@ -560,6 +634,8 @@ export default function ProjectTasksPageClient({
         iterations={iterations}
         onClose={() => setDrawerOpen(false)}
         onSubmit={handleTaskUpdate}
+        projectId={projectId}
+        onRefresh={refreshAll}
       />
 
       <IterationModal
@@ -577,9 +653,11 @@ type TaskDrawerProps = {
   iterations: IterationItem[];
   onClose: () => void;
   onSubmit: (taskId: string, payload: TaskUpdatePayload) => Promise<void>;
+  projectId: string;
+  onRefresh: () => Promise<void>;
 };
 
-function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: TaskDrawerProps) {
+function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, projectId, onRefresh }: TaskDrawerProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus | ''>('');
@@ -590,6 +668,12 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
   const [labels, setLabels] = useState('');
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [estimatedInput, setEstimatedInput] = useState('');
+  const [loggedTotal, setLoggedTotal] = useState(0);
+  const [loggedIncrement, setLoggedIncrement] = useState('');
+  const [timeError, setTimeError] = useState<string | null>(null);
+  const [timeSaving, setTimeSaving] = useState(false);
+  const [timeMessage, setTimeMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !task) {
@@ -604,7 +688,95 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
     setDueAt(toInputDateTime(task.dueAt));
     setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
     setError(null);
+    setEstimatedInput(
+      typeof task.estimatedTime === 'number' && Number.isFinite(task.estimatedTime)
+        ? String(task.estimatedTime)
+        : ''
+    );
+    setLoggedTotal(typeof task.loggedTime === 'number' && Number.isFinite(task.loggedTime) ? task.loggedTime : 0);
+    setLoggedIncrement('');
+    setTimeError(null);
+    setTimeMessage(null);
   }, [open, task]);
+
+  const handleEstimatedSave = useCallback(async () => {
+    if (!task) {
+      return;
+    }
+    const nextValue = Number.parseInt(estimatedInput, 10);
+    if (!Number.isFinite(nextValue) || nextValue < 0) {
+      setTimeError('Оценка должна быть неотрицательным числом.');
+      return;
+    }
+    setTimeSaving(true);
+    setTimeError(null);
+    setTimeMessage(null);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/tasks/${task.id}/time`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estimatedTime: nextValue })
+      });
+      if (!response.ok) {
+        const message = await response.text().catch(() => '');
+        throw new Error(message || 'Не удалось обновить оценку времени');
+      }
+      const data = (await response.json()) as { estimatedTime?: number | null; loggedTime?: number | null };
+      setEstimatedInput(
+        typeof data.estimatedTime === 'number' && Number.isFinite(data.estimatedTime)
+          ? String(data.estimatedTime)
+          : ''
+      );
+      if (typeof data.loggedTime === 'number' && Number.isFinite(data.loggedTime)) {
+        setLoggedTotal(data.loggedTime);
+      }
+      setTimeMessage('Оценка обновлена');
+      await onRefresh();
+    } catch (err) {
+      setTimeError(err instanceof Error ? err.message : 'Не удалось обновить оценку времени');
+    } finally {
+      setTimeSaving(false);
+    }
+  }, [estimatedInput, onRefresh, projectId, task]);
+
+  const handleLogSubmit = useCallback(async () => {
+    if (!task) {
+      return;
+    }
+    const increment = Number.parseInt(loggedIncrement, 10);
+    if (!Number.isFinite(increment) || increment <= 0) {
+      setTimeError('Введите количество часов для добавления.');
+      return;
+    }
+    setTimeSaving(true);
+    setTimeError(null);
+    setTimeMessage(null);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/tasks/${task.id}/time`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ increment })
+      });
+      if (!response.ok) {
+        const message = await response.text().catch(() => '');
+        throw new Error(message || 'Не удалось обновить учёт времени');
+      }
+      const data = (await response.json()) as { estimatedTime?: number | null; loggedTime?: number | null };
+      if (typeof data.loggedTime === 'number' && Number.isFinite(data.loggedTime)) {
+        setLoggedTotal(data.loggedTime);
+      }
+      if (typeof data.estimatedTime === 'number' && Number.isFinite(data.estimatedTime)) {
+        setEstimatedInput(String(data.estimatedTime));
+      }
+      setLoggedIncrement('');
+      setTimeMessage('Время зафиксировано');
+      await onRefresh();
+    } catch (err) {
+      setTimeError(err instanceof Error ? err.message : 'Не удалось обновить учёт времени');
+    } finally {
+      setTimeSaving(false);
+    }
+  }, [loggedIncrement, onRefresh, projectId, task]);
 
   const handleClose = useCallback(() => {
     if (!isSaving) {
@@ -765,6 +937,58 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
                   placeholder="product, design, urgent"
                 />
               </label>
+              {flags.TASK_TIME_TRACKING ? (
+                <div className="space-y-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-neutral-100">Трекинг времени</h3>
+                    <span className="text-xs text-neutral-400">Залогировано: {loggedTotal} ч</span>
+                  </div>
+                  {timeError ? <p className="text-xs text-rose-400">{timeError}</p> : null}
+                  {timeMessage ? <p className="text-xs text-emerald-400">{timeMessage}</p> : null}
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto]">
+                    <label className="space-y-1 text-xs uppercase tracking-[0.2em] text-neutral-500">
+                      <span className="block text-neutral-400">Оценка (ч)</span>
+                      <input
+                        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                        value={estimatedInput}
+                        onChange={(event) => setEstimatedInput(event.target.value.replace(/[^0-9]/g, ''))}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        disabled={timeSaving}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void handleEstimatedSave()}
+                      className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:opacity-60"
+                      disabled={timeSaving}
+                    >
+                      {timeSaving ? 'Сохранение…' : 'Сохранить'}
+                    </button>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto]">
+                    <label className="space-y-1 text-xs uppercase tracking-[0.2em] text-neutral-500">
+                      <span className="block text-neutral-400">Добавить (ч)</span>
+                      <input
+                        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                        value={loggedIncrement}
+                        onChange={(event) => setLoggedIncrement(event.target.value.replace(/[^0-9]/g, ''))}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        disabled={timeSaving}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => void handleLogSubmit()}
+                      className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:opacity-60"
+                      disabled={timeSaving}
+                    >
+                      {timeSaving ? 'Сохранение…' : 'Добавить'}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {error ? <p className="text-sm text-red-400">{error}</p> : null}
             </div>
           ) : (
@@ -790,6 +1014,99 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit }: Tas
         </form>
       </SheetContent>
     </Sheet>
+  );
+}
+
+type TaskActivityViewProps = {
+  projectId: string;
+};
+
+function TaskActivityView({ projectId }: TaskActivityViewProps) {
+  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
+  const [isLoading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadEntries = useCallback(async () => {
+    if (!flags.PROJECT_ACTIVITY_AUDIT) {
+      setEntries([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/activity?scope=tasks&limit=100`, {
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить активность');
+      }
+      const data = (await response.json()) as { items?: AuditLogEntry[] };
+      setEntries(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка загрузки активности');
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    void loadEntries();
+  }, [loadEntries]);
+
+  if (!flags.PROJECT_ACTIVITY_AUDIT) {
+    return (
+      <div className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-6 text-sm text-neutral-400">
+        Раздел активности отключён конфигурацией.
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-neutral-900 bg-neutral-950/80 p-6 text-sm text-neutral-400">
+        Загрузка активности задач…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-100">{error}</div>
+    );
+  }
+
+  if (entries.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-6 text-sm text-neutral-400">
+        Активность по задачам появится после первых изменений.
+      </div>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {entries.map((entry) => (
+        <li key={entry.id} className="rounded-2xl border border-neutral-900 bg-neutral-950/70 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-neutral-100">{getTaskActivityLabel(entry.action)}</p>
+              <p className="text-xs text-neutral-400">{describeTaskActivity(entry)}</p>
+            </div>
+            <span className="text-xs text-neutral-500">{activityDateFormatter.format(new Date(entry.createdAt))}</span>
+          </div>
+          <p className="mt-2 text-xs text-neutral-400">
+            Исполнитель: <span className="text-neutral-200">{entry.actorId}</span>
+          </p>
+          {entry.action === 'task.time_updated' && typeof entry.after === 'object' && entry.after !== null ? (
+            <p className="mt-1 text-xs text-neutral-400">
+              Время: {(entry.after as { loggedTime?: unknown }).loggedTime ?? '—'} / {(entry.after as { estimatedTime?: unknown }).estimatedTime ?? '—'} ч
+            </p>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 type IterationModalProps = {

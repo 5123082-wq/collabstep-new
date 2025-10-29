@@ -6,7 +6,9 @@ export type FeatureFlagKey =
   | 'projectDashboard'
   | 'budgetLimits'
   | 'tasksWorkspace'
-  | 'financeAutomations';
+  | 'financeAutomations'
+  | 'projectActivityAudit'
+  | 'taskTimeTracking';
 
 export type FeatureFlagDefinition = {
   env: string;
@@ -47,7 +49,7 @@ export const featureFlagRegistry = {
     env: 'NEXT_PUBLIC_FEATURE_PROJECT_DASHBOARD',
     stage: 4,
     description: 'Дашборд проекта с виджетами прогресса и рисков.',
-    default: false
+    default: true
   },
   budgetLimits: {
     env: 'NEXT_PUBLIC_FEATURE_BUDGET_LIMITS',
@@ -66,6 +68,18 @@ export const featureFlagRegistry = {
     stage: 8,
     description: 'Автоматизации финансов и журнал срабатываний.',
     default: false
+  },
+  projectActivityAudit: {
+    env: 'NEXT_PUBLIC_FEATURE_PROJECT_ACTIVITY_AUDIT',
+    stage: 4,
+    description: 'Лента активности проекта и задач.',
+    default: true
+  },
+  taskTimeTracking: {
+    env: 'NEXT_PUBLIC_FEATURE_TASK_TIME_TRACKING',
+    stage: 4,
+    description: 'Учёт и трекинг времени по задачам.',
+    default: true
   }
 } as const satisfies Record<FeatureFlagKey, FeatureFlagDefinition>;
 

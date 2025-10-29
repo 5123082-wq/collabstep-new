@@ -10,7 +10,7 @@ export type UserRole =
   | 'OBSERVER';
 
 const DEFAULT_ROLES: UserRole[] = ['FOUNDER', 'PM'];
-const ADMIN_EXTRA_ROLES: UserRole[] = ['ADMIN', 'MODERATOR'];
+const FULL_ADMIN_ROLES: UserRole[] = ['FOUNDER', 'PM', 'ADMIN', 'MODERATOR', 'SPECIALIST', 'CONTRACTOR', 'OBSERVER'];
 
 const FINANCE_ALLOWED = new Set<UserRole>(['FOUNDER', 'PM', 'ADMIN']);
 const ADMIN_ALLOWED = new Set<UserRole>(['ADMIN', 'MODERATOR']);
@@ -41,7 +41,7 @@ export function setUserRoles(roles: UserRole[]): void {
 
 export function getRolesForDemoRole(role: DemoRole): UserRole[] {
   if (role === 'admin') {
-    return [...DEFAULT_ROLES, ...ADMIN_EXTRA_ROLES];
+    return [...new Set(FULL_ADMIN_ROLES)];
   }
 
   return [...DEFAULT_ROLES];

@@ -10,6 +10,7 @@ export type DemoSession = {
 
 export const DEMO_SESSION_COOKIE = 'cv_session';
 export const DEMO_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
+export const DEMO_ADMIN_EMAIL = process.env.DEMO_ADMIN_EMAIL ?? 'admin.demo@collabverse.test';
 
 export function encodeDemoSession(session: DemoSession): string {
   return Buffer.from(JSON.stringify(session)).toString('base64url');
@@ -48,7 +49,7 @@ export function parseDemoRole(value: unknown): DemoRole | null {
 
 export function getDemoAccount(role: DemoRole): { email: string; password: string } {
   const prefix = role === 'admin' ? 'DEMO_ADMIN' : 'DEMO_USER';
-  const fallbackEmail = role === 'admin' ? 'admin.demo@collabverse.test' : 'user.demo@collabverse.test';
+  const fallbackEmail = role === 'admin' ? DEMO_ADMIN_EMAIL : 'user.demo@collabverse.test';
   const fallbackPassword = role === 'admin' ? 'demo-admin' : 'demo-user';
   const email = process.env[`${prefix}_EMAIL`] ?? fallbackEmail;
   const password = process.env[`${prefix}_PASSWORD`] ?? fallbackPassword;
@@ -65,4 +66,8 @@ export function getDemoSessionFromCookies(): DemoSession | null {
 export function isDemoAuthEnabled(): boolean {
   const flag = (process.env.AUTH_DEV ?? 'on').toLowerCase();
   return flag !== 'off' && flag !== 'false' && flag !== '0';
+}
+
+export function isDemoAdminSession(session: DemoSession | null | undefined): session is DemoSession {
+  return Boolean(session && session.role === 'admin' && session.email === DEMO_ADMIN_EMAIL);
 }

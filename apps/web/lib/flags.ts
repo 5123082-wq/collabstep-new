@@ -30,6 +30,8 @@ export const flags = {
   BUDGET_LIMITS: isFeatureEnabled('budgetLimits'),
   FINANCE_AUTOMATIONS: isFeatureEnabled('financeAutomations'),
   FINANCE_GLOBAL: isFeatureEnabled('financeGlobal'),
+  PROJECT_ACTIVITY_AUDIT: isFeatureEnabled('projectActivityAudit'),
+  TASK_TIME_TRACKING: isFeatureEnabled('taskTimeTracking'),
   PROJECT_ATTACHMENTS: resolveLegacyBooleanFlag([
     'NEXT_PUBLIC_FEATURE_PROJECT_ATTACHMENTS',
     'FEATURE_PROJECT_ATTACHMENTS'
