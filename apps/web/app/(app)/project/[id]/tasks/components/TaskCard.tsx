@@ -49,6 +49,7 @@ export function TaskCard({ task, onClick, className, footer }: TaskCardProps) {
         onClick && 'cursor-pointer hover:border-indigo-500/60 hover:bg-neutral-900',
         className
       )}
+      data-task-id={task.id}
     >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold text-neutral-100">{task.title}</p>

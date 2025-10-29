@@ -210,6 +210,27 @@ export const memory = {
       updatedAt: '2024-06-09T10:30:00.000Z'
     },
     {
+      id: 'task-admin-design-library',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-design',
+      title: 'Собрать UI-кит',
+      description: 'Сверстать компоненты, состояния и адаптивные варианты.',
+      status: 'in_progress',
+      assigneeId: 'designer-1',
+      createdAt: '2024-05-13T09:30:00.000Z',
+      updatedAt: '2024-06-09T11:00:00.000Z'
+    },
+    {
+      id: 'task-admin-design-library-assets',
+      projectId: 'proj-admin-onboarding',
+      parentId: 'task-admin-design-library',
+      title: 'Подготовить ассеты для презентации',
+      description: 'Экспортировать макеты и сделать превью для команды.',
+      status: 'new',
+      createdAt: '2024-05-14T12:15:00.000Z',
+      updatedAt: '2024-06-09T11:10:00.000Z'
+    },
+    {
       id: 'task-admin-landing-archive-audit',
       projectId: 'proj-admin-landing-archive',
       parentId: null,

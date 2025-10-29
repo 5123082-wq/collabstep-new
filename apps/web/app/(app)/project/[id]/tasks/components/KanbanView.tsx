@@ -63,7 +63,7 @@ export function KanbanView({ statuses, tasks, onTaskDrop, onTaskClick, isLoading
         setActiveTaskId(String(event.active.id));
       }}
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-view-mode="kanban">
         {columns.map((column) => (
           <KanbanColumn
             key={column.status}
@@ -90,6 +90,7 @@ function KanbanColumn({ column, isLoading, onTaskClick, activeTaskId }: KanbanCo
   return (
     <div
       ref={setNodeRef}
+      data-status={column.status}
       className={cn(
         'flex min-h-[420px] flex-col gap-3 rounded-2xl border border-neutral-900 bg-neutral-950/40 p-3 transition',
         isOver && 'border-indigo-500/60 bg-neutral-900/60'
@@ -142,6 +143,7 @@ function DraggableTaskCard({ task, onTaskClick, isActive }: DraggableTaskCardPro
       ref={setNodeRef}
       style={style}
       className={cn('touch-none', (isDragging || isActive) && 'opacity-75')}
+      data-task-id={task.id}
       {...listeners}
       {...attributes}
     >

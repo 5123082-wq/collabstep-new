@@ -10,13 +10,15 @@ type TaskRowProps = {
   depth?: number;
   onSelect?: (taskId: string) => void;
   children?: ReactNode;
+  isExpanded?: boolean | undefined;
+  onToggle?: (() => void) | undefined;
 };
 
-export function TaskRow({ task, depth = 0, onSelect, children }: TaskRowProps) {
+export function TaskRow({ task, depth = 0, onSelect, children, isExpanded, onToggle }: TaskRowProps) {
   const indent = Math.max(depth, 0) * 16;
   const hasChildren = Array.isArray(task.children) && task.children.length > 0;
   return (
-    <div className="flex flex-col" style={{ paddingLeft: indent }}>
+    <div className="flex flex-col" style={{ paddingLeft: indent }} data-task-row-id={task.id}>
       <div
         className={cn(
           'flex items-start justify-between gap-3 rounded-xl border border-neutral-900 bg-neutral-950/50 px-3 py-2 text-sm transition',
@@ -36,16 +38,45 @@ export function TaskRow({ task, depth = 0, onSelect, children }: TaskRowProps) {
             : undefined
         }
       >
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-neutral-100">{task.title}</p>
-            {hasChildren ? (
-              <span className="rounded-full border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
-                {task.children?.length} подзадач{task.children && task.children.length === 1 ? 'а' : ''}
-              </span>
-            ) : null}
+        <div className="flex flex-1 items-start gap-2">
+          {hasChildren ? (
+            <button
+              type="button"
+              className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded border border-neutral-800 bg-neutral-900 text-[10px] font-semibold text-neutral-300 transition hover:border-indigo-500/50 hover:text-indigo-200"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (onToggle) {
+                  onToggle();
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (onToggle) {
+                    onToggle();
+                  }
+                }
+              }}
+              aria-label={isExpanded ? 'Свернуть ветку' : 'Развернуть ветку'}
+              aria-expanded={isExpanded ?? false}
+            >
+              {isExpanded ? '−' : '+'}
+            </button>
+          ) : (
+            <span className="mt-1 h-5 w-5" aria-hidden />
+          )}
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-neutral-100">{task.title}</p>
+              {hasChildren ? (
+                <span className="rounded-full border border-neutral-800 bg-neutral-900 px-2 py-0.5 text-[10px] uppercase tracking-wide text-neutral-500">
+                  {task.children?.length} подзадач{task.children && task.children.length === 1 ? 'а' : ''}
+                </span>
+              ) : null}
+            </div>
+            {task.description ? <p className="mt-1 text-xs text-neutral-500">{task.description}</p> : null}
           </div>
-          {task.description ? <p className="mt-1 text-xs text-neutral-500">{task.description}</p> : null}
         </div>
         <span
           className={cn(

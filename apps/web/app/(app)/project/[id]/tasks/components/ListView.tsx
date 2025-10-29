@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import TaskRow from './TaskRow';
 
@@ -28,7 +29,7 @@ export function ListView({ tree, onTaskClick, isLoading, emptyMessage = 'Зад�
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2" data-view-mode="list">
       {tree.map((node) => (
         <ListNode key={node.id} node={node} depth={0} {...(onTaskClick ? { onTaskClick } : {})} />
       ))}
@@ -44,10 +45,25 @@ type ListNodeProps = {
 
 function ListNode({ node, depth, onTaskClick }: ListNodeProps) {
   const children = node.children;
+  const hasChildren = Array.isArray(children) && children.length > 0;
+  const [expanded, setExpanded] = useState(true);
+
   return (
-    <TaskRow task={node} depth={depth} {...(onTaskClick ? { onSelect: onTaskClick } : {})}>
-      {children && children.length > 0
-        ? children.map((child) => (
+    <TaskRow
+      task={node}
+      depth={depth}
+      isExpanded={hasChildren ? expanded : undefined}
+      onToggle={
+        hasChildren
+          ? () => {
+              setExpanded((prev) => !prev);
+            }
+          : undefined
+      }
+      {...(onTaskClick ? { onSelect: onTaskClick } : {})}
+    >
+      {hasChildren && expanded
+        ? children!.map((child) => (
             <ListNode key={child.id} node={child} depth={depth + 1} {...(onTaskClick ? { onTaskClick } : {})} />
           ))
         : null}
