@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act } from 'react-dom/test-utils';
 
 let useUiStore: typeof import('@/lib/state/ui-store').useUiStore;
 
