@@ -61,5 +61,23 @@
     "stage": "Бриф",
     "visibility": "private",
     "lead": "founder@collabverse.ru"
+  },
+  {
+    "id": "proj-admin-onboarding",
+    "name": "Онбординг команды Collabstep",
+    "code": "ONB-01",
+    "status": "В работе",
+    "stage": "Дизайн",
+    "visibility": "private",
+    "lead": "admin.demo@collabverse.test"
+  },
+  {
+    "id": "proj-admin-landing-archive",
+    "name": "Редизайн лендинга (архив)",
+    "code": "LAN-01",
+    "status": "Завершён",
+    "stage": "Запуск",
+    "visibility": "public",
+    "lead": "admin.demo@collabverse.test"
   }
 ]
