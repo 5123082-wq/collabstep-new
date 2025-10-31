@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -145,17 +145,17 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
   const isArchived = project.status === 'archived';
   const { canArchive, canCreateTask, canInvite, canView } = project.permissions; // [PLAN:S2-210] Быстрые действия по ролям.
   return (
-    <article className="flex h-full flex-col justify-between gap-6 rounded-2xl border border-neutral-900 bg-neutral-950/50 p-5 shadow-md shadow-black/10">
-      <div className="space-y-4">
-        <header className="space-y-2">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-semibold text-white">{project.title}</h3>
-              <p className="text-sm text-neutral-400">{project.description || 'Описание появится позже.'}</p>
+    <article className="flex h-full flex-col justify-between gap-3 rounded-2xl border border-neutral-900 bg-neutral-950/50 p-3 shadow-md shadow-black/10">
+      <div className="space-y-2">
+        <header className="space-y-1.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-semibold text-white line-clamp-1">{project.title}</h3>
+              <p className="text-xs text-neutral-400 line-clamp-1">{project.description || 'Описание появится позже.'}</p>
             </div>
             <span
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap flex-shrink-0',
                 isArchived
                   ? 'border border-rose-500/40 bg-rose-500/10 text-rose-200'
                   : 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
@@ -164,96 +164,101 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
               {isArchived ? 'В архиве' : 'Активен'}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Пространство: {project.workspace.name}</span>
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Тип: {formatProjectType(project.type)}</span>
-            <span className="rounded-full bg-neutral-900 px-2 py-1">
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-neutral-400">
+            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 line-clamp-1">Пространство: {project.workspace.name}</span>
+            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5">Тип: {formatProjectType(project.type)}</span>
+            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5">
               Доступ: {formatProjectVisibility(project.visibility)}
             </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-400">
-            {project.stage ? <span className="rounded-full bg-neutral-900 px-2 py-1">Стадия: {project.stage}</span> : null}
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Создан: {formatDate(project.createdAt)}</span>
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Дедлайн: {formatDate(project.deadline)}</span>
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-neutral-400">
+            {project.stage ? <span className="rounded-full bg-neutral-900 px-1.5 py-0.5">Стадия: {project.stage}</span> : null}
+            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5">Создан: {formatDate(project.createdAt)}</span>
+            <span className="rounded-full bg-neutral-900 px-1.5 py-0.5">Дедлайн: {formatDate(project.deadline)}</span>
           </div>
         </header>
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Avatar name={project.owner.name} email={project.owner.email} avatarUrl={project.owner.avatarUrl} size={40} />
-            <div>
-              <p className="text-xs uppercase tracking-wide text-neutral-500">Владелец</p>
-              <p className="text-sm font-medium text-neutral-100">{project.owner.name || project.owner.email}</p>
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Avatar name={project.owner.name} email={project.owner.email} avatarUrl={project.owner.avatarUrl} size={28} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Владелец</p>
+              <p className="text-xs font-medium text-neutral-100 truncate">{project.owner.name || project.owner.email}</p>
             </div>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500">Команда</p>
-            <div className="mt-2 flex -space-x-2">
+            <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Команда</p>
+            <div className="flex -space-x-1.5">
               {project.members.slice(0, 5).map((member) => (
-                <Avatar key={member.id} name={member.name} email={member.email} avatarUrl={member.avatarUrl} size={32} />
+                <Avatar key={member.id} name={member.name} email={member.email} avatarUrl={member.avatarUrl} size={24} />
               ))}
               {project.members.length > 5 ? (
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-900 bg-neutral-900 text-xs text-neutral-300">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-neutral-900 bg-neutral-900 text-[10px] text-neutral-300">
                   +{project.members.length - 5}
                 </span>
               ) : null}
             </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">Задачи</p>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs text-neutral-300">
-              <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-                <p className="text-lg font-semibold text-white">{project.tasks.total}</p>
-                <p className="text-[10px] uppercase tracking-wide text-neutral-500">Всего</p>
+          <div className="space-y-1">
+            <p className="text-[10px] uppercase tracking-wide text-neutral-500">Задачи</p>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] text-neutral-300">
+              <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-1.5">
+                <p className="text-sm font-semibold text-white">{project.tasks.total}</p>
+                <p className="text-[9px] uppercase tracking-wide text-neutral-500">Всего</p>
               </div>
-              <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-                <p className="text-lg font-semibold text-amber-200">{project.tasks.overdue}</p>
-                <p className="text-[10px] uppercase tracking-wide text-neutral-500">Просрочено</p>
+              <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-1.5">
+                <p className="text-sm font-semibold text-amber-200">{project.tasks.overdue}</p>
+                <p className="text-[9px] uppercase tracking-wide text-neutral-500">Просрочено</p>
               </div>
-              <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-                <p className="text-lg font-semibold text-indigo-200">{project.tasks.important}</p>
-                <p className="text-[10px] uppercase tracking-wide text-neutral-500">Важные</p>
+              <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-1.5">
+                <p className="text-sm font-semibold text-indigo-200">{project.tasks.important}</p>
+                <p className="text-[9px] uppercase tracking-wide text-neutral-500">Важные</p>
               </div>
             </div>
           </div>
         </section>
         {project.tags.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {project.tags.map((tag) => (
-              <span key={tag} className="rounded-full border border-neutral-800 px-3 py-1 text-xs text-neutral-300">
+          <div className="flex flex-wrap gap-1.5">
+            {project.tags.slice(0, 3).map((tag) => (
+              <span key={tag} className="rounded-full border border-neutral-800 px-2 py-0.5 text-[10px] text-neutral-300">
                 #{tag}
               </span>
             ))}
+            {project.tags.length > 3 ? (
+              <span className="rounded-full border border-neutral-800 px-2 py-0.5 text-[10px] text-neutral-400">
+                +{project.tags.length - 3}
+              </span>
+            ) : null}
           </div>
         ) : null}
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">Бюджет</p>
-          <div className="grid grid-cols-2 gap-2 text-sm text-neutral-300">
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-3">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Запланировано</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.planned)}</p>
+        <div className="space-y-1">
+          <p className="text-[10px] uppercase tracking-wide text-neutral-500">Бюджет</p>
+          <div className="grid grid-cols-2 gap-1.5 text-xs text-neutral-300">
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-[9px] uppercase tracking-wide text-neutral-500">Запланировано</p>
+              <p className="mt-0.5 text-xs font-semibold text-white truncate">{formatBudgetAmount(project.budget.planned)}</p>
             </div>
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-3">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Потрачено</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.spent)}</p>
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-[9px] uppercase tracking-wide text-neutral-500">Потрачено</p>
+              <p className="mt-0.5 text-xs font-semibold text-white truncate">{formatBudgetAmount(project.budget.spent)}</p>
             </div>
           </div>
         </div>
       </div>
-      <footer className="flex items-center justify-between gap-4">
+      <footer className="flex flex-col gap-2 pt-2 border-t border-neutral-900/50">
         <div className="flex-1">
-          <p className="text-xs uppercase tracking-wide text-neutral-500">Прогресс</p>
-          <div className="mt-2 h-2 w-full rounded-full bg-neutral-900">
-            <div className="h-2 rounded-full bg-indigo-500" style={{ width: formatProgress(project.progress) }} />
+          <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Прогресс</p>
+          <div className="h-1.5 w-full rounded-full bg-neutral-900">
+            <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: formatProgress(project.progress) }} />
           </div>
-          <p className="mt-1 text-xs text-neutral-400">{formatProgress(project.progress)} завершено</p>
+          <p className="mt-0.5 text-[10px] text-neutral-400">{formatProgress(project.progress)} завершено</p>
         </div>
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-1.5">
           <button
             type="button"
             onClick={() => onOpen(project.id)}
             disabled={!canView}
             className={cn(
-              'rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
+              'rounded-full border border-indigo-500/60 px-3 py-1 text-xs font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
               !canView ? 'cursor-not-allowed opacity-60 hover:border-indigo-500/60 hover:bg-transparent hover:text-indigo-200' : undefined
             )}
           >
@@ -263,7 +268,7 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
             <button
               type="button"
               onClick={() => onCreateTask(project.id)}
-              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+              className="rounded-full border border-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
             >
               Создать задачу
             </button>
@@ -272,7 +277,7 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
             <button
               type="button"
               onClick={() => onInvite(project.id)}
-              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+              className="rounded-full border border-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
             >
               Пригласить
             </button>
@@ -283,15 +288,15 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
               onClick={() => onToggleArchive(project.id, !isArchived)}
               disabled={actionInFlight === project.id}
               className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                'inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition',
                 isArchived
                   ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400 hover:text-emerald-100'
                   : 'border-rose-500/40 bg-rose-500/10 text-rose-200 hover:border-rose-400 hover:text-rose-100',
                 actionInFlight === project.id ? 'opacity-75' : undefined
               )}
             >
-              {actionInFlight === project.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isArchived ? 'Восстановить' : 'Архивировать'}
+              {actionInFlight === project.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              <span className="whitespace-nowrap">{isArchived ? 'Восстановить' : 'Архивировать'}</span>
             </button>
           ) : null}
         </div>
@@ -488,19 +493,19 @@ function FiltersMultiSelect({
 
 function GridSkeletonCard() {
   return (
-    <div className="h-full animate-pulse rounded-2xl border border-neutral-900 bg-neutral-950/40 p-5">
-      <div className="flex h-full flex-col gap-6">
-        <div className="space-y-3">
-          <div className="h-5 w-3/4 rounded bg-neutral-900/80" />
-          <div className="h-4 w-full rounded bg-neutral-900/70" />
-          <div className="h-4 w-1/2 rounded bg-neutral-900/60" />
+    <div className="h-full animate-pulse rounded-2xl border border-neutral-900 bg-neutral-950/40 p-3">
+      <div className="flex h-full flex-col gap-3">
+        <div className="space-y-2">
+          <div className="h-4 w-3/4 rounded bg-neutral-900/80" />
+          <div className="h-3 w-full rounded bg-neutral-900/70" />
+          <div className="h-3 w-1/2 rounded bg-neutral-900/60" />
         </div>
-        <div className="flex-1 space-y-4">
-          <div className="h-12 w-full rounded-xl bg-neutral-900/70" />
-          <div className="h-16 w-full rounded-xl bg-neutral-900/60" />
-          <div className="h-10 w-full rounded-xl bg-neutral-900/60" />
+        <div className="flex-1 space-y-2">
+          <div className="h-10 w-full rounded-lg bg-neutral-900/70" />
+          <div className="h-12 w-full rounded-lg bg-neutral-900/60" />
+          <div className="h-8 w-full rounded-lg bg-neutral-900/60" />
         </div>
-        <div className="h-3 w-full rounded bg-neutral-900/70" />
+        <div className="h-2 w-full rounded bg-neutral-900/70" />
       </div>
     </div>
   );
@@ -1146,7 +1151,7 @@ export default function ProjectsOverviewPageClient() {
 
         {showSkeletons ? (
           viewMode === 'grid' ? (
-            <div className="cs-auto-grid gap-6">
+            <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
               {Array.from({ length: GRID_SKELETON_COUNT }).map((_, index) => (
                 <GridSkeletonCard key={`grid-skeleton-${index}`} />
               ))}
@@ -1187,7 +1192,7 @@ export default function ProjectsOverviewPageClient() {
 
         {!showSkeletons && !showEmptyState && !error ? (
           viewMode === 'grid' ? (
-            <div className="cs-auto-grid gap-6">
+            <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
               {projects.map((project) => (
                 <ProjectGridCard
                   key={project.id}
