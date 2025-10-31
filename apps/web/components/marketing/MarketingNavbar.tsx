@@ -226,6 +226,14 @@ export default function MarketingNavbar() {
                 >
                   {item.label}
                 </button>
+                {/* Невидимый мост между кнопкой и меню для поддержания hover */}
+                <div
+                  className={clsx(
+                    'absolute left-1/2 top-full h-4 w-[28rem] -translate-x-1/2',
+                    isOpen ? 'pointer-events-auto' : 'pointer-events-none'
+                  )}
+                  aria-hidden="true"
+                />
                 <div
                   id={`mega-${item.id}`}
                   ref={(node) => {
@@ -235,7 +243,7 @@ export default function MarketingNavbar() {
                   role="menu"
                   aria-labelledby={`mega-trigger-${item.id}`}
                   className={clsx(
-                    'absolute left-1/2 z-30 mt-4 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 text-left shadow-2xl transition-opacity',
+                    'absolute left-1/2 z-30 mt-0 w-[28rem] -translate-x-1/2 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 pt-6 text-left shadow-2xl transition-opacity',
                     isOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
                   )}
                 >
