@@ -5,7 +5,7 @@ import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { ChevronDown, LayoutGrid, LayoutList, Loader2, RefreshCw } from 'lucide-react';
+import { LayoutGrid, LayoutList, Loader2, RefreshCw } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProjectCard } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
@@ -614,7 +614,18 @@ function TabDropdown({
         aria-haspopup="menu"
       >
         <span>{selectedOption.label}</span>
-        <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen ? 'rotate-180' : '')} />
+        <svg
+          className={cn('h-4 w-4 transition-transform', isOpen ? 'rotate-180' : '')}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </button>
       {isOpen ? (
         <div
