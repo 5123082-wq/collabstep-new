@@ -571,7 +571,7 @@ function TabDropdown({
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const selectedOption = options.find((opt) => opt.key === selectedTab) ?? options[0];
+  const selectedOption = options.find((opt) => opt.key === selectedTab) ?? options[0] ?? { key: 'all' as ProjectsOverviewTab, label: 'Все проекты' };
 
   useEffect(() => {
     if (!isOpen) {
