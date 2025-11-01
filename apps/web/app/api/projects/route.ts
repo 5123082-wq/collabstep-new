@@ -143,7 +143,10 @@ export async function GET(req: NextRequest) {
   }
 
   const tabParam = req.nextUrl.searchParams.get('tab');
-  const tab: ProjectCardTab = tabParam === 'member' ? 'member' : 'mine';
+  const tab: ProjectCardTab =
+    tabParam === 'member' || tabParam === 'mine' || tabParam === 'all'
+      ? tabParam
+      : 'all';
   const query = req.nextUrl.searchParams.get('query');
   const sort = parseSort(req.nextUrl.searchParams.get('sort'));
   const filters = parseFiltersParam(req.nextUrl.searchParams.get('filters'));

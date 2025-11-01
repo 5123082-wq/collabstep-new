@@ -529,6 +529,7 @@ function ListSkeletonCard() {
 }
 
 const TAB_OPTIONS: { key: ProjectsOverviewTab; label: string }[] = [
+  { key: 'all', label: 'Все проекты' },
   { key: 'mine', label: 'Мои проекты' },
   { key: 'member', label: 'Я участник' }
 ];
@@ -556,6 +557,106 @@ const DATE_FIELD_OPTIONS: { value: ProjectsOverviewFilters['dateField']; label: 
 
 const GRID_SKELETON_COUNT = 6;
 const LIST_SKELETON_COUNT = 6;
+
+function TabDropdown({
+  options,
+  selectedTab,
+  onSelectTab
+}: {
+  options: { key: ProjectsOverviewTab; label: string }[];
+  selectedTab: ProjectsOverviewTab;
+  onSelectTab: (tab: ProjectsOverviewTab) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const selectedOption = options.find((opt) => opt.key === selectedTab) ?? options[0] ?? { key: 'all' as ProjectsOverviewTab, label: 'Все проекты' };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (!target) {
+        return;
+      }
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) {
+        return;
+      }
+      setIsOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={cn(
+          'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+          'border-indigo-400/60 bg-indigo-500/20 text-white hover:border-indigo-400 hover:bg-indigo-500/30'
+        )}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
+        <span>{selectedOption.label}</span>
+        <svg
+          className={cn('h-4 w-4 transition-transform', isOpen ? 'rotate-180' : '')}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {isOpen ? (
+        <div
+          ref={menuRef}
+          role="menu"
+          className="absolute left-0 z-50 mt-2 min-w-[12rem] origin-top-left overflow-hidden rounded-2xl border border-neutral-900 bg-neutral-950 shadow-lg"
+        >
+          {options.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                onSelectTab(option.key);
+                setIsOpen(false);
+              }}
+              className={cn(
+                'block w-full px-4 py-2 text-left text-sm transition',
+                selectedTab === option.key
+                  ? 'bg-indigo-500/20 text-white'
+                  : 'text-neutral-300 hover:bg-indigo-500/10 hover:text-white'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function ProjectsOverviewPageClient() {
   const router = useRouter();
@@ -959,22 +1060,12 @@ export default function ProjectsOverviewPageClient() {
           </p>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {TAB_OPTIONS.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => handleChangeTab(option.key)}
-                className={cn(
-                  'rounded-full px-4 py-2 text-sm font-semibold transition',
-                  state.tab === option.key
-                    ? 'bg-indigo-500 text-white shadow-sm shadow-indigo-500/30'
-                    : 'border border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="relative">
+            <TabDropdown
+              options={TAB_OPTIONS}
+              selectedTab={state.tab}
+              onSelectTab={handleChangeTab}
+            />
           </div>
           <div className="flex items-center gap-3 text-sm text-neutral-400">
             <span>Проектов в выборке:</span>

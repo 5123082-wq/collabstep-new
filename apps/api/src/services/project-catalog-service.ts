@@ -23,7 +23,7 @@ export type CatalogProjectItem = CatalogProject;
 export type CatalogTemplateItem = ProjectTemplate;
 export type ProjectCardItem = ProjectCard;
 
-export type ProjectCardTab = 'mine' | 'member';
+export type ProjectCardTab = 'all' | 'mine' | 'member';
 
 export type ProjectCardSort =
   | 'updated-desc'
@@ -230,6 +230,11 @@ export class ProjectCatalogService {
         }
       } else if (params.tab === 'member') {
         if (!isParticipant || isOwner) {
+          continue;
+        }
+      } else if (params.tab === 'all') {
+        // 'all' shows both owned and participant projects
+        if (!isOwner && !isParticipant) {
           continue;
         }
       }

@@ -2,23 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { memo, useMemo, type SVGProps } from 'react';
-import { Input } from '@/components/ui/input';
+import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { PROJECTS_TOPBAR_CLASSNAMES } from '@/components/common/layoutPresets';
 import { isActivePath, TOPBAR_LINKS } from './projectsTopbar.config';
 
-const QUICK_FILTERS = [
-  { id: 'stage-discovery', label: 'Discovery', disabled: true },
-  { id: 'stage-build', label: 'Разработка', disabled: true },
-  { id: 'status-active', label: 'Активные', disabled: true }
-];
-
-type ProjectsTopbarProps = {
-  searchPlaceholder?: string;
-};
-
-function ProjectsTopbarComponent({ searchPlaceholder = 'Поиск по проектам' }: ProjectsTopbarProps) {
+function ProjectsTopbarComponent() {
   const pathname = usePathname();
 
   const links = useMemo(
@@ -51,29 +40,6 @@ function ProjectsTopbarComponent({ searchPlaceholder = 'Поиск по прое
             </Link>
           ))}
         </nav>
-        <div className={PROJECTS_TOPBAR_CLASSNAMES.actions}>
-          <div className={PROJECTS_TOPBAR_CLASSNAMES.search}>
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" aria-hidden="true" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="pl-9"
-              aria-label="Поиск по проектам"
-              disabled
-            />
-          </div>
-          <div className={PROJECTS_TOPBAR_CLASSNAMES.quickFilters}>
-            {QUICK_FILTERS.map((filter) => (
-              <span
-                key={filter.id}
-                className="inline-flex items-center rounded-full border border-dashed border-neutral-800 px-3 py-1 text-xs font-medium uppercase tracking-wide text-neutral-500"
-              >
-                {filter.label}
-              </span>
-            ))}
-            <span className="text-xs uppercase tracking-[0.2em] text-neutral-600">Скоро</span>
-          </div>
-        </div>
       </div>
     </header>
   );
@@ -84,12 +50,3 @@ ProjectsTopbar.displayName = 'ProjectsTopbar';
 
 export default ProjectsTopbar;
 export { TOPBAR_LINKS, isActivePath };
-
-function SearchIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3-3" />
-    </svg>
-  );
-}

@@ -32,7 +32,7 @@ export interface SelectOption {
 }
 
 export const DEFAULT_SORT: ProjectsOverviewSort = 'updated-desc';
-export const DEFAULT_TAB: ProjectsOverviewTab = 'mine';
+export const DEFAULT_TAB: ProjectsOverviewTab = 'all';
 
 export const DEFAULT_FILTERS: ProjectsOverviewFilters = {
   status: 'all',
@@ -150,7 +150,11 @@ export function encodeFiltersParam(filters: ProjectsOverviewFilters): string | n
 export function parseStateFromSearchParams(params: URLSearchParams): ProjectsOverviewState {
   const base = createDefaultState();
   const tabParam = params.get('tab');
-  base.tab = tabParam === 'member' ? 'member' : DEFAULT_TAB;
+  if (tabParam === 'member' || tabParam === 'mine' || tabParam === 'all') {
+    base.tab = tabParam;
+  } else {
+    base.tab = DEFAULT_TAB;
+  }
   base.query = params.get('query') ?? '';
   const sortParam = params.get('sort');
   const allowedSorts: ProjectsOverviewSort[] = [
