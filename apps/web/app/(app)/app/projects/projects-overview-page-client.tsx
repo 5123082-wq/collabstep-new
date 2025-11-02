@@ -5,12 +5,13 @@ import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LayoutGrid, LayoutList, Loader2, RefreshCw } from 'lucide-react';
+import { LayoutGrid, LayoutList, Loader2, RefreshCw, Settings } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProjectCard } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
+import { TOPBAR_LINKS, isActivePath } from '@/components/projects/projectsTopbar.config';
 import {
   DEFAULT_SORT,
   ProjectsOverviewFilters,
@@ -663,6 +664,15 @@ export default function ProjectsOverviewPageClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const topbarLinks = useMemo(
+    () =>
+      TOPBAR_LINKS.map((link) => ({
+        ...link,
+        active: isActivePath(pathname, link)
+      })),
+    [pathname]
+  );
+
   const [state, setState] = useState<ProjectsOverviewState>(() => {
     const params = searchParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
     const parsed = parseStateFromSearchParams(params);
@@ -680,6 +690,7 @@ export default function ProjectsOverviewPageClient() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionInFlight, setActionInFlight] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
 
   const listParentRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -1050,6 +1061,21 @@ export default function ProjectsOverviewPageClient() {
   const showSkeletons = loading && projects.length === 0;
   const showEmptyState = !loading && projects.length === 0 && !error;
 
+  useEffect(() => {
+    if (!isFiltersModalOpen) {
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsFiltersModalOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFiltersModalOpen]);
+
   return (
     <div className="space-y-8">
       <header className="space-y-6">
@@ -1075,150 +1101,215 @@ export default function ProjectsOverviewPageClient() {
       </header>
 
       <section className="space-y-6">
-        <div className="space-y-6 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-6 shadow-sm shadow-black/10">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
-            <label className="flex-1 text-sm">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">Поиск</span>
-              <input
-                type="search"
-                value={state.query}
-                onChange={handleSearchChange}
-                placeholder="Название, описание или тег"
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              />
-            </label>
-            <label className="w-full text-sm lg:w-64">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
-              <select
-                value={state.sort}
-                onChange={handleSortChange}
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleChangeView('grid')}
+        {/* Компактный блок с меню навигации и основными фильтрами */}
+        <div className="space-y-3 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-3 shadow-sm shadow-black/10">
+          {/* Компактное меню навигации */}
+          <nav aria-label="Навигация по разделу проектов" className="flex flex-wrap items-center gap-1">
+            {topbarLinks.map((link) => (
+              <Link
+                key={link.id}
+                href={link.href}
                 className={cn(
-                  'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
-                  viewMode === 'grid'
-                    ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                    : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
+                  'rounded-lg px-2 py-1 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  link.active
+                    ? 'bg-indigo-500 text-white shadow'
+                    : 'border border-transparent bg-neutral-900/60 text-neutral-300 hover:border-neutral-700 hover:text-neutral-100'
                 )}
+                aria-current={link.active ? 'page' : undefined}
               >
-                <LayoutGrid className="h-4 w-4" />
-                Grid
-              </button>
-              <button
-                type="button"
-                onClick={() => handleChangeView('list')}
-                className={cn(
-                  'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
-                  viewMode === 'list'
-                    ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                    : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
-                )}
-              >
-                <LayoutList className="h-4 w-4" />
-                List
-              </button>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
-              >
-                Сбросить
-              </button>
-              <button
-                type="button"
-                className="inline-flex cursor-not-allowed items-center justify-center rounded-full border border-neutral-900/80 px-4 py-2 text-sm font-semibold text-neutral-500"
-                title="Скоро"
-                disabled
-              >
-                Сохранить как вид
-              </button>
-            </div>
-          </div>
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <label className="text-sm">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">Статус проекта</span>
-              <select
-                value={state.filters.status}
-                onChange={handleStatusChange}
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <FiltersMultiSelect
-              label="Владельцы"
-              options={ownerOptions}
-              value={state.filters.owners}
-              placeholder="Пока нет вариантов"
-              onChange={handleOwnersChange}
+          {/* Основные кнопки сортировки */}
+          <div className="flex flex-wrap items-center gap-2">
+            <TabDropdown
+              options={TAB_OPTIONS}
+              selectedTab={state.tab}
+              onSelectTab={handleChangeTab}
             />
-            <FiltersMultiSelect
-              label="Участники"
-              options={participantOptions}
-              value={state.filters.participants}
-              placeholder="Пока нет вариантов"
-              onChange={handleParticipantsChange}
-            />
-            <FiltersMultiSelect
-              label="Метки"
-              options={tagSelectOptions}
-              value={state.filters.tags}
-              placeholder="Нет меток"
-              onChange={handleTagsChange}
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="text-sm">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">Поле даты</span>
-              <select
-                value={state.filters.dateField}
-                onChange={handleDateFieldChange}
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              >
-                {DATE_FIELD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">С даты</span>
-              <input
-                type="date"
-                value={state.filters.dateFrom ?? ''}
-                onChange={handleDateFromChange}
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              />
-            </label>
-            <label className="text-sm">
-              <span className="text-xs uppercase tracking-wide text-neutral-500">По дату</span>
-              <input
-                type="date"
-                value={state.filters.dateTo ?? ''}
-                onChange={handleDateToChange}
-                className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-              />
-            </label>
+            <button
+              type="button"
+              onClick={() => handleChangeView('grid')}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                viewMode === 'grid'
+                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
+              )}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Grid
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChangeView('list')}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                viewMode === 'list'
+                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
+              )}
+            >
+              <LayoutList className="h-4 w-4" />
+              List
+            </button>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+            >
+              Сбросить
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFiltersModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
+            >
+              <Settings className="h-4 w-4" />
+              Настройки
+            </button>
           </div>
         </div>
+
+        {/* Модальное окно с полными фильтрами */}
+        {isFiltersModalOpen ? (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              onClick={() => setIsFiltersModalOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              className="fixed inset-4 z-50 mx-auto max-w-4xl overflow-auto rounded-2xl border border-neutral-900 bg-neutral-950/95 p-6 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-white">Настройки фильтров и сортировки</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsFiltersModalOpen(false)}
+                  className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-900 hover:text-white"
+                  aria-label="Закрыть"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Сортировка */}
+                <div>
+                  <label className="mb-2 block text-sm">
+                    <span className="text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
+                    <select
+                      value={state.sort}
+                      onChange={handleSortChange}
+                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                {/* Дополнительные фильтры */}
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <FiltersMultiSelect
+                    label="Владельцы"
+                    options={ownerOptions}
+                    value={state.filters.owners}
+                    placeholder="Пока нет вариантов"
+                    onChange={handleOwnersChange}
+                  />
+                  <FiltersMultiSelect
+                    label="Участники"
+                    options={participantOptions}
+                    value={state.filters.participants}
+                    placeholder="Пока нет вариантов"
+                    onChange={handleParticipantsChange}
+                  />
+                  <FiltersMultiSelect
+                    label="Метки"
+                    options={tagSelectOptions}
+                    value={state.filters.tags}
+                    placeholder="Нет меток"
+                    onChange={handleTagsChange}
+                  />
+                </div>
+
+                {/* Фильтры по дате */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <label className="text-sm">
+                    <span className="text-xs uppercase tracking-wide text-neutral-500">Поле даты</span>
+                    <select
+                      value={state.filters.dateField}
+                      onChange={handleDateFieldChange}
+                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                    >
+                      {DATE_FIELD_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="text-xs uppercase tracking-wide text-neutral-500">С даты</span>
+                    <input
+                      type="date"
+                      value={state.filters.dateFrom ?? ''}
+                      onChange={handleDateFromChange}
+                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                  </label>
+                  <label className="text-sm">
+                    <span className="text-xs uppercase tracking-wide text-neutral-500">По дату</span>
+                    <input
+                      type="date"
+                      value={state.filters.dateTo ?? ''}
+                      onChange={handleDateToChange}
+                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                    />
+                  </label>
+                </div>
+
+                {/* Кнопки действий */}
+                <div className="flex items-center justify-end gap-3 border-t border-neutral-900 pt-4">
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+                  >
+                    Сбросить
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsFiltersModalOpen(false)}
+                    className="inline-flex items-center justify-center rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
+                  >
+                    Применить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : null}
 
         {actionError ? (
           <div className="rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react';
 import SideDrawer from './SideDrawer';
-import ProjectsTopbar from './ProjectsTopbar';
 import { useProjectDrawer } from '@/hooks/projects/useProjectDrawer';
 import DashboardSplitLayout from '@/components/common/DashboardSplitLayout';
 import { cn } from '@/lib/utils';
@@ -13,7 +12,7 @@ export default function ProjectsLayoutShell({ children }: { children: ReactNode 
   return (
     <>
       <DashboardSplitLayout
-        topbar={<ProjectsTopbar />}
+        topbar={null}
         main={children}
         mainProps={{
           'aria-label': getDrawerTitle(entityType)
