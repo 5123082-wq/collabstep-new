@@ -5,13 +5,13 @@ import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { LayoutGrid, LayoutList, Loader2, RefreshCw, Settings } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProjectCard } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useDebouncedValue } from '@/lib/ui/useDebouncedValue';
-import { TOPBAR_LINKS, isActivePath } from '@/components/projects/projectsTopbar.config';
+import ProjectsControlPanel from '@/components/projects/ProjectsControlPanel';
 import {
   DEFAULT_SORT,
   ProjectsOverviewFilters,
@@ -664,15 +664,6 @@ export default function ProjectsOverviewPageClient() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const topbarLinks = useMemo(
-    () =>
-      TOPBAR_LINKS.map((link) => ({
-        ...link,
-        active: isActivePath(pathname, link)
-      })),
-    [pathname]
-  );
-
   const [state, setState] = useState<ProjectsOverviewState>(() => {
     const params = searchParams ? new URLSearchParams(searchParams.toString()) : new URLSearchParams();
     const parsed = parseStateFromSearchParams(params);
@@ -1089,76 +1080,19 @@ export default function ProjectsOverviewPageClient() {
 
       <section className="space-y-6">
         {/* Компактный блок с меню навигации и основными фильтрами */}
-        <div className="space-y-3 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-3 shadow-sm shadow-black/10">
-          {/* Компактное меню навигации */}
-          <nav aria-label="Навигация по разделу проектов" className="flex flex-wrap items-center gap-1">
-            {topbarLinks.map((link) => (
-              <Link
-                key={link.id}
-                href={link.href}
-                className={cn(
-                  'rounded-lg px-2 py-1 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                  link.active
-                    ? 'bg-indigo-500 text-white shadow'
-                    : 'border border-transparent bg-neutral-900/60 text-neutral-300 hover:border-neutral-700 hover:text-neutral-100'
-                )}
-                aria-current={link.active ? 'page' : undefined}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Основные кнопки сортировки */}
-          <div className="flex flex-wrap items-center gap-2">
+        <ProjectsControlPanel
+          viewMode={viewMode}
+          onViewModeChange={handleChangeView}
+          onReset={handleResetFilters}
+          onSettingsClick={() => setIsFiltersModalOpen(true)}
+          filters={
             <TabDropdown
               options={TAB_OPTIONS}
               selectedTab={state.tab}
               onSelectTab={handleChangeTab}
             />
-            <button
-              type="button"
-              onClick={() => handleChangeView('grid')}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
-                viewMode === 'grid'
-                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Grid
-            </button>
-            <button
-              type="button"
-              onClick={() => handleChangeView('list')}
-              className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
-                viewMode === 'list'
-                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
-              )}
-            >
-              <LayoutList className="h-4 w-4" />
-              List
-            </button>
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
-            >
-              Сбросить
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsFiltersModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
-            >
-              <Settings className="h-4 w-4" />
-              Настройки
-            </button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Модальное окно с полными фильтрами */}
         {isFiltersModalOpen ? (
