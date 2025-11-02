@@ -5,6 +5,8 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@/components/theme/ThemeContext';
 import { useUiStore, type WallpaperPreset } from '@/lib/state/ui-store';
 import { getUserType, setUserType, type UserType } from '@/lib/auth/roles';
+import { useMenuPreferencesStore, MENU_PRESETS } from '@/stores/menuPreferences';
+import { leftMenuConfig } from './LeftMenu.config';
 import type { DemoProfile } from './AppTopbar';
 
 const themeOptions = [
@@ -53,14 +55,45 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
   }));
   const [isOpen, setOpen] = useState(false);
   const [isWallpaperOpen, setWallpaperOpen] = useState(false);
+  const [isMenuCustomizationOpen, setMenuCustomizationOpen] = useState(false);
   const [userType, setUserTypeState] = useState<UserType>(() => getUserType());
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const wallpaperPanelId = useId();
+  const menuCustomizationPanelId = useId();
+  
+  const { visibleMenuIds, toggleMenuVisibility, reset: resetMenuPreferences, isMenuVisible, applyPreset } = useMenuPreferencesStore();
+
+  // Применяем предустановку при первой загрузке, если тип пользователя установлен
+  // и настройки меню еще не кастомизированы (для совместимости со старыми настройками)
+  useEffect(() => {
+    if (userType !== null) {
+      const key = userType ?? 'null';
+      const preset = MENU_PRESETS[key as keyof typeof MENU_PRESETS];
+      const presetSet = new Set(preset);
+      const currentSet = new Set(visibleMenuIds);
+      // Если текущее меню не соответствует предустановке, применяем её
+      // Это происходит только если пользователь не кастомизировал меню вручную
+      if (preset.length !== visibleMenuIds.length || 
+          preset.some(id => !currentSet.has(id)) ||
+          visibleMenuIds.some(id => !presetSet.has(id))) {
+        // Применяем предустановку только если это первая загрузка (все меню видимы)
+        // или если пользователь только что выбрал тип
+        const isFirstLoad = visibleMenuIds.length === leftMenuConfig.length;
+        if (isFirstLoad) {
+          applyPreset(userType);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userType, visibleMenuIds.length, applyPreset]);
 
   const handleUserTypeChange = (type: UserType) => {
     setUserType(type);
     setUserTypeState(type);
+    // Применяем предустановку меню для типа пользователя
+    const { applyPreset } = useMenuPreferencesStore.getState();
+    applyPreset(type);
     // Обновляем страницу для применения изменений
     if (typeof window !== 'undefined') {
       window.location.reload();
@@ -224,6 +257,70 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                   Сбросить выбор
                 </button>
               )}
+            </section>
+            <section>
+              <button
+                type="button"
+                onClick={() => setMenuCustomizationOpen((value) => !value)}
+                className="flex w-full items-center justify-between rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-left text-sm font-semibold text-[color:var(--text-primary)] transition hover:border-[color:var(--accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                aria-expanded={isMenuCustomizationOpen}
+                aria-controls={menuCustomizationPanelId}
+              >
+                <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">Кастомизация меню</span>
+                <span className="flex items-center gap-2 text-[11px] text-[color:var(--text-tertiary)]">
+                  {visibleMenuIds.length} / {leftMenuConfig.length}
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className={clsx('h-4 w-4 transition-transform', isMenuCustomizationOpen ? 'rotate-180' : 'rotate-0')}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </span>
+              </button>
+              <div
+                id={menuCustomizationPanelId}
+                className={clsx('space-y-2 pt-3', isMenuCustomizationOpen ? 'mt-1' : 'mt-1 hidden')}
+              >
+                <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                  {leftMenuConfig.map((section) => {
+                    const isVisible = isMenuVisible(section.id);
+                    return (
+                      <label
+                        key={section.id}
+                        className={clsx(
+                          'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition cursor-pointer',
+                          isVisible
+                            ? 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] hover:border-[color:var(--accent-border)]'
+                            : 'border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] opacity-60 hover:opacity-80'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isVisible}
+                          onChange={() => toggleMenuVisibility(section.id)}
+                          className="h-4 w-4 rounded border-[color:var(--surface-border-strong)] accent-[color:var(--accent-fg)]"
+                        />
+                        <span className="flex-1 text-[color:var(--text-primary)]">{section.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetMenuPreferences();
+                  }}
+                  className="mt-2 w-full rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-1.5 text-[11px] text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)]"
+                >
+                  Сбросить к полному меню
+                </button>
+              </div>
             </section>
             <section>
               <div className="mb-3 flex items-center justify-between">

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildLeftMenu } from '@/lib/nav/menu-builder';
 import type { UserRole } from '@/lib/auth/roles';
 import { useUiStore } from '@/lib/state/ui-store';
+import { useMenuPreferencesStore } from '@/stores/menuPreferences';
 
 const iconMap: Record<string, string> = {
   dashboard: 'M4 4h16v16H4z',
@@ -49,7 +50,9 @@ type SidebarProps = {
 export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
-  const menu = useMemo(() => buildLeftMenu(roles), [roles]);
+  // Подписываемся на изменения видимости меню для перерисовки компонента
+  const visibleMenuIds = useMenuPreferencesStore((state) => state.visibleMenuIds);
+  const menu = useMemo(() => buildLeftMenu(roles), [roles, visibleMenuIds]);
   const { expandedGroups, toggleGroup, sidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed } = useUiStore((state) => ({
     expandedGroups: state.expandedGroups,
     toggleGroup: state.toggleGroup,
