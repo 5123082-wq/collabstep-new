@@ -72,19 +72,19 @@ export default function CommunicationDrawer() {
     <Sheet open={isOpen} onOpenChange={(next) => (!next ? closeDrawer() : undefined)}>
       <SheetContent
         side="right"
-        className="flex h-full flex-col overflow-hidden bg-neutral-900/90 p-0 text-neutral-50 shadow-2xl sm:max-w-[440px] md:max-w-[500px] lg:max-w-[560px]"
+        className="flex h-full flex-col overflow-hidden p-0 shadow-2xl sm:max-w-[440px] md:max-w-[500px] lg:max-w-[560px]"
       >
-        <header className="flex items-center gap-3 border-b border-neutral-800 px-6 py-4">
+        <header className="flex items-center gap-3 border-b border-[color:var(--surface-border-subtle)] px-6 py-4">
           <button
             type="button"
             onClick={closeDrawer}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-neutral-800/80 text-neutral-300 transition hover:border-neutral-700 hover:text-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-transparent bg-[color:var(--surface-muted)] text-[color:var(--text-secondary)] transition hover:border-[color:var(--surface-border-strong)] hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
             aria-label="Закрыть панель"
           >
             <CloseIcon className="h-4 w-4" aria-hidden="true" />
           </button>
           <nav className="flex flex-1 items-center justify-center">
-            <div className="inline-flex rounded-full bg-neutral-800/70 p-1">
+            <div className="inline-flex rounded-full bg-[color:var(--surface-muted)] p-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = tab.id === activeTab;
@@ -99,7 +99,7 @@ export default function CommunicationDrawer() {
                       'relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                       isActive
                         ? 'bg-indigo-500 text-white shadow'
-                        : 'text-neutral-300 hover:bg-neutral-700/60 hover:text-neutral-100'
+                        : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-muted)] hover:text-[color:var(--text-primary)]'
                     )}
                   >
                     <Icon className="h-4 w-4" aria-hidden="true" />

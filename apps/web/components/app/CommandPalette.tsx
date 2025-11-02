@@ -220,20 +220,20 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-start justify-center bg-neutral-950/80 pt-24 backdrop-blur-sm"
+      className="fixed inset-0 z-[120] flex items-start justify-center bg-[color:var(--surface-overlay)] pt-24 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Командная палитра"
     >
-      <div className="w-full max-w-3xl rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+      <div className="w-full max-w-3xl rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-6 shadow-2xl">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-neutral-100">Командная палитра</h2>
-            <p className="text-xs text-neutral-500">
+            <h2 className="text-base font-semibold text-[color:var(--text-primary)]">Командная палитра</h2>
+            <p className="text-xs text-[color:var(--text-tertiary)]">
               Маски: @ — участники и подрядчики, # — задачи, $ — счета.
             </p>
           </div>
-          <span className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-400">Esc</span>
+          <span className="rounded-full border border-[color:var(--surface-border-subtle)] px-3 py-1 text-xs text-[color:var(--text-tertiary)]">Esc</span>
         </div>
         <div className="mt-4">
           <label htmlFor="command-input" className="sr-only">
@@ -247,13 +247,13 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
               setActiveIndex(0);
             }}
             placeholder="Например: #12 или @demo"
-            className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+            className="w-full rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-3 text-sm text-[color:var(--text-primary)] focus:border-indigo-500 focus:outline-none"
             autoComplete="off"
           />
         </div>
-        <ul className="mt-4 max-h-72 overflow-y-auto rounded-xl border border-neutral-800/60 bg-neutral-900/30">
+        <ul className="mt-4 max-h-72 overflow-y-auto rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)]">
           {results.length === 0 && (
-            <li className="px-4 py-8 text-center text-sm text-neutral-500">Ничего не найдено</li>
+            <li className="px-4 py-8 text-center text-sm text-[color:var(--text-tertiary)]">Ничего не найдено</li>
           )}
           {results.map((result, index) => {
             const item = result.item;
@@ -277,10 +277,10 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                   }`}
                 >
                   <div>
-                    <p className="font-medium text-neutral-100">{item.title}</p>
-                    {item.subtitle && <p className="text-xs text-neutral-500">{item.subtitle}</p>}
+                    <p className="font-medium text-[color:var(--text-primary)]">{item.title}</p>
+                    {item.subtitle && <p className="text-xs text-[color:var(--text-tertiary)]">{item.subtitle}</p>}
                   </div>
-                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">{getTypeLabel(item.type)}</span>
+                  <span className="text-[11px] uppercase tracking-wide text-[color:var(--text-tertiary)]">{getTypeLabel(item.type)}</span>
                 </button>
               </li>
             );

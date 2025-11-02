@@ -105,8 +105,8 @@ export default function RightActionsPanel() {
 
   if (!matched) {
     return (
-      <aside className="hidden w-[280px] flex-col border-l border-neutral-900/60 bg-neutral-950/70 px-4 py-6 lg:flex">
-        <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/60 p-4 text-sm text-neutral-400">
+      <aside className="hidden w-[280px] flex-col border-l border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-6 lg:flex">
+        <div className="rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4 text-sm text-[color:var(--text-tertiary)]">
           Быстрых действий пока нет.
         </div>
       </aside>
@@ -114,16 +114,16 @@ export default function RightActionsPanel() {
   }
 
   return (
-    <aside className="hidden w-[280px] flex-col border-l border-neutral-900/60 bg-neutral-950/70 px-4 py-6 lg:flex">
-      <div className="rounded-2xl border border-neutral-800/60 bg-neutral-900/60 p-4">
-        <h3 className="text-sm font-semibold text-neutral-100">{matched.title}</h3>
+    <aside className="hidden w-[280px] flex-col border-l border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-4 py-6 lg:flex">
+      <div className="rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4">
+        <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">{matched.title}</h3>
         <ul className="mt-3 space-y-2">
           {matched.actions.map((action) => (
             <li key={action.label}>
               <button
                 type="button"
                 onClick={() => toast(action.message)}
-                className="w-full rounded-xl border border-neutral-800/70 bg-neutral-950/60 px-3 py-2 text-left text-sm text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className="w-full rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-left text-sm text-[color:var(--text-secondary)] transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
               >
                 {action.label}
               </button>
