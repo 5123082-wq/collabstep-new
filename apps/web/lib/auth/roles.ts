@@ -72,12 +72,14 @@ export function setUserType(type: UserType): void {
       if (type === 'performer') {
         setUserRoles(['SPECIALIST', 'CONTRACTOR']);
       } else if (type === 'marketer') {
-        // Для маркетолога оставляем базовые роли, доступ к маркетингу будет проверяться по типу
+        // Для маркетолога оставляем базовые роли
         setUserRoles(DEFAULT_ROLES);
       }
     } else {
       window.localStorage.removeItem('cv-user-type');
     }
+    // Применение предустановки меню теперь происходит в компоненте AccountMenu
+    // для избежания циклических зависимостей
   }
 }
 
@@ -105,19 +107,17 @@ export function canAccessAdmin(roles: UserRole[]): boolean {
   return roles.some((role) => ADMIN_ALLOWED.has(role));
 }
 
+// Эти функции больше не используются для блокировки доступа,
+// но оставляем их для обратной совместимости с другими частями кода
 export function canAccessMarketplace(roles: UserRole[]): boolean {
-  // Для тестового режима: исполнители (SPECIALIST, CONTRACTOR) имеют доступ
-  const userType = getUserType();
-  if (userType === 'performer') {
-    return true;
-  }
+  // Тип пользователя больше не блокирует доступ, только влияет на предустановки меню
   return roles.some((role) => MARKETPLACE_ALLOWED.has(role));
 }
 
 export function canAccessMarketing(): boolean {
-  // Для тестового режима: маркетологи имеют доступ
-  const userType = getUserType();
-  return userType === 'marketer';
+  // Тип пользователя больше не блокирует доступ, только влияет на предустановки меню
+  // Все пользователи имеют доступ к маркетингу, но по умолчанию видимость зависит от типа
+  return true;
 }
 
 export function filterRoles<T extends { roles?: UserRole[] }>(items: T[], roles: UserRole[]): T[] {
