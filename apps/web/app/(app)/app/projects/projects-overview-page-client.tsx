@@ -1085,19 +1085,6 @@ export default function ProjectsOverviewPageClient() {
             Быстрый доступ к инициативам команды, фильтры и карточки с ключевыми метриками.
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="relative">
-            <TabDropdown
-              options={TAB_OPTIONS}
-              selectedTab={state.tab}
-              onSelectTab={handleChangeTab}
-            />
-          </div>
-          <div className="flex items-center gap-3 text-sm text-neutral-400">
-            <span>Проектов в выборке:</span>
-            <span className="rounded-full border border-neutral-800 px-3 py-1 text-white">{total}</span>
-          </div>
-        </div>
       </header>
 
       <section className="space-y-6">

@@ -51,6 +51,24 @@ export class ProjectsRepository {
     return (memory.PROJECT_MEMBERS[projectId] ?? []).map((member) => ({ ...member }));
   }
 
+  hasAccess(projectId: string, userId: string): boolean {
+    const project = this.findById(projectId);
+    if (!project) {
+      return false;
+    }
+    // Public projects are accessible to everyone
+    if (project.visibility === 'public') {
+      return true;
+    }
+    // Private projects are only accessible to members
+    if (project.visibility === 'private') {
+      const isOwner = project.ownerId === userId;
+      const isMember = this.getMember(projectId, userId) !== null;
+      return isOwner || isMember;
+    }
+    return false;
+  }
+
   create(payload: {
     title: string;
     description?: string;

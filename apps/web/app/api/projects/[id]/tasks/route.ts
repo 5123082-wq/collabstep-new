@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository, tasksRepository } from '@collabverse/api';
+import { projectsRepository, tasksRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 function flattenTaskTree(tree: TaskTreeNode[]): Task[] {
   const result: Task[] = [];
@@ -32,6 +33,19 @@ function flattenTaskTree(tree: TaskTreeNode[]): Task[] {
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const sp = req.nextUrl.searchParams;
@@ -75,6 +89,19 @@ const TaskCreate = z.object({
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const parsed = TaskCreate.safeParse(await req.json().catch(() => ({})));
