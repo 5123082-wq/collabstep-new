@@ -1,4 +1,4 @@
-import { memory } from '../data/memory';
+import { memory, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } from '../data/memory';
 import type { WorkspaceUser } from '../types';
 
 function cloneUser(user: WorkspaceUser): WorkspaceUser {
@@ -34,6 +34,54 @@ export class UsersRepository {
       return [];
     }
     return memory.WORKSPACE_USERS.filter((user) => lookup.has(user.id)).map(cloneUser);
+  }
+
+  create(user: Omit<WorkspaceUser, 'id'> & { id?: string }): WorkspaceUser {
+    const email = user.email.trim().toLowerCase();
+    const existing = memory.WORKSPACE_USERS.find((u) => u.email.toLowerCase() === email);
+    if (existing) {
+      return cloneUser(existing);
+    }
+
+    const newUser: WorkspaceUser = {
+      id: user.id || email,
+      name: user.name.trim(),
+      email: user.email.trim(),
+      title: user.title,
+      avatarUrl: user.avatarUrl,
+      department: user.department,
+      location: user.location
+    };
+
+    memory.WORKSPACE_USERS.push(newUser);
+
+    // Добавляем пользователя в ACCOUNT_MEMBERS как member
+    const existingAccountMember = memory.ACCOUNT_MEMBERS.find(
+      (member) => member.userId === newUser.id && member.accountId === DEFAULT_ACCOUNT_ID
+    );
+    if (!existingAccountMember) {
+      memory.ACCOUNT_MEMBERS.push({
+        accountId: DEFAULT_ACCOUNT_ID,
+        userId: newUser.id,
+        role: 'member'
+      });
+    }
+
+    // Добавляем пользователя в WORKSPACE_MEMBERS как member
+    const workspaceMembers = memory.WORKSPACE_MEMBERS[DEFAULT_WORKSPACE_ID] || [];
+    const existingWorkspaceMember = workspaceMembers.find((member) => member.userId === newUser.id);
+    if (!existingWorkspaceMember) {
+      if (!memory.WORKSPACE_MEMBERS[DEFAULT_WORKSPACE_ID]) {
+        memory.WORKSPACE_MEMBERS[DEFAULT_WORKSPACE_ID] = [];
+      }
+      memory.WORKSPACE_MEMBERS[DEFAULT_WORKSPACE_ID].push({
+        workspaceId: DEFAULT_WORKSPACE_ID,
+        userId: newUser.id,
+        role: 'member'
+      });
+    }
+
+    return cloneUser(newUser);
   }
 }
 
