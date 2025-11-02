@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useMemo, type ReactNode } from 'react';
-import { LayoutGrid, LayoutList, Settings, RefreshCw } from 'lucide-react';
+import { LayoutGrid, LayoutList, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { isActivePath, TOPBAR_LINKS } from './projectsTopbar.config';
 
