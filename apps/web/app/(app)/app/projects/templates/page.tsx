@@ -28,7 +28,16 @@ export default function ProjectTemplatesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <header className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-semibold text-white">Шаблоны</h1>
+          <p className="text-sm text-neutral-400">
+            Готовые шаблоны проектов для быстрого старта новых инициатив.
+          </p>
+        </div>
+      </header>
+
       <ProjectsControlPanel
         viewMode={viewMode}
         onViewModeChange={setViewMode}

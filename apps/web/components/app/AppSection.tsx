@@ -59,10 +59,10 @@ export default function AppSection({
 
   return (
     <section className="space-y-6">
-      <header>
+      <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-white">{title}</h1>
+            <h1 className="text-2xl font-semibold text-neutral-50">{title}</h1>
             <p className="text-sm text-neutral-400">{description}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -78,7 +78,7 @@ export default function AppSection({
             ))}
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+        <div className="flex flex-wrap gap-2 text-xs">
           {states.map((item) => (
             <button
               key={item.id}

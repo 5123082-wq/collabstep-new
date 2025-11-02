@@ -10,8 +10,8 @@ const SECTION_CONFIG = {
       const { items, error } = loadSpecialists();
       return (
         <div className="space-y-6">
-          <header>
-            <h1 className="text-2xl font-semibold text-white">Специалисты</h1>
+          <header className="space-y-2">
+            <h1 className="text-2xl font-semibold text-neutral-50">Специалисты</h1>
             <p className="text-sm text-neutral-400">
               Каталог экспертов с фильтрами и карточками компетенций.
             </p>
@@ -38,8 +38,8 @@ const SECTION_CONFIG = {
       const { items, error } = loadVacancies();
       return (
         <div className="space-y-6">
-          <header>
-            <h1 className="text-2xl font-semibold text-white">Вакансии и задачи</h1>
+          <header className="space-y-2">
+            <h1 className="text-2xl font-semibold text-neutral-50">Вакансии и задачи</h1>
             <p className="text-sm text-neutral-400">
               Актуальные запросы на специалистов и консультантов.
             </p>
