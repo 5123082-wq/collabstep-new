@@ -80,7 +80,9 @@ export class ProjectCatalogService {
     }
 
     const currentUserId = options.currentUserId ?? DEFAULT_WORKSPACE_USER_ID;
-    const projects = projectsRepository.list({ archived: options.archived });
+    const projects = projectsRepository.list({ 
+      archived: options.archived ?? null 
+    });
     
     return projects
       .filter((project) => {
