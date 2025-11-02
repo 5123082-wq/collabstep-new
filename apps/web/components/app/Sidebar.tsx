@@ -50,7 +50,7 @@ type SidebarProps = {
 export default function Sidebar({ roles }: SidebarProps) {
   const pathname = usePathname();
   const [normalizedPath = ''] = (pathname ?? '').split('?');
-  // Подписываемся на изменения видимости меню
+  // Подписываемся на изменения видимости меню для перерисовки компонента
   const visibleMenuIds = useMenuPreferencesStore((state) => state.visibleMenuIds);
   const menu = useMemo(() => buildLeftMenu(roles), [roles, visibleMenuIds]);
   const { expandedGroups, toggleGroup, sidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed } = useUiStore((state) => ({

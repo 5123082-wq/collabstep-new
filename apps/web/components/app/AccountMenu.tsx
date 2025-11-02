@@ -67,8 +67,9 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
   // Применяем предустановку при первой загрузке, если тип пользователя установлен
   // и настройки меню еще не кастомизированы (для совместимости со старыми настройками)
   useEffect(() => {
-    if (userType) {
-      const preset = MENU_PRESETS[userType];
+    if (userType !== null) {
+      const key = userType ?? 'null';
+      const preset = MENU_PRESETS[key as keyof typeof MENU_PRESETS];
       const presetSet = new Set(preset);
       const currentSet = new Set(visibleMenuIds);
       // Если текущее меню не соответствует предустановке, применяем её
@@ -84,6 +85,7 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userType, visibleMenuIds.length, applyPreset]);
 
   const handleUserTypeChange = (type: UserType) => {

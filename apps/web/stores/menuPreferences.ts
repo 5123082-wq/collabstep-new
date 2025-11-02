@@ -20,7 +20,11 @@ const memoryStorage: StateStorage = {
 const ALL_MENU_IDS = leftMenuConfig.map((section) => section.id);
 
 // Предустановки для разных типов пользователей
-export const MENU_PRESETS: Record<UserType, string[]> = {
+export const MENU_PRESETS: {
+  performer: string[];
+  marketer: string[];
+  null: string[];
+} = {
   performer: [
     'dashboard',
     'projects',
@@ -108,7 +112,8 @@ export const useMenuPreferencesStore = create<MenuPreferencesState>()(
         });
       },
       applyPreset: (userType) => {
-        const preset = MENU_PRESETS[userType];
+        const key = userType ?? 'null';
+        const preset = MENU_PRESETS[key as keyof typeof MENU_PRESETS];
         set({ visibleMenuIds: [...preset] });
       },
       reset: () => {
