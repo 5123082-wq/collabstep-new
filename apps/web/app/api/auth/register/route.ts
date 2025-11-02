@@ -45,11 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Создаём нового пользователя
   const newUser = usersRepository.create({
     name,
-    email: email.toLowerCase(),
-    title: undefined,
-    avatarUrl: undefined,
-    department: undefined,
-    location: undefined
+    email: email.toLowerCase()
   });
 
   // Создаём сессию

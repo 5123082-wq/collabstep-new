@@ -47,10 +47,10 @@ export class UsersRepository {
       id: user.id || email,
       name: user.name.trim(),
       email: user.email.trim(),
-      title: user.title,
-      avatarUrl: user.avatarUrl,
-      department: user.department,
-      location: user.location
+      ...(user.title && { title: user.title }),
+      ...(user.avatarUrl && { avatarUrl: user.avatarUrl }),
+      ...(user.department && { department: user.department }),
+      ...(user.location && { location: user.location })
     };
 
     memory.WORKSPACE_USERS.push(newUser);
