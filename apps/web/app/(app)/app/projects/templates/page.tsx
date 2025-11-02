@@ -30,45 +30,27 @@ export default function ProjectTemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <StandardizedSection
-        title="Шаблоны"
-        description="Готовые шаблоны проектов для быстрого старта новых инициатив."
-        quickActions={[
-          {
-            label: 'Создать проект',
-            href: '/app/projects/create',
-            variant: 'primary'
-          },
-          {
-            label: 'Опубликовать шаблон',
-            onClick: () => {
-              // TODO: Open publish template modal
-            }
-          }
-        ]}
-      >
-        <ProjectsControlPanel
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          onReset={handleReset}
-          filters={<TemplatesFilters value={activeFilter} onChange={setActiveFilter} />}
-        />
+      <ProjectsControlPanel
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onReset={handleReset}
+        filters={<TemplatesFilters value={activeFilter} onChange={setActiveFilter} />}
+      />
 
-        <section className="rounded-3xl border border-dashed border-neutral-900/60 bg-neutral-950/60 px-10 py-16 text-center shadow-inner">
-          <div className="space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Шаблоны</p>
-            <h1 className="text-3xl font-semibold text-white">Шаблонов нет</h1>
-            <p className="text-base text-neutral-400">
-              Опубликуйте первый шаблон из существующего проекта, чтобы команда могла быстро стартовать новые направления.
-            </p>
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <ProjectsDrawerTrigger entityType="template" entityId="TPL-001" mode="preview">
-              Показать карточку шаблона
-            </ProjectsDrawerTrigger>
-          </div>
-        </section>
-      </StandardizedSection>
+      <section className="rounded-3xl border border-dashed border-neutral-900/60 bg-neutral-950/60 px-10 py-16 text-center shadow-inner">
+        <div className="space-y-4">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-neutral-500">Шаблоны</p>
+          <h1 className="text-3xl font-semibold text-white">Шаблонов нет</h1>
+          <p className="text-base text-neutral-400">
+            Опубликуйте первый шаблон из существующего проекта, чтобы команда могла быстро стартовать новые направления.
+          </p>
+        </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <ProjectsDrawerTrigger entityType="template" entityId="TPL-001" mode="preview">
+            Показать карточку шаблона
+          </ProjectsDrawerTrigger>
+        </div>
+      </section>
     </div>
   );
 }
