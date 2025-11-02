@@ -1068,307 +1068,296 @@ export default function ProjectsOverviewPageClient() {
   }, [isFiltersModalOpen]);
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-white">Обзор проектов</h1>
-          <p className="text-sm text-neutral-400">
-            Быстрый доступ к инициативам команды, фильтры и карточки с ключевыми метриками.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-6">
+      {/* Компактный блок с меню навигации и основными фильтрами */}
+      <ProjectsControlPanel
+        viewMode={viewMode}
+        onViewModeChange={handleChangeView}
+        onReset={handleResetFilters}
+        onSettingsClick={() => setIsFiltersModalOpen(true)}
+        filters={
+          <TabDropdown
+            options={TAB_OPTIONS}
+            selectedTab={state.tab}
+            onSelectTab={handleChangeTab}
+          />
+        }
+      />
 
-      <section className="space-y-6">
-        {/* Компактный блок с меню навигации и основными фильтрами */}
-        <ProjectsControlPanel
-          viewMode={viewMode}
-          onViewModeChange={handleChangeView}
-          onReset={handleResetFilters}
-          onSettingsClick={() => setIsFiltersModalOpen(true)}
-          filters={
-            <TabDropdown
-              options={TAB_OPTIONS}
-              selectedTab={state.tab}
-              onSelectTab={handleChangeTab}
-            />
-          }
-        />
+      {/* Модальное окно с полными фильтрами */}
+      {isFiltersModalOpen ? (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsFiltersModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed inset-4 z-50 mx-auto max-w-4xl overflow-auto rounded-2xl border border-neutral-900 bg-neutral-950/95 p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-white">Настройки фильтров и сортировки</h2>
+              <button
+                type="button"
+                onClick={() => setIsFiltersModalOpen(false)}
+                className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-900 hover:text-white"
+                aria-label="Закрыть"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M18 6L6 18" />
+                  <path d="M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-        {/* Модальное окно с полными фильтрами */}
-        {isFiltersModalOpen ? (
-          <>
-            <div
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsFiltersModalOpen(false)}
-              aria-hidden="true"
-            />
-            <div
-              className="fixed inset-4 z-50 mx-auto max-w-4xl overflow-auto rounded-2xl border border-neutral-900 bg-neutral-950/95 p-6 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-white">Настройки фильтров и сортировки</h2>
+            <div className="space-y-6">
+              {/* Сортировка */}
+              <div>
+                <label className="mb-2 block text-sm">
+                  <span className="text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
+                  <select
+                    value={state.sort}
+                    onChange={handleSortChange}
+                    className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                  >
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* Дополнительные фильтры */}
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <FiltersMultiSelect
+                  label="Владельцы"
+                  options={ownerOptions}
+                  value={state.filters.owners}
+                  placeholder="Пока нет вариантов"
+                  onChange={handleOwnersChange}
+                />
+                <FiltersMultiSelect
+                  label="Участники"
+                  options={participantOptions}
+                  value={state.filters.participants}
+                  placeholder="Пока нет вариантов"
+                  onChange={handleParticipantsChange}
+                />
+                <FiltersMultiSelect
+                  label="Метки"
+                  options={tagSelectOptions}
+                  value={state.filters.tags}
+                  placeholder="Нет меток"
+                  onChange={handleTagsChange}
+                />
+              </div>
+
+              {/* Фильтры по дате */}
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className="text-sm">
+                  <span className="text-xs uppercase tracking-wide text-neutral-500">Поле даты</span>
+                  <select
+                    value={state.filters.dateField}
+                    onChange={handleDateFieldChange}
+                    className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                  >
+                    {DATE_FIELD_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm">
+                  <span className="text-xs uppercase tracking-wide text-neutral-500">С даты</span>
+                  <input
+                    type="date"
+                    value={state.filters.dateFrom ?? ''}
+                    onChange={handleDateFromChange}
+                    className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                  />
+                </label>
+                <label className="text-sm">
+                  <span className="text-xs uppercase tracking-wide text-neutral-500">По дату</span>
+                  <input
+                    type="date"
+                    value={state.filters.dateTo ?? ''}
+                    onChange={handleDateToChange}
+                    className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
+                  />
+                </label>
+              </div>
+
+              {/* Кнопки действий */}
+              <div className="flex items-center justify-end gap-3 border-t border-neutral-900 pt-4">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+                >
+                  Сбросить
+                </button>
                 <button
                   type="button"
                   onClick={() => setIsFiltersModalOpen(false)}
-                  className="rounded-lg p-2 text-neutral-400 transition hover:bg-neutral-900 hover:text-white"
-                  aria-label="Закрыть"
+                  className="inline-flex items-center justify-center rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
                 >
-                  <svg
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </svg>
+                  Применить
                 </button>
               </div>
-
-              <div className="space-y-6">
-                {/* Сортировка */}
-                <div>
-                  <label className="mb-2 block text-sm">
-                    <span className="text-xs uppercase tracking-wide text-neutral-500">Сортировка</span>
-                    <select
-                      value={state.sort}
-                      onChange={handleSortChange}
-                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-                    >
-                      {SORT_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                {/* Дополнительные фильтры */}
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <FiltersMultiSelect
-                    label="Владельцы"
-                    options={ownerOptions}
-                    value={state.filters.owners}
-                    placeholder="Пока нет вариантов"
-                    onChange={handleOwnersChange}
-                  />
-                  <FiltersMultiSelect
-                    label="Участники"
-                    options={participantOptions}
-                    value={state.filters.participants}
-                    placeholder="Пока нет вариантов"
-                    onChange={handleParticipantsChange}
-                  />
-                  <FiltersMultiSelect
-                    label="Метки"
-                    options={tagSelectOptions}
-                    value={state.filters.tags}
-                    placeholder="Нет меток"
-                    onChange={handleTagsChange}
-                  />
-                </div>
-
-                {/* Фильтры по дате */}
-                <div className="grid gap-4 md:grid-cols-3">
-                  <label className="text-sm">
-                    <span className="text-xs uppercase tracking-wide text-neutral-500">Поле даты</span>
-                    <select
-                      value={state.filters.dateField}
-                      onChange={handleDateFieldChange}
-                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-                    >
-                      {DATE_FIELD_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="text-sm">
-                    <span className="text-xs uppercase tracking-wide text-neutral-500">С даты</span>
-                    <input
-                      type="date"
-                      value={state.filters.dateFrom ?? ''}
-                      onChange={handleDateFromChange}
-                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-                    />
-                  </label>
-                  <label className="text-sm">
-                    <span className="text-xs uppercase tracking-wide text-neutral-500">По дату</span>
-                    <input
-                      type="date"
-                      value={state.filters.dateTo ?? ''}
-                      onChange={handleDateToChange}
-                      className="mt-2 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-white focus:border-indigo-400 focus:outline-none"
-                    />
-                  </label>
-                </div>
-
-                {/* Кнопки действий */}
-                <div className="flex items-center justify-end gap-3 border-t border-neutral-900 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
-                  >
-                    Сбросить
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFiltersModalOpen(false)}
-                    className="inline-flex items-center justify-center rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
-                  >
-                    Применить
-                  </button>
-                </div>
-              </div>
             </div>
-          </>
-        ) : null}
-
-        {actionError ? (
-          <div className="rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-            {actionError}
           </div>
-        ) : null}
+        </>
+      ) : null}
 
-        {error ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-10 text-center text-sm text-rose-100">
-            <p>{error}</p>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-2 rounded-full border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-100 transition hover:border-rose-300"
+      {actionError ? (
+        <div className="rounded-xl border border-rose-500/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          {actionError}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-rose-500/40 bg-rose-500/10 p-10 text-center text-sm text-rose-100">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="inline-flex items-center gap-2 rounded-full border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-100 transition hover:border-rose-300"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Повторить загрузку
+          </button>
+        </div>
+      ) : null}
+
+      {showSkeletons ? (
+        viewMode === 'grid' ? (
+          <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
+            {Array.from({ length: GRID_SKELETON_COUNT }).map((_, index) => (
+              <GridSkeletonCard key={`grid-skeleton-${index}`} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {Array.from({ length: LIST_SKELETON_COUNT }).map((_, index) => (
+              <ListSkeletonCard key={`list-skeleton-${index}`} />
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {showEmptyState ? (
+        <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-neutral-900/60 bg-neutral-950/60 p-12 text-center">
+          <div className="space-y-3">
+            <h2 className="text-xl font-semibold text-white">У вас пока нет проектов</h2>
+            <p className="text-sm text-neutral-400">
+              Нажмите «Создать проект» или выберите шаблон, чтобы запустить первую инициативу.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/app/projects/create"
+              className="inline-flex items-center justify-center rounded-full bg-indigo-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400"
             >
-              <RefreshCw className="h-4 w-4" />
-              Повторить загрузку
-            </button>
-          </div>
-        ) : null}
-
-        {showSkeletons ? (
-          viewMode === 'grid' ? (
-            <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
-              {Array.from({ length: GRID_SKELETON_COUNT }).map((_, index) => (
-                <GridSkeletonCard key={`grid-skeleton-${index}`} />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {Array.from({ length: LIST_SKELETON_COUNT }).map((_, index) => (
-                <ListSkeletonCard key={`list-skeleton-${index}`} />
-              ))}
-            </div>
-          )
-        ) : null}
-
-        {showEmptyState ? (
-          <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-neutral-900/60 bg-neutral-950/60 p-12 text-center">
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold text-white">У вас пока нет проектов</h2>
-              <p className="text-sm text-neutral-400">
-                Нажмите «Создать проект» или выберите шаблон, чтобы запустить первую инициативу.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/app/projects/create"
-                className="inline-flex items-center justify-center rounded-full bg-indigo-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-indigo-400"
-              >
-                Создать проект
-              </Link>
-              <Link
-                href="/app/projects/templates"
-                className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-6 py-3 text-sm font-semibold text-neutral-100 transition hover:border-indigo-400/60 hover:text-white"
-              >
-                Выбрать шаблон
-              </Link>
-            </div>
-          </div>
-        ) : null}
-
-        {!showSkeletons && !showEmptyState && !error ? (
-          viewMode === 'grid' ? (
-            <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
-              {projects.map((project) => (
-                <ProjectGridCard
-                  key={project.id}
-                  project={project}
-                  onOpen={handleOpenProject}
-                  onCreateTask={handleCreateTask}
-                  onInvite={handleInvite}
-                  onToggleArchive={handleToggleArchive}
-                  actionInFlight={actionInFlight}
-                />
-              ))}
-            </div>
-          ) : shouldVirtualize ? (
-            <div ref={listParentRef} className="max-h-[70vh] overflow-auto pr-2">
-              <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const project = projects[virtualRow.index];
-                  if (!project) {
-                    return null;
-                  }
-                  return (
-                    <div
-                      key={project.id}
-                      ref={rowVirtualizer.measureElement}
-                      className="absolute left-0 top-0 w-full px-2"
-                      style={{ transform: `translateY(${virtualRow.start}px)` }}
-                    >
-                      <ProjectListCard
-                        project={project}
-                        onOpen={handleOpenProject}
-                        onCreateTask={handleCreateTask}
-                        onInvite={handleInvite}
-                        onToggleArchive={handleToggleArchive}
-                        actionInFlight={actionInFlight}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {projects.map((project) => (
-                <ProjectListCard
-                  key={project.id}
-                  project={project}
-                  onOpen={handleOpenProject}
-                  onCreateTask={handleCreateTask}
-                  onInvite={handleInvite}
-                  onToggleArchive={handleToggleArchive}
-                  actionInFlight={actionInFlight}
-                />
-              ))}
-            </div>
-          )
-        ) : null}
-
-        {projects.length > 0 && !loading && !error ? (
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-4 text-sm text-neutral-400">
-            <span>
-              Показано {projects.length} из {total} проектов
-            </span>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-4 py-2 font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+              Создать проект
+            </Link>
+            <Link
+              href="/app/projects/templates"
+              className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-6 py-3 text-sm font-semibold text-neutral-100 transition hover:border-indigo-400/60 hover:text-white"
             >
-              <RefreshCw className={cn('h-4 w-4', loading ? 'animate-spin' : undefined)} />
-              Обновить данные
-            </button>
+              Выбрать шаблон
+            </Link>
           </div>
-        ) : null}
-      </section>
+        </div>
+      ) : null}
+
+      {!showSkeletons && !showEmptyState && !error ? (
+        viewMode === 'grid' ? (
+          <div className="cs-auto-grid gap-4" style={{ '--cs-grid-min': '220px' } as CSSProperties}>
+            {projects.map((project) => (
+              <ProjectGridCard
+                key={project.id}
+                project={project}
+                onOpen={handleOpenProject}
+                onCreateTask={handleCreateTask}
+                onInvite={handleInvite}
+                onToggleArchive={handleToggleArchive}
+                actionInFlight={actionInFlight}
+              />
+            ))}
+          </div>
+        ) : shouldVirtualize ? (
+          <div ref={listParentRef} className="max-h-[70vh] overflow-auto pr-2">
+            <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const project = projects[virtualRow.index];
+                if (!project) {
+                  return null;
+                }
+                return (
+                  <div
+                    key={project.id}
+                    ref={rowVirtualizer.measureElement}
+                    className="absolute left-0 top-0 w-full px-2"
+                    style={{ transform: `translateY(${virtualRow.start}px)` }}
+                  >
+                    <ProjectListCard
+                      project={project}
+                      onOpen={handleOpenProject}
+                      onCreateTask={handleCreateTask}
+                      onInvite={handleInvite}
+                      onToggleArchive={handleToggleArchive}
+                      actionInFlight={actionInFlight}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {projects.map((project) => (
+              <ProjectListCard
+                key={project.id}
+                project={project}
+                onOpen={handleOpenProject}
+                onCreateTask={handleCreateTask}
+                onInvite={handleInvite}
+                onToggleArchive={handleToggleArchive}
+                actionInFlight={actionInFlight}
+              />
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {projects.length > 0 && !loading && !error ? (
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-neutral-900 bg-neutral-950/60 px-6 py-4 text-sm text-neutral-400">
+          <span>
+            Показано {projects.length} из {total} проектов
+          </span>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-800 px-4 py-2 font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+          >
+            <RefreshCw className={cn('h-4 w-4', loading ? 'animate-spin' : undefined)} />
+            Обновить данные
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

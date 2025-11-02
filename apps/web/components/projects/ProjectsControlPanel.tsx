@@ -48,13 +48,13 @@ export default function ProjectsControlPanel({
     <div className="space-y-3 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-3 shadow-sm shadow-black/10">
       {/* Навигация по разделам */}
       {showNavigation && (
-        <nav aria-label="Навигация по разделу проектов" className="flex flex-wrap items-center gap-1">
+        <nav aria-label="Навигация по разделу проектов" className="flex flex-wrap items-center gap-1.5">
           {links.map((link) => (
             <Link
               key={link.id}
               href={link.href}
               className={cn(
-                'rounded-lg px-2 py-1 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
                 link.active
                   ? 'bg-indigo-500 text-white shadow'
                   : 'border border-transparent bg-neutral-900/60 text-neutral-300 hover:border-neutral-700 hover:text-neutral-100'
@@ -78,10 +78,10 @@ export default function ProjectsControlPanel({
               type="button"
               onClick={() => onViewModeChange('grid')}
               className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
                 viewMode === 'grid'
-                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
+                  ? 'border-indigo-500/40 bg-indigo-500/20 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white'
               )}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -91,10 +91,10 @@ export default function ProjectsControlPanel({
               type="button"
               onClick={() => onViewModeChange('list')}
               className={cn(
-                'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
+                'inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold transition',
                 viewMode === 'list'
-                  ? 'border-indigo-400 bg-indigo-500/20 text-white'
-                  : 'border-neutral-800 text-neutral-300 hover:border-indigo-400/60 hover:text-white'
+                  ? 'border-indigo-500/40 bg-indigo-500/20 text-white'
+                  : 'border-neutral-800 text-neutral-300 hover:border-neutral-700 hover:text-white'
               )}
             >
               <LayoutList className="h-4 w-4" />
@@ -108,7 +108,7 @@ export default function ProjectsControlPanel({
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center justify-center rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400/60 hover:text-white"
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-500/40 hover:text-white"
           >
             Сбросить
           </button>
@@ -119,7 +119,7 @@ export default function ProjectsControlPanel({
           <button
             type="button"
             onClick={onSettingsClick}
-            className="inline-flex items-center gap-2 rounded-full border border-indigo-400/60 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
+            className="inline-flex items-center gap-2 rounded-xl border border-indigo-500/40 bg-indigo-500/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-indigo-400 hover:bg-indigo-500/30"
           >
             <Settings className="h-4 w-4" />
             Настройки
