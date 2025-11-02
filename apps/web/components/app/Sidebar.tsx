@@ -108,21 +108,21 @@ export default function Sidebar({ roles }: SidebarProps) {
         const active = isSectionActive(section.href, section.children);
 
         return (
-          <div key={section.id} className="rounded-2xl border border-transparent hover:border-neutral-800/80">
+          <div key={section.id} className="rounded-2xl border border-transparent hover:border-[color:var(--surface-border-subtle)]">
             <div className="flex items-center justify-between px-3 py-2">
               {section.href ? (
                 <Link
                   href={section.href}
                   className={clsx(
-                    'flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                    active && 'text-white'
+                    'flex flex-1 items-center gap-3 text-sm font-semibold text-[color:var(--text-secondary)] transition hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                    active && 'text-[color:var(--text-primary)]'
                   )}
                 >
                   <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
                   {section.label}
                 </Link>
               ) : (
-                <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-neutral-300">
+                <div className="flex flex-1 items-center gap-3 text-sm font-semibold text-[color:var(--text-secondary)]">
                   <MenuIcon name={(section.icon ?? 'dashboard') as IconName} />
                   {section.label}
                 </div>
@@ -133,7 +133,7 @@ export default function Sidebar({ roles }: SidebarProps) {
                   onClick={() => toggleGroup(section.id)}
                   aria-expanded={isExpanded}
                   aria-label={(isExpanded ? 'Свернуть ' : 'Раскрыть ') + section.label}
-                  className="rounded-full border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-xs text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-2 py-1 text-xs text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                 >
                   {isExpanded ? '−' : '+'}
                 </button>
@@ -144,7 +144,7 @@ export default function Sidebar({ roles }: SidebarProps) {
                 {section.children?.map((child) => {
                   if (child.type === 'divider') {
                     return (
-                      <li key={child.id} role="separator" className="my-3 border-t border-neutral-800/70" />
+                      <li key={child.id} role="separator" className="my-3 border-t border-[color:var(--surface-border-subtle)]" />
                     );
                   }
 
@@ -153,8 +153,8 @@ export default function Sidebar({ roles }: SidebarProps) {
                       <Link
                         href={child.href}
                         className={clsx(
-                          'block rounded-xl px-3 py-2 text-sm text-neutral-300 transition hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                          normalizedPath === child.href && 'bg-indigo-500/10 text-white'
+                          'block rounded-xl px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          normalizedPath === child.href && 'bg-indigo-500/10 text-[color:var(--text-primary)]'
                         )}
                       >
                         {child.label}
@@ -197,8 +197,8 @@ export default function Sidebar({ roles }: SidebarProps) {
               <Link
                 href={section.href}
                 className={clsx(
-                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-neutral-300 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                  active && 'border-indigo-500/40 text-white'
+                  'group flex h-12 w-full items-center justify-center rounded-2xl border border-transparent text-[color:var(--text-secondary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                  active && 'border-indigo-500/40 text-[color:var(--text-primary)]'
                 )}
                 aria-haspopup={hasChildren ? 'true' : undefined}
                 aria-expanded={hasChildren ? isFlyoutOpen : undefined}
@@ -221,8 +221,8 @@ export default function Sidebar({ roles }: SidebarProps) {
             ) : (
               <div
                 className={clsx(
-                  'flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-900/80 text-neutral-300',
-                  active && 'border-indigo-500/40 text-white'
+                  'flex h-12 w-full items-center justify-center rounded-2xl border border-[color:var(--surface-border-subtle)] text-[color:var(--text-secondary)]',
+                  active && 'border-indigo-500/40 text-[color:var(--text-primary)]'
                 )}
               >
                 <MenuIcon name={(section.icon ?? 'dashboard') as IconName} className="h-5 w-5 text-indigo-200" />
@@ -233,19 +233,19 @@ export default function Sidebar({ roles }: SidebarProps) {
             {hasChildren && (
               <div
                 className={clsx(
-                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden w-[280px] rounded-2xl border border-neutral-800/60 bg-neutral-900/70 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm',
+                  'pointer-events-none absolute left-[72px] top-0 z-40 hidden w-[280px] rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm',
                   isFlyoutOpen && 'pointer-events-auto block'
                 )}
               >
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-neutral-100">{section.label}</span>
+                  <span className="text-sm font-semibold text-[color:var(--text-primary)]">{section.label}</span>
                   <div className="mt-3 space-y-2">
                     {section.href && (
                       <Link
                         href={section.href}
                         className={clsx(
-                          'block rounded-xl border border-neutral-800/70 bg-neutral-950/60 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                          isSectionActive(section.href) && 'border-indigo-500/40 bg-indigo-500/10 text-white'
+                          'block rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] px-3 py-2 text-sm font-medium text-[color:var(--text-secondary)] transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                          isSectionActive(section.href) && 'border-indigo-500/40 bg-indigo-500/10 text-[color:var(--text-primary)]'
                         )}
                         onClick={() => closeFlyout()}
                       >
@@ -255,7 +255,7 @@ export default function Sidebar({ roles }: SidebarProps) {
                     <ul className="space-y-2">
                       {section.children?.map((child) => {
                         if (child.type === 'divider') {
-                          return <li key={child.id} role="separator" className="my-2 border-t border-neutral-800/70" />;
+                          return <li key={child.id} role="separator" className="my-2 border-t border-[color:var(--surface-border-subtle)]" />;
                         }
 
                         return (
@@ -263,8 +263,8 @@ export default function Sidebar({ roles }: SidebarProps) {
                             <Link
                               href={child.href}
                               className={clsx(
-                                'block rounded-xl border border-transparent px-3 py-2 text-sm text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-                                normalizedPath === child.href && 'border-indigo-500/40 bg-indigo-500/10 text-white'
+                                'block rounded-xl border border-transparent px-3 py-2 text-sm text-[color:var(--text-secondary)] transition hover:border-indigo-500/40 hover:bg-indigo-500/10 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
+                                normalizedPath === child.href && 'border-indigo-500/40 bg-indigo-500/10 text-[color:var(--text-primary)]'
                               )}
                               onClick={() => closeFlyout()}
                             >
@@ -287,7 +287,7 @@ export default function Sidebar({ roles }: SidebarProps) {
   return (
     <aside
       className={clsx(
-        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-neutral-900/60 bg-neutral-950/80 py-5 transition-[width] duration-300 ease-out',
+        'flex h-full flex-shrink-0 flex-col overflow-hidden border-r border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] py-5 transition-[width] duration-300 ease-out',
         sidebarCollapsed ? 'w-[72px] px-2' : 'w-[288px] px-4'
       )}
       data-collapsed={sidebarCollapsed}
@@ -299,7 +299,7 @@ export default function Sidebar({ roles }: SidebarProps) {
         <button
           type="button"
           onClick={toggleSidebarCollapsed}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-800 bg-neutral-900/70 text-neutral-400 transition hover:border-indigo-500/40 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] text-[color:var(--text-tertiary)] transition hover:border-indigo-500/40 hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
           aria-label={sidebarCollapsed ? 'Развернуть меню' : 'Свернуть меню'}
         >
           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">

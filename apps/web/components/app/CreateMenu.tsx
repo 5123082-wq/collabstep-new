@@ -134,23 +134,23 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--surface-overlay)] backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-menu-title"
     >
-      <div className="w-full max-w-2xl rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-2xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-popover)] p-6 shadow-2xl">
         <div className="flex items-center justify-between gap-6">
           <div>
-            <h2 id="create-menu-title" className="text-lg font-semibold">
+            <h2 id="create-menu-title" className="text-lg font-semibold text-[color:var(--text-primary)]">
               Меню создания
             </h2>
-            <p className="mt-1 text-sm text-neutral-400">Быстрые действия для запуска рабочей сессии.</p>
+            <p className="mt-1 text-sm text-[color:var(--text-tertiary)]">Быстрые действия для запуска рабочей сессии.</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-neutral-500 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+            className="rounded-full border border-[color:var(--surface-border-subtle)] px-3 py-1 text-xs text-[color:var(--text-secondary)] transition hover:border-[color:var(--surface-border-strong)] hover:text-[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
             aria-label="Закрыть меню создания"
           >
             Esc
@@ -159,20 +159,20 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
 
         <div className="mt-6 space-y-4">
           <div>
-            <span className="text-xs uppercase text-neutral-500">Контекст проекта</span>
-            <div className="mt-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+            <span className="text-xs uppercase text-[color:var(--text-tertiary)]">Контекст проекта</span>
+            <div className="mt-2 rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4">
               {projectContext ? (
                 <div>
-                  <p className="text-sm font-semibold text-neutral-100">{projectContext.projectName}</p>
-                  <p className="mt-1 text-xs text-neutral-400">
+                  <p className="text-sm font-semibold text-[color:var(--text-primary)]">{projectContext.projectName}</p>
+                  <p className="mt-1 text-xs text-[color:var(--text-tertiary)]">
                     Стадия: {projectContext.stage} · {projectContext.visibility === 'public' ? 'Публичный' : 'Приватный'} проект
                   </p>
                 </div>
               ) : selectedProject ? (
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-neutral-100">{selectedProject.name}</p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-sm font-semibold text-[color:var(--text-primary)]">{selectedProject.name}</p>
+                    <p className="text-xs text-[color:var(--text-tertiary)]">
                       {selectedProject.code} · {selectedProject.stage} ·{' '}
                       {selectedProject.visibility === 'public' ? 'Публичный' : 'Приватный'}
                     </p>
@@ -187,7 +187,7 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                 </div>
               ) : (
                 <div>
-                  <label htmlFor="project-search" className="text-xs text-neutral-400">
+                  <label htmlFor="project-search" className="text-xs text-[color:var(--text-tertiary)]">
                     Найдите проект по названию, коду или стадии
                   </label>
                   <input
@@ -195,7 +195,7 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                     type="text"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    className="mt-2 w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-indigo-500 focus:outline-none"
+                    className="mt-2 w-full rounded-lg border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-sm text-[color:var(--text-primary)] focus:border-indigo-500 focus:outline-none"
                     placeholder="Например: DEMO"
                   />
                   <ul className="mt-3 max-h-32 space-y-2 overflow-y-auto pr-1 text-sm">
@@ -206,15 +206,15 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                           onClick={() => setSelected(project.id)}
                           className="w-full rounded-lg border border-transparent px-3 py-2 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                         >
-                          <p className="font-medium text-neutral-100">{project.name}</p>
-                          <p className="text-xs text-neutral-400">
+                          <p className="font-medium text-[color:var(--text-primary)]">{project.name}</p>
+                          <p className="text-xs text-[color:var(--text-tertiary)]">
                             {project.code} · {project.stage} · {project.visibility === 'public' ? 'Публичный' : 'Приватный'}
                           </p>
                         </button>
                       </li>
                     ))}
                     {filteredProjects.length === 0 && (
-                      <li className="rounded-lg border border-dashed border-neutral-800 px-3 py-4 text-center text-xs text-neutral-500">
+                      <li className="rounded-lg border border-dashed border-[color:var(--surface-border-subtle)] px-3 py-4 text-center text-xs text-[color:var(--text-tertiary)]">
                         Ничего не найдено
                       </li>
                     )}
@@ -231,19 +231,19 @@ export default function CreateMenu({ open, onClose }: CreateMenuProps) {
                   key={action.id}
                   type="button"
                   onClick={() => handleAction(action)}
-                  className="flex h-full flex-col justify-between rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                  className="flex h-full flex-col justify-between rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-4 text-left transition hover:border-indigo-500/40 hover:bg-indigo-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                 >
                   <div>
-                    <p className="text-sm font-semibold text-neutral-100">{action.label}</p>
-                    <p className="mt-2 text-xs text-neutral-400">{action.description}</p>
+                    <p className="text-sm font-semibold text-[color:var(--text-primary)]">{action.label}</p>
+                    <p className="mt-2 text-xs text-[color:var(--text-tertiary)]">{action.description}</p>
                   </div>
                   {action.requiresProject && (
-                    <p className="mt-3 text-[10px] uppercase tracking-wide text-neutral-500">Нужен выбранный проект</p>
+                    <p className="mt-3 text-[10px] uppercase tracking-wide text-[color:var(--text-tertiary)]">Нужен выбранный проект</p>
                   )}
                 </button>
               ))
             ) : (
-              <p className="rounded-xl border border-dashed border-neutral-800 bg-neutral-900/40 p-6 text-center text-xs text-neutral-500">
+              <p className="rounded-xl border border-dashed border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-muted)] p-6 text-center text-xs text-[color:var(--text-tertiary)]">
                 Доступные действия отсутствуют для вашей роли.
               </p>
             )}

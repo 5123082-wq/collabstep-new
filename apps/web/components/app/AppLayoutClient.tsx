@@ -102,7 +102,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
 
   return (
     <AppShellProvider openCreateMenu={openCreateMenu} openCommandPalette={openCommandPalette}>
-      <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-neutral-100">
+      <div className="flex h-screen min-h-0 max-h-screen overflow-hidden bg-transparent text-[color:var(--text-primary)]">
         <Sidebar roles={roles} />
         <div className="flex h-full min-h-0 flex-1 flex-col">
           <AppTopbar
@@ -112,7 +112,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
           />
-          <div className="flex flex-1 min-h-0 overflow-hidden bg-neutral-950/70">
+          <div className="flex flex-1 min-h-0 overflow-hidden bg-[color:var(--surface-base)]">
             <ContentContainer className={isHoverRailEnabled ? 'lg:pr-6 xl:pr-10' : ''}>
               {children}
             </ContentContainer>
