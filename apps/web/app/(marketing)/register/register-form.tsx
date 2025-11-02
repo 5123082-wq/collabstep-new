@@ -42,7 +42,7 @@ export default function RegisterForm() {
     }
 
     if (!state.name.trim() || !state.email.trim() || state.password.length < MIN_PASSWORD_LENGTH || !state.consent) {
-      setState((prev) => ({ ...prev, error: 'Заполните все поля и подтвердите dev-режим.' }));
+      setState((prev) => ({ ...prev, error: 'Заполните все поля и подтвердите согласие.' }));
       return;
     }
 
@@ -125,7 +125,7 @@ export default function RegisterForm() {
           className="mt-1 h-4 w-4 border-neutral-600 text-indigo-500 focus:ring-indigo-500"
           required
         />
-        <span>Это тестовый аккаунт (dev-режим)</span>
+        <span>Я согласен с условиями использования</span>
       </label>
       {state.error ? (
         <p role="alert" className="text-sm text-rose-300">

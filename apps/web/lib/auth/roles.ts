@@ -10,6 +10,8 @@ export type UserRole =
   | 'MODERATOR'
   | 'OBSERVER';
 
+export type UserType = 'performer' | 'marketer' | null;
+
 const DEFAULT_ROLES: UserRole[] = ['FOUNDER', 'PM'];
 const FULL_ADMIN_ROLES: UserRole[] = ['FOUNDER', 'PM', 'ADMIN', 'MODERATOR', 'SPECIALIST', 'CONTRACTOR', 'OBSERVER'];
 
@@ -19,6 +21,7 @@ function uniqueRoles(roles: UserRole[]): UserRole[] {
 
 const FINANCE_ALLOWED = new Set<UserRole>(['FOUNDER', 'PM', 'ADMIN']);
 const ADMIN_ALLOWED = new Set<UserRole>(['ADMIN', 'MODERATOR']);
+const MARKETPLACE_ALLOWED = new Set<UserRole>(['SPECIALIST', 'CONTRACTOR', 'FOUNDER', 'PM', 'ADMIN']);
 
 export function getUserRoles(): UserRole[] {
   if (typeof window !== 'undefined') {
@@ -35,12 +38,46 @@ export function getUserRoles(): UserRole[] {
     }
   }
 
+  // Если есть тип пользователя, автоматически добавляем соответствующие роли
+  const userType = getUserType();
+  if (userType === 'performer') {
+    return ['SPECIALIST', 'CONTRACTOR'];
+  }
+
   return DEFAULT_ROLES;
 }
 
 export function setUserRoles(roles: UserRole[]): void {
   if (typeof window !== 'undefined') {
     window.localStorage.setItem('cv-roles', JSON.stringify(roles));
+  }
+}
+
+export function getUserType(): UserType {
+  if (typeof window !== 'undefined') {
+    const persisted = window.localStorage.getItem('cv-user-type');
+    if (persisted === 'performer' || persisted === 'marketer') {
+      return persisted;
+    }
+  }
+  return null;
+}
+
+export function setUserType(type: UserType): void {
+  if (typeof window !== 'undefined') {
+    if (type) {
+      window.localStorage.setItem('cv-user-type', type);
+      
+      // Автоматически устанавливаем соответствующие роли
+      if (type === 'performer') {
+        setUserRoles(['SPECIALIST', 'CONTRACTOR']);
+      } else if (type === 'marketer') {
+        // Для маркетолога оставляем базовые роли, доступ к маркетингу будет проверяться по типу
+        setUserRoles(DEFAULT_ROLES);
+      }
+    } else {
+      window.localStorage.removeItem('cv-user-type');
+    }
   }
 }
 
@@ -66,6 +103,21 @@ export function canAccessFinance(roles: UserRole[]): boolean {
 
 export function canAccessAdmin(roles: UserRole[]): boolean {
   return roles.some((role) => ADMIN_ALLOWED.has(role));
+}
+
+export function canAccessMarketplace(roles: UserRole[]): boolean {
+  // Для тестового режима: исполнители (SPECIALIST, CONTRACTOR) имеют доступ
+  const userType = getUserType();
+  if (userType === 'performer') {
+    return true;
+  }
+  return roles.some((role) => MARKETPLACE_ALLOWED.has(role));
+}
+
+export function canAccessMarketing(): boolean {
+  // Для тестового режима: маркетологи имеют доступ
+  const userType = getUserType();
+  return userType === 'marketer';
 }
 
 export function filterRoles<T extends { roles?: UserRole[] }>(items: T[], roles: UserRole[]): T[] {

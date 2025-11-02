@@ -18,7 +18,7 @@ export default function RegisterPage() {
     <main className="mx-auto max-w-2xl px-6 py-16 sm:px-8">
       <header className="space-y-3 text-center">
         <h1 className="text-3xl font-bold">Регистрация</h1>
-        <p className="text-neutral-300">Создайте тестовый аккаунт для доступа к демо-версии Collabverse.</p>
+        <p className="text-neutral-300">Создайте аккаунт для доступа к Collabverse.</p>
       </header>
       <RegisterForm />
       <p className="mt-6 text-center text-sm text-neutral-400">
