@@ -7,7 +7,6 @@ import { flags } from '@/lib/flags';
 import ProjectsControlPanel, { type ViewMode } from '@/components/projects/ProjectsControlPanel';
 import { TemplatesFilters } from '@/components/projects/section-filters/TemplatesFilters';
 import type { TemplateFilterType } from '@/components/projects/section-filters/TemplatesFilters';
-import StandardizedSection from '@/components/common/StandardizedSection';
 
 export default function ProjectTemplatesPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
