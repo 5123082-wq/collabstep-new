@@ -9,7 +9,7 @@ type DesignTokens = {
 
 export const designTokens: DesignTokens = {
   shared: {
-    'content-inline-padding': '24px',
+    'content-inline-padding': '20px',
     'rail-collapsed-width': '56px',
     'rail-dock-spacing': '1rem',
     'rail-safe-gap': '5px',
