@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { attachmentsRepository, filesRepository, projectsRepository, type AttachmentEntityType } from '@collabverse/api';
+import { attachmentsRepository, filesRepository, projectsRepository, DEFAULT_WORKSPACE_USER_ID, type AttachmentEntityType } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 const ExistingAttachmentSchema = z.object({
   fileId: z.string(),
@@ -146,6 +147,20 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+  }
+
   const items = mapAttachments(params.id);
   return NextResponse.json({ items });
 }
@@ -153,6 +168,19 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECT_ATTACHMENTS) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const parsed = await parseRequest(req);
@@ -188,12 +216,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     createdBy: parsed.mode === 'existing' ? parsed.createdBy : parsed.data.uploaderId
   });
 
-  const project = projectsRepository.findById(params.id);
   recordAudit({
     action: 'file.attached',
     entity: { type: 'file', id: attachment.id },
     projectId: params.id,
-    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
+    ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     after: {
       attachmentId: attachment.id,
       fileId,

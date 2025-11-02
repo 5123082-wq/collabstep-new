@@ -9,14 +9,19 @@ export async function GET(request: Request) {
   }
 
   const projects = projectsRepository.list();
-  const items = projects.map((project) => {
-    const role = getProjectRole(project.id, auth.userId);
-    return {
-      id: project.id,
-      name: project.title,
-      role
-    };
-  });
+  const items = projects
+    .filter((project) => {
+      // Filter out private projects the user doesn't have access to
+      return projectsRepository.hasAccess(project.id, auth.userId);
+    })
+    .map((project) => {
+      const role = getProjectRole(project.id, auth.userId);
+      return {
+        id: project.id,
+        name: project.title,
+        role
+      };
+    });
 
   return jsonOk({ items });
 }

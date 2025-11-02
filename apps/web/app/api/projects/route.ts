@@ -17,6 +17,7 @@ import {
 } from '@collabverse/api';
 import { workspacesRepository } from '@collabverse/api';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 function parseArchivedFilter(value: string | null): boolean | null {
   if (!value) {
@@ -138,7 +139,10 @@ export async function GET(req: NextRequest) {
     !req.nextUrl.searchParams.has('filters') &&
     !req.nextUrl.searchParams.has('query')
   ) {
-    const legacyItems = projectCatalogService.getProjects({ archived: archivedFilter });
+    // Get current user from session
+    const session = getDemoSessionFromCookies();
+    const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+    const legacyItems = projectCatalogService.getProjects({ archived: archivedFilter, currentUserId });
     return NextResponse.json({ items: legacyItems, total: legacyItems.length });
   }
 
@@ -153,9 +157,13 @@ export async function GET(req: NextRequest) {
   const page = Number.parseInt(req.nextUrl.searchParams.get('page') ?? '', 10);
   const pageSize = Number.parseInt(req.nextUrl.searchParams.get('pageSize') ?? '', 10);
 
+  // Get current user from session
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+
   const { items, total } = projectCatalogService.getProjectCards({
     tab,
-    currentUserId: DEFAULT_WORKSPACE_USER_ID,
+    currentUserId,
     query,
     sort,
     filters,

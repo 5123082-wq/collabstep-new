@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository } from '@collabverse/api';
+import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 const TimePatchSchema = z.object({
   estimatedTime: z.number().int().nonnegative().nullable().optional(),
@@ -17,6 +18,19 @@ export async function GET(
 ) {
   if (!flags.PROJECTS_V1 && !flags.TASK_TIME_TRACKING) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const task = memory.TASKS.find((item) => item.id === params['task-id'] && item.projectId === params.id);
@@ -36,6 +50,19 @@ export async function PATCH(
 ) {
   if (!flags.PROJECTS_V1 && !flags.TASK_TIME_TRACKING) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const parsed = TimePatchSchema.safeParse(await req.json().catch(() => ({ } )));
@@ -72,12 +99,11 @@ export async function PATCH(
   task.updatedAt = new Date().toISOString();
   memory.TASKS[idx] = task;
 
-  const project = projectsRepository.findById(params.id);
   recordAudit({
     action: 'task.time_updated',
     entity: { type: 'task', id: task.id },
     projectId: params.id,
-    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
+    ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
     after: task
   });

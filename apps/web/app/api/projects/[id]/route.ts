@@ -3,6 +3,8 @@ import { flags } from '@/lib/flags';
 import type { Project, ProjectStage } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
 import { recordAudit } from '@/lib/audit/log';
+import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 function parseBudgetPatch(input: unknown): number | null | undefined {
   if (input === undefined) {
@@ -35,6 +37,14 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+  }
+
   return NextResponse.json(project);
 }
 
@@ -46,6 +56,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const idx = memory.PROJECTS.findIndex((item) => item.id === params.id);
   if (idx === -1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = memory.PROJECTS[idx];
+  
+  if (project && !projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const body = (await req.json().catch(() => ({}))) as Partial<Project> & Record<string, unknown>;
@@ -113,6 +132,15 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
   const idx = memory.PROJECTS.findIndex((item) => item.id === params.id);
   if (idx === -1) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = memory.PROJECTS[idx];
+  
+  if (project && !projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const existing = memory.PROJECTS[idx];
