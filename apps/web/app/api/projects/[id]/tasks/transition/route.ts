@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository } from '@collabverse/api';
+import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import { memory } from '@/mocks/projects-memory';
 import type { TaskStatus } from '@/domain/projects/types';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 const BodySchema = z.object({
   taskId: z.string().min(1),
@@ -14,6 +15,19 @@ const BodySchema = z.object({
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
@@ -40,12 +54,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   task.status = toStatus;
   task.updatedAt = new Date().toISOString();
 
-  const project = projectsRepository.findById(params.id);
   recordAudit({
     action: 'task.status_changed',
     entity: { type: 'task', id: task.id },
     projectId: params.id,
-    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
+    ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
     after: task
   });

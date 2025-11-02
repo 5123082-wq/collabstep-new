@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository } from '@collabverse/api';
+import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { TaskStatus } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
 import { recordAudit } from '@/lib/audit/log';
+import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 const TaskPatchSchema = z.object({
   title: z.string().trim().min(1).optional(),
@@ -23,6 +24,19 @@ const TaskPatchSchema = z.object({
 export async function PATCH(req: NextRequest, { params }: { params: { id: string; 'task-id': string } }) {
   if (!flags.PROJECTS_V1 && !flags.TASKS_WORKSPACE) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  // Check access for private projects
+  const session = getDemoSessionFromCookies();
+  const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
+  const project = projectsRepository.findById(params.id);
+  
+  if (!project) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
+    return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const parsed = TaskPatchSchema.safeParse(await req.json().catch(() => ({ } )));
@@ -107,12 +121,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   existing.updatedAt = new Date().toISOString();
   memory.TASKS[idx] = existing;
 
-  const project = projectsRepository.findById(params.id);
   recordAudit({
     action: 'task.updated',
     entity: { type: 'task', id: existing.id },
     projectId: params.id,
-    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
+    ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
     after: existing
   });

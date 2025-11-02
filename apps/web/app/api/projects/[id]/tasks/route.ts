@@ -131,12 +131,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ...(b.loggedTime !== undefined ? { loggedTime: b.loggedTime } : { loggedTime: 0 })
   }) as Task;
 
-  const project = projectsRepository.findById(params.id);
   recordAudit({
     action: 'task.created',
     entity: { type: 'task', id: task.id },
     projectId: params.id,
-    ...(project?.workspaceId ? { workspaceId: project.workspaceId } : {}),
+    ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     after: task
   });
 
