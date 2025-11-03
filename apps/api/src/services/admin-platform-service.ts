@@ -40,15 +40,16 @@ function computeModuleTree(): ModuleNodeView[] {
         .map((testerId) => userMap.get(testerId))
         .filter((value): value is WorkspaceUser => Boolean(value));
 
+      const { children, ...rest } = node;
       const decorated: ModuleNodeView = {
-        ...node,
+        ...rest,
         effectiveStatus,
         inherited,
         testersDetails
       };
 
-      if (node.children && node.children.length > 0) {
-        decorated.children = decorate(node.children, effectiveStatus);
+      if (children && children.length > 0) {
+        decorated.children = decorate(children, effectiveStatus);
       }
 
       return decorated;

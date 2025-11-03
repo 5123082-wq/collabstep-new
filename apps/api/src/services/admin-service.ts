@@ -106,13 +106,11 @@ export class AdminService {
         .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
       const effectiveStatus: PlatformModuleStatus = inheritedStatus === 'disabled' ? 'disabled' : node.status;
       const inherited = inheritedStatus === 'disabled';
-      return {
+      const result: AdminModuleNodeView = {
         id: node.id,
         parentId: node.parentId,
         code: node.code,
         label: node.label,
-        summary: node.summary,
-        path: node.path,
         status: node.status,
         effectiveStatus,
         inherited,
@@ -124,6 +122,16 @@ export class AdminService {
         updatedBy: node.updatedBy,
         children: (node.children ?? []).map((child) => hydrate(child, effectiveStatus))
       };
+      
+      if (node.summary) {
+        result.summary = node.summary;
+      }
+      
+      if (node.path) {
+        result.path = node.path;
+      }
+      
+      return result;
     };
 
     return tree.map((node) => hydrate(node, 'enabled'));
