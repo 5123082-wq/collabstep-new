@@ -335,35 +335,12 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
           <IconButton icon="chat" label="Сообщения" />
           <IconButton icon="wallet" label="Кошелёк" />
           <ThemeToggle />
-          {onOpenSettings ? (
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className={clsx(
-                'flex h-10 w-10 items-center justify-center rounded-full border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
-                'border-[color:var(--theme-control-border)] bg-[color:var(--theme-control-bg)] text-[color:var(--theme-control-foreground)]',
-                'hover:border-[color:var(--theme-control-border-hover)] hover:text-[color:var(--theme-control-foreground-hover)]'
-              )}
-              aria-label="Настройки платформы"
-              title="Настройки (⌘,)"
-            >
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22a10 10 0 1 1 10-10 10 10 0 0 1-10 10Z" />
-                <path d="M12 18a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6Z" />
-                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-              </svg>
-            </button>
-          ) : null}
-          <AccountMenu profile={profile} onLogout={onLogout} isLoggingOut={isLoggingOut} />
+          <AccountMenu 
+            profile={profile} 
+            onLogout={onLogout} 
+            isLoggingOut={isLoggingOut}
+            onOpenSettings={onOpenSettings}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span
