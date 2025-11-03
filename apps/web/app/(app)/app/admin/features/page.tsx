@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Filter, ToggleLeft, ToggleRight, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
-import { featureFlagRegistry, type FeatureFlagKey } from '../../../../../config/feature-flags';
 
 type FeatureCategory = 'all' | 'platform' | 'section' | 'subsection';
 type FeatureStatus = 'all' | 'enabled' | 'disabled';
 
 interface FeatureItem {
   id: string;
-  key: FeatureFlagKey;
+  key: string;
   label: string;
   description: string;
   category: string;
@@ -140,8 +139,9 @@ export default function AdminFeaturesPage() {
             <button
               onClick={() => {
                 const config = JSON.stringify(features, null, 2);
-                navigator.clipboard.writeText(config);
-                toast('Конфигурация скопирована в буфер', 'success');
+                void navigator.clipboard.writeText(config).then(() => {
+                  toast('Конфигурация скопирована в буфер', 'success');
+                });
               }}
               className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-green-500/40 hover:bg-green-500/10"
             >

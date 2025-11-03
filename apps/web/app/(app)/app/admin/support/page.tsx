@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserSearch, Activity, Database, RefreshCw } from 'lucide-react';
+import { UserSearch, Activity, RefreshCw } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 
 interface ImpersonationSession {

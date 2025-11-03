@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Filter, Shield, UserX, UserCheck, MoreVertical, Mail } from 'lucide-react';
+import { Search, Filter, Shield, UserX, UserCheck, MoreVertical } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 

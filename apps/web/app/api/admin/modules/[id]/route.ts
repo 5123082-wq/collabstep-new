@@ -26,12 +26,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const module = adminService.getModuleById(params.id);
-  if (!module) {
+  const moduleData = adminService.getModuleById(params.id);
+  if (!moduleData) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  return NextResponse.json({ item: module });
+  return NextResponse.json({ item: moduleData });
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

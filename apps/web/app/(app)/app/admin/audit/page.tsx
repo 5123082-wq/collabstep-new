@@ -90,8 +90,9 @@ export default function AdminAuditPage() {
           <button
             onClick={() => {
               const logs = JSON.stringify(events, null, 2);
-              navigator.clipboard.writeText(logs);
-              toast('Журнал скопирован в буфер', 'success');
+              void navigator.clipboard.writeText(logs).then(() => {
+                toast('Журнал скопирован в буфер', 'success');
+              });
             }}
             className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-4 py-2 text-sm font-medium text-neutral-300 transition hover:border-indigo-500/40 hover:bg-indigo-500/10"
           >

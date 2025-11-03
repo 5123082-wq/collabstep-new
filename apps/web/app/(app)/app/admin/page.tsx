@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import clsx from 'clsx';
 import { 
-  Settings, 
   Users, 
   Shield, 
   Flag, 
-  Clock, 
   FileText, 
   Calendar,
   HelpCircle,

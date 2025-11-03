@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Shield, Users, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
-import clsx from 'clsx';
 
 interface Role {
   id: string;
