@@ -48,31 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'invalid_payload', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Filter out undefined values for exactOptionalPropertyTypes
-  const cleanData: typeof parsed.data = {};
-  if (parsed.data.status !== undefined) {
-    cleanData.status = parsed.data.status;
-  }
-  if (parsed.data.defaultAudience !== undefined) {
-    cleanData.defaultAudience = parsed.data.defaultAudience;
-  }
-  if (parsed.data.label !== undefined) {
-    cleanData.label = parsed.data.label;
-  }
-  if (parsed.data.summary !== undefined) {
-    cleanData.summary = parsed.data.summary;
-  }
-  if (parsed.data.path !== undefined) {
-    cleanData.path = parsed.data.path;
-  }
-  if (parsed.data.tags !== undefined) {
-    cleanData.tags = parsed.data.tags;
-  }
-  if (parsed.data.testers !== undefined) {
-    cleanData.testers = parsed.data.testers;
-  }
-
-  const updated = adminService.updateModule(params.id, cleanData, session.email);
+  const updated = adminService.updateModule(params.id, parsed.data, session.email);
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

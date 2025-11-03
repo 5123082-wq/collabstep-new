@@ -181,8 +181,29 @@ export class AdminService {
         )
       : undefined;
 
+    // Filter out undefined values for exactOptionalPropertyTypes
+    const cleanPatch: typeof patch = {};
+    if (patch.status !== undefined) {
+      cleanPatch.status = patch.status;
+    }
+    if (patch.defaultAudience !== undefined) {
+      cleanPatch.defaultAudience = patch.defaultAudience;
+    }
+    if (patch.label !== undefined) {
+      cleanPatch.label = patch.label;
+    }
+    if (patch.summary !== undefined) {
+      cleanPatch.summary = patch.summary;
+    }
+    if (patch.path !== undefined) {
+      cleanPatch.path = patch.path;
+    }
+    if (patch.tags !== undefined) {
+      cleanPatch.tags = patch.tags;
+    }
+
     const updated = adminModulesRepository.update(moduleId, {
-      ...patch,
+      ...cleanPatch,
       ...(normalizedTesters ? { testers: normalizedTesters } : {}),
       updatedBy: actorId
     });
@@ -278,8 +299,23 @@ export class AdminService {
     patch: Partial<Pick<PlatformUserControl, 'status' | 'roles' | 'testerAccess' | 'notes'>>,
     actorId: string
   ): AdminUserView {
+    // Filter out undefined values for exactOptionalPropertyTypes
+    const cleanPatch: Partial<Pick<PlatformUserControl, 'status' | 'roles' | 'testerAccess' | 'notes'>> = {};
+    if (patch.status !== undefined) {
+      cleanPatch.status = patch.status;
+    }
+    if (patch.roles !== undefined) {
+      cleanPatch.roles = patch.roles;
+    }
+    if (patch.testerAccess !== undefined) {
+      cleanPatch.testerAccess = patch.testerAccess;
+    }
+    if (patch.notes !== undefined) {
+      cleanPatch.notes = patch.notes;
+    }
+
     adminUserControlsRepository.update(userId, {
-      ...patch,
+      ...cleanPatch,
       updatedBy: actorId
     });
 
