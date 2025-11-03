@@ -55,7 +55,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.status = parsed.data.status;
   }
   if (parsed.data.roles !== undefined) {
-    cleanData.roles = parsed.data.roles as PlatformRole[];
+    const rolesArray: PlatformRole[] = parsed.data.roles as unknown as PlatformRole[];
+    cleanData.roles = rolesArray;
   }
   if (parsed.data.testerAccess !== undefined) {
     cleanData.testerAccess = parsed.data.testerAccess;
