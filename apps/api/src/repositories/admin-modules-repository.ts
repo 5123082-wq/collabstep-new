@@ -129,7 +129,7 @@ export class AdminModulesRepository {
   }
 
   replaceTesters(id: string, testers: string[], updatedBy?: string): PlatformModule | null {
-    return this.update(id, { testers, updatedBy });
+    return this.update(id, updatedBy ? { testers, updatedBy } : { testers });
   }
 
   buildTree(): PlatformModuleNode[] {
