@@ -5,7 +5,7 @@ import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronDown } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProjectCard } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
@@ -32,7 +32,7 @@ import {
   parseStateFromSearchParams
 } from './projects-overview-state';
 
-const LIST_ROW_ESTIMATE = 220;
+const LIST_ROW_ESTIMATE = 100;
 const VIRTUALIZATION_THRESHOLD = 50;
 
 type ViewMode = 'grid' | 'list';
@@ -58,6 +58,29 @@ function formatDate(value?: string | null): string {
     return '—';
   }
   return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(date);
+}
+
+function formatUpdatedAt(value?: string | null): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) {
+    return 'Сегодня';
+  } else if (diffDays === 1) {
+    return 'Вчера';
+  } else if (diffDays < 7) {
+    return `${diffDays} дн. назад`;
+  } else {
+    return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(date);
+  }
 }
 
 function formatProgress(progress: number): string {
@@ -253,152 +276,224 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
   );
 }
 function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArchive, actionInFlight }: ProjectCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isArchived = project.status === 'archived';
   const { canArchive, canCreateTask, canInvite, canView } = project.permissions; // [PLAN:S2-211] ACL для списочного вида.
+  
   return (
-    <article className="flex flex-col gap-4 rounded-2xl border border-neutral-900 bg-neutral-950/60 p-5 shadow-sm shadow-black/5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex-1 space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-semibold text-white">{project.title}</h3>
-            <span
+    <article 
+      className={cn(
+        'flex flex-col gap-3 rounded-xl border border-neutral-900 bg-neutral-950/60 p-3 shadow-sm shadow-black/5 transition-all duration-200 overflow-hidden',
+        isExpanded ? undefined : 'max-h-[100px]'
+      )}
+    >
+      {/* Компактная строка - всегда видима */}
+      <div className="flex items-center gap-3 min-h-[60px]">
+        {/* Владелец (компактный аватар) */}
+        <Avatar name={project.owner.name} email={project.owner.email} avatarUrl={project.owner.avatarUrl} size={32} />
+        
+        {/* Основная информация */}
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onOpen(project.id)}
+              disabled={!canView}
               className={cn(
-                'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
+                'text-sm font-semibold text-white hover:text-indigo-300 transition truncate text-left',
+                !canView ? 'cursor-not-allowed opacity-60' : undefined
+              )}
+            >
+              {project.title}
+            </button>
+            <span className={cn(
+              'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap flex-shrink-0',
+              project.visibility === 'public'
+                ? 'border border-blue-500/40 bg-blue-500/10 text-blue-200'
+                : 'border border-neutral-700/40 bg-neutral-700/10 text-neutral-300'
+            )}>
+              {formatProjectVisibility(project.visibility)}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-xs text-neutral-400">
+            <span>Обновлён: {formatUpdatedAt(project.updatedAt)}</span>
+            <span className="flex items-center gap-1">
+              Прогресс:
+              <div className="h-1.5 w-16 rounded-full bg-neutral-900">
+                <div className="h-1.5 rounded-full bg-indigo-500" style={{ width: `${Math.max(0, Math.min(100, project.progress))}%` }} />
+              </div>
+              <span className="text-[10px]">{project.progress}%</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Чип для разворачивания/сворачивания */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className={cn(
+            'flex items-center justify-center rounded-full border transition flex-shrink-0',
+            isExpanded
+              ? 'border-indigo-400 bg-indigo-500/20 text-white'
+              : 'border-neutral-800 text-neutral-400 hover:border-indigo-400/60 hover:text-indigo-300'
+          )}
+          style={{ width: '28px', height: '28px' }}
+          aria-label={isExpanded ? 'Свернуть' : 'Развернуть'}
+        >
+          <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} />
+        </button>
+      </div>
+
+      {/* Развернутая информация - показывается только при isExpanded */}
+      {isExpanded ? (
+        <div className="space-y-3 pt-2 border-t border-neutral-900">
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Описание</p>
+              <p className="text-neutral-300">{project.description || 'Описание появится позже.'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Статус</p>
+              <span className={cn(
+                'inline-block rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide',
                 isArchived
                   ? 'border border-rose-500/40 bg-rose-500/10 text-rose-200'
                   : 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
-              )}
-            >
-              {isArchived ? 'В архиве' : 'Активен'}
-            </span>
+              )}>
+                {isArchived ? 'В архиве' : 'Активен'}
+              </span>
+            </div>
           </div>
-          <p className="text-sm text-neutral-400">{project.description || 'Описание появится позже.'}</p>
-          <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400">
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Пространство: {project.workspace.name}</span>
-            <span className="rounded-full bg-neutral-900 px-2 py-1">Тип: {formatProjectType(project.type)}</span>
-            <span className="rounded-full bg-neutral-900 px-2 py-1">
-              Доступ: {formatProjectVisibility(project.visibility)}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-400">
-            <span>Создан: {formatDate(project.createdAt)}</span>
-            <span>Дедлайн: {formatDate(project.deadline)}</span>
-            {project.stage ? <span>Стадия: {project.stage}</span> : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Avatar name={project.owner.name} email={project.owner.email} avatarUrl={project.owner.avatarUrl} size={36} />
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <p className="text-xs uppercase tracking-wide text-neutral-500">Владелец</p>
-              <p className="text-sm font-medium text-neutral-100">{project.owner.name || project.owner.email}</p>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Пространство</p>
+              <p className="text-neutral-300">{project.workspace.name}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Тип проекта</p>
+              <p className="text-neutral-300">{formatProjectType(project.type)}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs uppercase tracking-wide text-neutral-500">Команда:</p>
-            <div className="flex -space-x-2">
-              {project.members.slice(0, 5).map((member) => (
-                <Avatar key={member.id} name={member.name} email={member.email} avatarUrl={member.avatarUrl} size={28} />
-              ))}
-              {project.members.length > 5 ? (
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-neutral-900 bg-neutral-900 text-[11px] text-neutral-300">
-                  +{project.members.length - 5}
-                </span>
-              ) : null}
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Создан</p>
+              <p className="text-neutral-300">{formatDate(project.createdAt)}</p>
             </div>
+            {project.deadline ? (
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Дедлайн</p>
+                <p className="text-neutral-300">{formatDate(project.deadline)}</p>
+              </div>
+            ) : null}
           </div>
-          {project.tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {project.tags.map((tag) => (
-                <span key={tag} className="rounded-full border border-neutral-800 px-3 py-1 text-xs text-neutral-300">
-                  #{tag}
-                </span>
-              ))}
+
+          {project.stage ? (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-1">Стадия</p>
+              <p className="text-neutral-300">{project.stage}</p>
             </div>
           ) : null}
-        </div>
-        <div className="w-full space-y-4">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-neutral-500">Прогресс</p>
-            <div className="mt-2 h-2 w-full rounded-full bg-neutral-900">
-              <div className="h-2 rounded-full bg-indigo-500" style={{ width: formatProgress(project.progress) }} />
+
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-sm font-semibold text-white">{project.tasks.total}</p>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Задач</p>
             </div>
-            <p className="mt-1 text-xs text-neutral-400">{formatProgress(project.progress)} завершено</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-sm text-neutral-300">
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-3">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Запланировано</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.planned)}</p>
-            </div>
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-3">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Потрачено</p>
-              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.spent)}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs text-neutral-300">
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-              <p className="text-lg font-semibold text-white">{project.tasks.total}</p>
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Всего</p>
-            </div>
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-              <p className="text-lg font-semibold text-amber-200">{project.tasks.overdue}</p>
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-sm font-semibold text-amber-200">{project.tasks.overdue}</p>
               <p className="text-[10px] uppercase tracking-wide text-neutral-500">Просрочено</p>
             </div>
-            <div className="rounded-xl border border-neutral-900/80 bg-neutral-900/60 p-2">
-              <p className="text-lg font-semibold text-indigo-200">{project.tasks.important}</p>
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-sm font-semibold text-indigo-200">{project.tasks.important}</p>
               <p className="text-[10px] uppercase tracking-wide text-neutral-500">Важные</p>
             </div>
           </div>
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onOpen(project.id)}
-            disabled={!canView}
-            className={cn(
-              'rounded-full border border-indigo-500/60 px-4 py-2 text-sm font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
-              !canView ? 'cursor-not-allowed opacity-60 hover:border-indigo-500/60 hover:bg-transparent hover:text-indigo-200' : undefined
-            )}
-          >
-            Открыть
-          </button>
-          {canCreateTask ? (
-            <button
-              type="button"
-              onClick={() => onCreateTask(project.id)}
-              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-            >
-              Создать задачу
-            </button>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Бюджет (запланировано)</p>
+              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.planned)}</p>
+            </div>
+            <div className="rounded-lg border border-neutral-900/80 bg-neutral-900/60 p-2">
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500">Бюджет (потрачено)</p>
+              <p className="mt-1 text-sm font-semibold text-white">{formatBudgetAmount(project.budget.spent)}</p>
+            </div>
+          </div>
+
+          {project.tags.length > 0 ? (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-2">Метки</p>
+              <div className="flex flex-wrap gap-2">
+                {project.tags.map((tag) => (
+                  <span key={tag} className="rounded-full border border-neutral-800 px-2 py-1 text-[10px] text-neutral-300">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
           ) : null}
-          {canInvite ? (
-            <button
-              type="button"
-              onClick={() => onInvite(project.id)}
-              className="rounded-full border border-neutral-800 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
-            >
-              Пригласить
-            </button>
+
+          {project.members.length > 0 ? (
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 mb-2">Команда</p>
+              <div className="flex -space-x-2">
+                {project.members.slice(0, 5).map((member) => (
+                  <Avatar key={member.id} name={member.name} email={member.email} avatarUrl={member.avatarUrl} size={24} />
+                ))}
+                {project.members.length > 5 ? (
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full border border-neutral-900 bg-neutral-900 text-[10px] text-neutral-300">
+                    +{project.members.length - 5}
+                  </span>
+                ) : null}
+              </div>
+            </div>
           ) : null}
+
+          {/* Действия */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-900">
+            {canCreateTask ? (
+              <button
+                type="button"
+                onClick={() => onCreateTask(project.id)}
+                className="rounded-full border border-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+              >
+                Создать задачу
+              </button>
+            ) : null}
+            {canInvite ? (
+              <button
+                type="button"
+                onClick={() => onInvite(project.id)}
+                className="rounded-full border border-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+              >
+                Пригласить
+              </button>
+            ) : null}
+            {canArchive ? (
+              <button
+                type="button"
+                onClick={() => onToggleArchive(project.id, !isArchived)}
+                disabled={actionInFlight === project.id}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition',
+                  isArchived
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400 hover:text-emerald-100'
+                    : 'border-rose-500/40 bg-rose-500/10 text-rose-200 hover:border-rose-400 hover:text-rose-100',
+                  actionInFlight === project.id ? 'opacity-75' : undefined
+                )}
+              >
+                {actionInFlight === project.id ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                {isArchived ? 'Восстановить' : 'Архивировать'}
+              </button>
+            ) : null}
+          </div>
         </div>
-        {canArchive ? (
-          <button
-            type="button"
-            onClick={() => onToggleArchive(project.id, !isArchived)}
-            disabled={actionInFlight === project.id}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition',
-              isArchived
-                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200 hover:border-emerald-400 hover:text-emerald-100'
-                : 'border-rose-500/40 bg-rose-500/10 text-rose-200 hover:border-rose-400 hover:text-rose-100',
-              actionInFlight === project.id ? 'opacity-75' : undefined
-            )}
-            >
-              {actionInFlight === project.id ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isArchived ? 'Восстановить' : 'Архивировать'}
-            </button>
-        ) : null}
-      </div>
+      ) : null}
     </article>
   );
 }
@@ -1318,3 +1413,4 @@ export default function ProjectsOverviewPageClient() {
     </div>
   );
 }
+
