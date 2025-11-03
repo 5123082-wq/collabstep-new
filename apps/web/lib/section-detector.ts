@@ -20,7 +20,11 @@ export type GlobalSectionId =
  * Определяет глобальный раздел на основе pathname
  */
 export function detectSectionFromPath(pathname: string): GlobalSectionId | null {
-  const normalized = pathname.split('?')[0]; // Убираем query параметры
+  if (!pathname) {
+    return null;
+  }
+  
+  const normalized = pathname.split('?')[0] || ''; // Убираем query параметры
   
   if (normalized.startsWith('/app/dashboard') || normalized === '/app') {
     return 'dashboard';
