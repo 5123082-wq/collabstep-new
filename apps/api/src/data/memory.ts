@@ -22,7 +22,9 @@ import type {
   Task,
   Workspace,
   WorkspaceMember,
-  WorkspaceUser
+  WorkspaceUser,
+  PlatformModule,
+  PlatformUserControl
 } from '../types';
 
 export const DEFAULT_WORKSPACE_USER_ID = 'admin.demo@collabverse.test';
@@ -426,7 +428,181 @@ export const memory = {
     }
   ] as AuditLogEntry[],
   EVENTS: [] as DomainEvent[],
-  IDEMPOTENCY_KEYS: globalIdempotencyKeys
+  IDEMPOTENCY_KEYS: globalIdempotencyKeys,
+  ADMIN_PLATFORM_MODULES: [
+    {
+      id: 'module-core-dashboard',
+      parentId: null,
+      code: 'dashboard',
+      label: 'Обзор платформы',
+      summary: 'Доступ к главному дашборду после входа в приложение.',
+      path: '/app/dashboard',
+      status: 'enabled',
+      defaultAudience: 'everyone',
+      testers: [],
+      tags: ['core'],
+      sortOrder: 10,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-marketing',
+      parentId: null,
+      code: 'marketing',
+      label: 'Маркетинг',
+      summary: 'Раздел маркетинга: кампании, исследования, аналитика.',
+      path: '/app/marketing',
+      status: 'enabled',
+      defaultAudience: 'everyone',
+      testers: [],
+      tags: ['marketing'],
+      sortOrder: 20,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-marketing-research',
+      parentId: 'module-marketing',
+      code: 'marketing.research',
+      label: 'Маркетинг — Исследования',
+      summary: 'Подраздел, отвечающий за исследования и пользовательские интервью.',
+      path: '/app/marketing/research',
+      status: 'enabled',
+      defaultAudience: 'beta',
+      testers: ['designer-1'],
+      tags: ['marketing', 'research'],
+      sortOrder: 21,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-docs',
+      parentId: null,
+      code: 'documents',
+      label: 'Документы',
+      summary: 'Документы, контракты и бренд-репозиторий.',
+      path: '/app/docs',
+      status: 'enabled',
+      defaultAudience: 'everyone',
+      testers: [],
+      tags: ['documents'],
+      sortOrder: 30,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-docs-brand',
+      parentId: 'module-docs',
+      code: 'documents.brand',
+      label: 'Документы — Бренд-репозиторий',
+      summary: 'Файлы брендбука, ассеты и гайды.',
+      path: '/app/docs/brand-repo',
+      status: 'enabled',
+      defaultAudience: 'beta',
+      testers: ['designer-1'],
+      tags: ['documents', 'brand'],
+      sortOrder: 31,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-finance',
+      parentId: null,
+      code: 'finance',
+      label: 'Финансы',
+      summary: 'Финансовые отчёты, расходы, тарифы.',
+      path: '/app/finance',
+      status: 'enabled',
+      defaultAudience: 'admins',
+      testers: ['finance.pm@collabverse.test'],
+      tags: ['finance'],
+      sortOrder: 40,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-finance-automations',
+      parentId: 'module-finance',
+      code: 'finance.automations',
+      label: 'Финансы — Автоматизации',
+      summary: 'Экспериментальные сценарии автоматизации платежей.',
+      path: '/app/finance/automations',
+      status: 'disabled',
+      defaultAudience: 'beta',
+      testers: ['finance.pm@collabverse.test'],
+      tags: ['finance', 'beta'],
+      sortOrder: 41,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-community',
+      parentId: null,
+      code: 'community',
+      label: 'Комьюнити',
+      summary: 'Комнаты, события и рейтинг сообщества.',
+      path: '/app/community',
+      status: 'enabled',
+      defaultAudience: 'everyone',
+      testers: [],
+      tags: ['community'],
+      sortOrder: 50,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      id: 'module-ai',
+      parentId: null,
+      code: 'aiHub',
+      label: 'AI-хаб',
+      summary: 'AI-агенты, генерации и промпты.',
+      path: '/app/ai-hub',
+      status: 'enabled',
+      defaultAudience: 'beta',
+      testers: ['designer-1'],
+      tags: ['ai'],
+      sortOrder: 60,
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    }
+  ] as PlatformModule[],
+  ADMIN_USER_CONTROLS: [
+    {
+      userId: DEFAULT_WORKSPACE_USER_ID,
+      status: 'active',
+      roles: ['productAdmin', 'featureAdmin'],
+      testerAccess: ['module-ai', 'module-marketing-research', 'module-docs-brand'],
+      notes: 'Главный администратор демо-окружения.',
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      userId: 'user.demo@collabverse.test',
+      status: 'active',
+      roles: ['viewer'],
+      testerAccess: ['module-community'],
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      userId: 'finance.pm@collabverse.test',
+      status: 'active',
+      roles: ['financeAdmin', 'betaTester'],
+      testerAccess: ['module-finance', 'module-finance-automations'],
+      notes: 'Ответственный за финансовые автоматизации.',
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    },
+    {
+      userId: 'designer-1',
+      status: 'invited',
+      roles: ['betaTester'],
+      testerAccess: ['module-marketing-research', 'module-docs-brand', 'module-ai'],
+      notes: 'UI/UX тестирование новых разделов.',
+      updatedAt: '2024-06-10T12:00:00.000Z',
+      updatedBy: DEFAULT_WORKSPACE_USER_ID
+    }
+  ] as PlatformUserControl[]
 };
 
 export function resetFinanceMemory(): void {

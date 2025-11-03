@@ -318,3 +318,49 @@ export interface AccountMember {
   userId: ID;
   role: ProjectMember['role'];
 }
+
+export type PlatformModuleStatus = 'enabled' | 'disabled';
+
+export type PlatformAudience = 'everyone' | 'admins' | 'beta';
+
+export interface PlatformModule {
+  id: ID;
+  parentId: ID | null;
+  code: string;
+  label: string;
+  summary?: string;
+  path?: string;
+  status: PlatformModuleStatus;
+  defaultAudience: PlatformAudience;
+  testers: ID[];
+  tags: string[];
+  sortOrder: number;
+  updatedAt: string;
+  updatedBy: ID;
+}
+
+export interface PlatformModuleNode extends PlatformModule {
+  children?: PlatformModuleNode[];
+  effectiveStatus?: PlatformModuleStatus;
+  inherited?: boolean;
+}
+
+export type PlatformUserStatus = 'active' | 'suspended' | 'invited';
+
+export type PlatformRole =
+  | 'productAdmin'
+  | 'featureAdmin'
+  | 'supportAgent'
+  | 'financeAdmin'
+  | 'betaTester'
+  | 'viewer';
+
+export interface PlatformUserControl {
+  userId: ID;
+  status: PlatformUserStatus;
+  roles: PlatformRole[];
+  testerAccess: ID[];
+  notes?: string;
+  updatedAt: string;
+  updatedBy: ID;
+}
