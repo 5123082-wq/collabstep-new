@@ -23,4 +23,28 @@ declare module 'lucide-react' {
   export const Calendar: LucideIcon;
   export const BookOpen: LucideIcon;
   export const Settings: LucideIcon;
+  // Admin panel icons
+  export const Users: LucideIcon;
+  export const Shield: LucideIcon;
+  export const Flag: LucideIcon;
+  export const File: LucideIcon;
+  export const HelpCircle: LucideIcon;
+  export const TrendingUp: LucideIcon;
+  export const Search: LucideIcon;
+  export const Filter: LucideIcon;
+  export const Power: LucideIcon;
+  export const ChevronDown: LucideIcon;
+  export const ChevronRight: LucideIcon;
+  export const UserX: LucideIcon;
+  export const UserCheck: LucideIcon;
+  export const MoreVertical: LucideIcon;
+  export const Plus: LucideIcon;
+  export const Edit: LucideIcon;
+  export const Trash2: LucideIcon;
+  export const Play: LucideIcon;
+  export const Pause: LucideIcon;
+  export const X: LucideIcon;
+  export const UserSearch: LucideIcon;
+  export const Activity: LucideIcon;
+  export const Clock: LucideIcon;
 }

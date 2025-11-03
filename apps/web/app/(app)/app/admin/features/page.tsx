@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Filter, ToggleLeft, ToggleRight, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, Filter, Power, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 
@@ -266,12 +266,12 @@ export default function AdminFeaturesPage() {
                   >
                     {feature.enabled ? (
                       <>
-                        <ToggleRight className="h-5 w-5" />
+                        <Power className="h-5 w-5" />
                         Включено
                       </>
                     ) : (
                       <>
-                        <ToggleLeft className="h-5 w-5" />
+                        <Power className="h-5 w-5" />
                         Отключено
                       </>
                     )}

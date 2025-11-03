@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Search, Filter, Clock } from 'lucide-react';
+import { File, Search, Filter, Clock } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
 
@@ -142,7 +142,7 @@ export default function AdminAuditPage() {
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
                 <div className="rounded-xl bg-indigo-500/20 p-2">
-                  <FileText className="h-5 w-5 text-indigo-100" />
+                  <File className="h-5 w-5 text-indigo-100" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default function AdminAuditPage() {
 
       {filteredEvents.length === 0 && (
         <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
-          <FileText className="mx-auto h-12 w-12 text-neutral-700" />
+          <File className="mx-auto h-12 w-12 text-neutral-700" />
           <p className="mt-4 text-sm text-neutral-400">События не найдены</p>
         </div>
       )}

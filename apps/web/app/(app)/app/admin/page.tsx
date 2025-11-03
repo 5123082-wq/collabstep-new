@@ -8,7 +8,7 @@ import {
   Users, 
   Shield, 
   Flag, 
-  FileText, 
+  File, 
   Calendar,
   HelpCircle,
   TrendingUp
@@ -61,7 +61,7 @@ const overviewCards = [
     id: 'audit',
     title: 'Аудит',
     description: 'История изменений и журнал действий',
-    icon: FileText,
+    icon: File,
     href: '/app/admin/audit',
     color: 'bg-rose-500/10 border-rose-500/30 text-rose-100'
   },
