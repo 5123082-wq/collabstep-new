@@ -52,6 +52,8 @@ export default function Sidebar({ roles }: SidebarProps) {
   const [normalizedPath = ''] = (pathname ?? '').split('?');
   // Подписываемся на изменения видимости меню для перерисовки компонента
   const visibleMenuIds = useMenuPreferencesStore((state) => state.visibleMenuIds);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // visibleMenuIds нужен для перерисовки при изменении настроек, хотя buildLeftMenu получает его из store
   const menu = useMemo(() => buildLeftMenu(roles), [roles, visibleMenuIds]);
   const { expandedGroups, toggleGroup, sidebarCollapsed, toggleSidebarCollapsed, setSidebarCollapsed } = useUiStore((state) => ({
     expandedGroups: state.expandedGroups,

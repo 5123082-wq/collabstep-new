@@ -45,6 +45,7 @@ export default function AppSection({
   const pathname = usePathname();
   
   // Определяем текущий раздел и применяем тему
+  // ВСЕ ХУКИ ДОЛЖНЫ БЫТЬ ДО УСЛОВНЫХ ВОЗВРАТОВ!
   const sectionId = useMemo(() => {
     const detected = detectSectionFromPath(pathname || '');
     // Отладка (можно убрать в продакшене)
@@ -54,17 +55,35 @@ export default function AppSection({
     return detected;
   }, [pathname]);
   
-  const theme = useSectionThemingStore((state) => {
+  const sectionThemes = useSectionThemingStore((state) => state.sectionThemes);
+  const theme = useMemo(() => {
     if (!sectionId) return null;
-    const themeForSection = state.getSectionTheme(sectionId);
+    const themeForSection = useSectionThemingStore.getState().getSectionTheme(sectionId);
     // Отладка (можно убрать в продакшене)
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('[AppSection] SectionId:', sectionId, 'Theme:', themeForSection, 'All themes:', state.sectionThemes);
+      console.log('[AppSection] SectionId:', sectionId, 'Theme:', themeForSection, 'All themes:', sectionThemes);
     }
     return themeForSection;
-  });
+  }, [sectionId, sectionThemes]);
   const sectionClassName = useMemo(() => generateSectionClassName(theme), [theme]);
   const sectionStyles = useMemo(() => getSectionThemeStyles(theme), [theme]);
+  
+  // Применяем тему с приоритетом над глобальными стилями
+  const finalClassName = useMemo(() => {
+    if (!theme) return 'space-y-6';
+    
+    // Для вариантов с темой используем важные классы
+    if (theme.variant === 'minimal') {
+      return 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4';
+    }
+    if (theme.variant === 'accent') {
+      return 'space-y-6 rounded-3xl border p-6';
+    }
+    if (theme.variant === 'bordered') {
+      return 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6';
+    }
+    return sectionClassName;
+  }, [theme, sectionClassName]);
 
   if (access === 'admin' && !canAccessAdmin(roles)) {
     return (
@@ -83,23 +102,6 @@ export default function AppSection({
       </section>
     );
   }
-
-  // Применяем тему с приоритетом над глобальными стилями
-  const finalClassName = useMemo(() => {
-    if (!theme) return 'space-y-6';
-    
-    // Для вариантов с темой используем важные классы
-    if (theme.variant === 'minimal') {
-      return 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4';
-    }
-    if (theme.variant === 'accent') {
-      return 'space-y-6 rounded-3xl border p-6';
-    }
-    if (theme.variant === 'bordered') {
-      return 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6';
-    }
-    return sectionClassName;
-  }, [theme, sectionClassName]);
 
   return (
     <section 
