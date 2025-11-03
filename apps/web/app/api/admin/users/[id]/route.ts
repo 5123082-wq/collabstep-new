@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { adminService } from '@collabverse/api';
+import type { PlatformRole } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
 
 const UserUpdateSchema = z
   .object({
     status: z.enum(['active', 'suspended', 'invited']).optional(),
-    roles: z.array(z.string().trim().min(1)).max(16).optional(),
+    roles: z
+      .array(z.enum(['productAdmin', 'featureAdmin', 'supportAgent', 'financeAdmin', 'betaTester', 'viewer']))
+      .max(16)
+      .optional(),
     testerAccess: z.array(z.string().trim().min(1)).max(64).optional(),
     notes: z.string().trim().max(500).optional()
   })
@@ -51,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.status = parsed.data.status;
   }
   if (parsed.data.roles !== undefined) {
-    cleanData.roles = parsed.data.roles;
+    cleanData.roles = parsed.data.roles as PlatformRole[];
   }
   if (parsed.data.testerAccess !== undefined) {
     cleanData.testerAccess = parsed.data.testerAccess;
@@ -63,4 +67,3 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const updated = adminService.updateUser(params.id, cleanData, session.email);
   return NextResponse.json({ item: updated });
 }
-
