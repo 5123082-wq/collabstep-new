@@ -5,7 +5,7 @@ import type { ChangeEvent, CSSProperties } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronDown } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ProjectCard } from '@collabverse/api';
 import { trackEvent } from '@/lib/telemetry';
@@ -284,7 +284,7 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
     <article 
       className={cn(
         'flex flex-col gap-3 rounded-xl border border-neutral-900 bg-neutral-950/60 p-3 shadow-sm shadow-black/5 transition-all duration-200 overflow-hidden',
-        isExpanded ? '' : 'max-h-[100px]'
+        isExpanded ? undefined : 'max-h-[100px]'
       )}
     >
       {/* Компактная строка - всегда видима */}
@@ -343,7 +343,7 @@ function ProjectListCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
           style={{ width: '28px', height: '28px' }}
           aria-label={isExpanded ? 'Свернуть' : 'Развернуть'}
         >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} />
         </button>
       </div>
 
