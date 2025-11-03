@@ -329,12 +329,13 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-      )}
 
-      {!loading && !error && filteredUsers.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
-          <p className="text-sm text-neutral-400">Пользователи не найдены</p>
-        </div>
+        {filteredUsers.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
+            <p className="text-sm text-neutral-400">Пользователи не найдены</p>
+          </div>
+        )}
+      </div>
       )}
     </div>
   );

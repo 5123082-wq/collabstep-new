@@ -429,14 +429,13 @@ export default function AdminFeaturesPage() {
             </div>
           );
         })}
-      </div>
 
-          {!loading && !error && topLevelFeatures.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
-              <p className="text-sm text-neutral-400">Фичи не найдены</p>
-            </div>
-          )}
-        </div>
+        {topLevelFeatures.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
+            <p className="text-sm text-neutral-400">Фичи не найдены</p>
+          </div>
+        )}
+      </div>
       )}
     </div>
   );
