@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
-      toast('Не удалось загрузить пользователей', 'error');
+      toast('Не удалось загрузить пользователей', 'warning');
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
         toast('Пользователь заблокирован', 'warning');
       } catch (err) {
         console.error(err);
-        toast(err instanceof Error ? err.message : 'Не удалось заблокировать пользователя', 'error');
+        toast(err instanceof Error ? err.message : 'Не удалось заблокировать пользователя', 'warning');
       } finally {
         setUpdatingIds((prev) => {
           const next = new Set(prev);
@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
         toast('Пользователь активирован', 'success');
       } catch (err) {
         console.error(err);
-        toast(err instanceof Error ? err.message : 'Не удалось активировать пользователя', 'error');
+        toast(err instanceof Error ? err.message : 'Не удалось активировать пользователя', 'warning');
       } finally {
         setUpdatingIds((prev) => {
           const next = new Set(prev);

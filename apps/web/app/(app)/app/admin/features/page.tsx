@@ -22,16 +22,21 @@ interface FeatureItem {
 
 function convertModuleToFeature(module: AdminModuleNodeView, parentId?: string): FeatureItem {
   const category = parentId ? (module.children.length > 0 ? 'section' : 'subsection') : 'platform';
-  return {
+  const result: FeatureItem = {
     id: module.id,
     key: module.code,
     label: module.label,
     description: module.summary || module.label,
     category,
-    parentId: parentId || undefined,
     enabled: module.effectiveStatus === 'enabled',
     children: module.children.map((child) => convertModuleToFeature(child, module.id))
   };
+  
+  if (parentId) {
+    result.parentId = parentId;
+  }
+  
+  return result;
 }
 
 function flattenFeatures(features: FeatureItem[]): FeatureItem[] {
@@ -78,7 +83,7 @@ export default function AdminFeaturesPage() {
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
-      toast('Не удалось загрузить модули', 'error');
+      toast('Не удалось загрузить модули', 'warning');
     } finally {
       setLoading(false);
     }
@@ -115,11 +120,14 @@ export default function AdminFeaturesPage() {
         const updateInTree = (items: FeatureItem[]): FeatureItem[] => {
           return items.map((item) => {
             if (item.id === featureId) {
-              return {
+              const result: FeatureItem = {
                 ...item,
-                enabled: updatedFeature.enabled,
-                children: item.children ? updateInTree(item.children) : undefined
+                enabled: updatedFeature.enabled
               };
+              if (item.children) {
+                result.children = updateInTree(item.children);
+              }
+              return result;
             }
             if (item.children) {
               return { ...item, children: updateInTree(item.children) };
@@ -135,7 +143,7 @@ export default function AdminFeaturesPage() {
         );
       } catch (err) {
         console.error(err);
-        toast(err instanceof Error ? err.message : 'Не удалось обновить модуль', 'error');
+        toast(err instanceof Error ? err.message : 'Не удалось обновить модуль', 'warning');
       } finally {
         setUpdatingIds((prev) => {
           const next = new Set(prev);
