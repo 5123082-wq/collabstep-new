@@ -182,7 +182,7 @@ export class AdminService {
       : undefined;
 
     // Filter out undefined values for exactOptionalPropertyTypes
-    const cleanPatch: typeof patch = {};
+    const cleanPatch: Partial<Pick<PlatformModule, 'status' | 'defaultAudience' | 'label' | 'summary' | 'path' | 'tags'>> & { testers?: string[] } = {};
     if (patch.status !== undefined) {
       cleanPatch.status = patch.status;
     }

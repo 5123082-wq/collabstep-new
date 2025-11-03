@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 
   // Filter out undefined values for exactOptionalPropertyTypes
-  const cleanData: Record<string, unknown> = {};
+  const cleanData: Parameters<typeof adminService.updateModule>[1] = {} as Parameters<typeof adminService.updateModule>[1];
   if (parsed.data.status !== undefined) {
     cleanData.status = parsed.data.status;
   }
@@ -72,7 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     cleanData.testers = parsed.data.testers;
   }
 
-  const updated = adminService.updateModule(params.id, cleanData as typeof parsed.data, session.email);
+  const updated = adminService.updateModule(params.id, cleanData, session.email);
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
