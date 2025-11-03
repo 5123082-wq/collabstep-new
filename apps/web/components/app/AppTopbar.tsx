@@ -64,12 +64,13 @@ export type DemoProfile = {
 type AppTopbarProps = {
   onOpenCreate: () => void;
   onOpenPalette: () => void;
+  onOpenSettings?: () => void;
   profile: DemoProfile;
   onLogout: () => void;
   isLoggingOut: boolean;
 };
 
-export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogout, isLoggingOut }: AppTopbarProps) {
+export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings, profile, onLogout, isLoggingOut }: AppTopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const bgPreset = useUiStore((state) => state.bgPreset);
@@ -334,7 +335,12 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, profile, onLogo
           <IconButton icon="chat" label="Сообщения" />
           <IconButton icon="wallet" label="Кошелёк" />
           <ThemeToggle />
-          <AccountMenu profile={profile} onLogout={onLogout} isLoggingOut={isLoggingOut} />
+          <AccountMenu 
+            profile={profile} 
+            onLogout={onLogout} 
+            isLoggingOut={isLoggingOut}
+            {...(onOpenSettings && { onOpenSettings })}
+          />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span

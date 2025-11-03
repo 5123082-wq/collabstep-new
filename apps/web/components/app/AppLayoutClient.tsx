@@ -11,6 +11,7 @@ import CreateMenu from '@/components/app/CreateMenu';
 import Sidebar from '@/components/app/Sidebar';
 import ToastHub from '@/components/app/ToastHub';
 import HoverRail from '@/components/right-rail/HoverRail';
+import PlatformSettingsModal from '@/components/settings/PlatformSettingsModal';
 import type { DemoSession } from '@/lib/auth/demo-session';
 import { getRolesForDemoAccount, setUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
@@ -30,6 +31,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
   const router = useRouter();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isPaletteOpen, setPaletteOpen] = useState(false);
+  const [isSettingsOpen, setSettingsOpen] = useState(false);
   const [isLoggingOut, setLoggingOut] = useState(false);
   const roles = useMemo(() => getRolesForDemoAccount(session.email, session.role), [session.email, session.role]);
   useQueryToast(TOAST_MESSAGES);
@@ -42,6 +44,10 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
     setPaletteOpen(true);
   }, []);
 
+  const openSettings = useCallback(() => {
+    setSettingsOpen(true);
+  }, []);
+
   useEffect(() => {
     setUserRoles(roles);
   }, [roles]);
@@ -52,9 +58,14 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
         event.preventDefault();
         setPaletteOpen(true);
       }
+      if ((event.metaKey || event.ctrlKey) && event.key === ',') {
+        event.preventDefault();
+        setSettingsOpen(true);
+      }
       if (event.key === 'Escape') {
         setCreateOpen(false);
         setPaletteOpen(false);
+        setSettingsOpen(false);
       }
     };
 
@@ -109,6 +120,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
             profile={{ email: session.email, role: session.role }}
             onOpenCreate={openCreateMenu}
             onOpenPalette={openCommandPalette}
+            onOpenSettings={openSettings}
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
           />
@@ -120,6 +132,7 @@ export default function AppLayoutClient({ session, children }: AppLayoutClientPr
         </div>
         <CreateMenu open={isCreateOpen} onClose={() => setCreateOpen(false)} />
         <CommandPalette open={isPaletteOpen} onClose={() => setPaletteOpen(false)} />
+        <PlatformSettingsModal open={isSettingsOpen} onClose={() => setSettingsOpen(false)} />
         <ToastHub />
         {isHoverRailEnabled ? <HoverRail permissions={roles} /> : null}
       </div>

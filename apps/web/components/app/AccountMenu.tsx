@@ -45,9 +45,10 @@ type AccountMenuProps = {
   profile: DemoProfile;
   onLogout: () => void;
   isLoggingOut: boolean;
+  onOpenSettings?: () => void;
 };
 
-export default function AccountMenu({ profile, onLogout, isLoggingOut }: AccountMenuProps) {
+export default function AccountMenu({ profile, onLogout, isLoggingOut, onOpenSettings }: AccountMenuProps) {
   const { mode, resolvedTheme, setMode } = useTheme();
   const { bgPreset, setBgPreset } = useUiStore((state) => ({
     bgPreset: state.bgPreset,
@@ -415,6 +416,36 @@ export default function AccountMenu({ profile, onLogout, isLoggingOut }: Account
                 ))}
               </div>
             </section>
+            {onOpenSettings && (
+              <section>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onOpenSettings();
+                  }}
+                  className="flex w-full items-center justify-between rounded-xl border border-[color:var(--surface-border-subtle)] bg-[color:var(--surface-base)] px-3 py-2 text-left text-sm font-semibold text-[color:var(--text-primary)] transition hover:border-[color:var(--accent-border)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
+                    Настройки платформы
+                  </span>
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4 text-[color:var(--text-tertiary)]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 22a10 10 0 1 1 10-10 10 10 0 0 1-10 10Z" />
+                    <path d="M12 18a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6Z" />
+                    <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                  </svg>
+                </button>
+              </section>
+            )}
             <section>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">
                 Скоро
