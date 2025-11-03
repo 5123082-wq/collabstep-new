@@ -339,7 +339,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             profile={profile} 
             onLogout={onLogout} 
             isLoggingOut={isLoggingOut}
-            onOpenSettings={onOpenSettings}
+            {...(onOpenSettings && { onOpenSettings })}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
