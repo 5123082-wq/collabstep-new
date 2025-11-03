@@ -226,6 +226,28 @@ function ProjectGridCard({ project, onOpen, onCreateTask, onInvite, onToggleArch
           </div>
           <p className="mt-0.5 text-[9px] text-neutral-400">{formatProgress(project.progress)} завершено</p>
         </div>
+        <div className="flex flex-wrap justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => onOpen(project.id)}
+            disabled={!canView}
+            className={cn(
+              'rounded-full border border-indigo-500/60 px-2 py-0.5 text-[10px] font-semibold text-indigo-200 transition hover:border-indigo-400 hover:bg-indigo-500/20 hover:text-white',
+              !canView ? 'cursor-not-allowed opacity-60 hover:border-indigo-500/60 hover:bg-transparent hover:text-indigo-200' : undefined
+            )}
+          >
+            Открыть
+          </button>
+          {canCreateTask ? (
+            <button
+              type="button"
+              onClick={() => onCreateTask(project.id)}
+              className="rounded-full border border-neutral-800 px-2 py-0.5 text-[10px] font-semibold text-neutral-200 transition hover:border-neutral-600 hover:bg-neutral-900"
+            >
+              Создать задачу
+            </button>
+          ) : null}
+        </div>
       </footer>
     </article>
   );
