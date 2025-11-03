@@ -196,7 +196,17 @@ const baseLeftMenuConfig: LeftMenuSection[] = [
     label: 'Админка',
     icon: 'admin',
     roles: ['ADMIN', 'MODERATOR'],
-    href: '/app/admin'
+    href: '/app/admin',
+    children: [
+      { id: 'admin-overview', label: 'Обзор', href: '/app/admin' },
+      { id: 'admin-features', label: 'Фичи & Разделы', href: '/app/admin/features' },
+      { id: 'admin-users', label: 'Пользователи', href: '/app/admin/users' },
+      { id: 'admin-roles', label: 'Роли & Разрешения', href: '/app/admin/roles' },
+      { id: 'admin-segments', label: 'Сегменты', href: '/app/admin/segments' },
+      { id: 'admin-audit', label: 'Аудит', href: '/app/admin/audit' },
+      { id: 'admin-releases', label: 'Релизы', href: '/app/admin/releases' },
+      { id: 'admin-support', label: 'Support Tools', href: '/app/admin/support' }
+    ]
   }
 ];
 

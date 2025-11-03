@@ -65,3 +65,18 @@ export {
   type ExpenseStoreDriver
 } from './stores/expense-store-factory';
 export { amountToCents, centsToAmount } from './utils/money';
+export {
+  adminModulesRepository,
+  AdminModulesRepository
+} from './repositories/admin-modules-repository';
+export {
+  adminUserControlsRepository,
+  AdminUserControlsRepository
+} from './repositories/admin-user-controls-repository';
+export {
+  adminService,
+  AdminService,
+  type AdminModuleNodeView,
+  type AdminUserView,
+  type AdminModuleTester
+} from './services/admin-service';
