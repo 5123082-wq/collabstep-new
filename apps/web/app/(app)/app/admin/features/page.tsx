@@ -315,12 +315,12 @@ export default function AdminFeaturesPage() {
                         >
                           {child.enabled ? (
                             <>
-                              <ToggleRight className="h-5 w-5" />
+                              <Power className="h-5 w-5" />
                               Включено
                             </>
                           ) : (
                             <>
-                              <ToggleLeft className="h-5 w-5" />
+                              <Power className="h-5 w-5" />
                               Отключено
                             </>
                           )}
