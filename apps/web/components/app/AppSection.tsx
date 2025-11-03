@@ -1,9 +1,13 @@
 'use client';
 
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { canAccessAdmin, canAccessFinance, getUserRoles } from '@/lib/auth/roles';
 import { toast } from '@/lib/ui/toast';
+import { detectSectionFromPath } from '@/lib/section-detector';
+import { useSectionThemingStore } from '@/stores/sectionTheming';
+import { generateSectionClassName, getSectionThemeStyles } from '@/lib/utils/sectionTheme';
 
 type Access = 'finance' | 'admin' | null;
 
@@ -38,6 +42,15 @@ export default function AppSection({
 }: AppSectionProps) {
   const [state, setState] = useState<(typeof states)[number]['id']>('default');
   const roles = getUserRoles();
+  const pathname = usePathname();
+  
+  // Определяем текущий раздел и применяем тему
+  const sectionId = useMemo(() => detectSectionFromPath(pathname || ''), [pathname]);
+  const theme = useSectionThemingStore((state) => 
+    sectionId ? state.getSectionTheme(sectionId) : null
+  );
+  const sectionClassName = useMemo(() => generateSectionClassName(theme), [theme]);
+  const sectionStyles = useMemo(() => getSectionThemeStyles(theme), [theme]);
 
   if (access === 'admin' && !canAccessAdmin(roles)) {
     return (
@@ -58,7 +71,7 @@ export default function AppSection({
   }
 
   return (
-    <section className="space-y-6">
+    <section className={sectionClassName} style={sectionStyles}>
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
