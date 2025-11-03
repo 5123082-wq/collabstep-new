@@ -102,11 +102,11 @@ export class AdminModulesRepository {
       next.label = patch.label.trim();
     }
 
-    if (typeof patch.summary === 'string') {
+    if (typeof patch.summary === 'string' && patch.summary.trim()) {
       next.summary = patch.summary.trim();
     }
 
-    if (typeof patch.path === 'string') {
+    if (typeof patch.path === 'string' && patch.path.trim()) {
       next.path = patch.path.trim();
     }
 

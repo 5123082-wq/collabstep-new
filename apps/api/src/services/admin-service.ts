@@ -73,14 +73,22 @@ export class AdminService {
   private decorateTester(userId: string, controlsMap: Map<string, PlatformUserControl>, usersMap: Map<string, WorkspaceUser>): AdminModuleTester {
     const control = controlsMap.get(userId);
     const user = usersMap.get(userId);
-    return {
+    const result: AdminModuleTester = {
       userId,
       name: user?.name ?? userId,
-      email: user?.email,
       status: control?.status ?? 'active',
       roles: control?.roles ?? [],
-      notes: control?.notes
     };
+    
+    if (user?.email) {
+      result.email = user.email;
+    }
+    
+    if (control?.notes) {
+      result.notes = control.notes;
+    }
+    
+    return result;
   }
 
   private buildModuleViewTree(): AdminModuleNodeView[] {
@@ -215,21 +223,38 @@ export class AdminService {
           effectiveStatus: module.effectiveStatus
         }));
 
-      views.push({
+      const view: AdminUserView = {
         userId,
         name: user?.name ?? userId,
-        email: user?.email,
-        title: user?.title,
-        department: user?.department,
-        location: user?.location,
         status: control.status,
         roles: [...control.roles],
         testerAccess: [...control.testerAccess],
         testerModules,
-        notes: control.notes,
         updatedAt: control.updatedAt,
         updatedBy: control.updatedBy
-      });
+      };
+      
+      if (user?.email) {
+        view.email = user.email;
+      }
+      
+      if (user?.title) {
+        view.title = user.title;
+      }
+      
+      if (user?.department) {
+        view.department = user.department;
+      }
+      
+      if (user?.location) {
+        view.location = user.location;
+      }
+      
+      if (control.notes) {
+        view.notes = control.notes;
+      }
+      
+      views.push(view);
     }
 
     return views.sort((a, b) => a.name.localeCompare(b.name, 'ru'));
