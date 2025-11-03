@@ -30,10 +30,14 @@ export const useSectionThemingStore = create<SectionThemingState>()(
       sectionThemes: {},
       
       setSectionTheme: (sectionId, theme) => {
-        console.log('[SectionThemingStore] Setting theme for section:', sectionId, 'Theme:', theme);
+        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          console.log('[SectionThemingStore] Setting theme for section:', sectionId, 'Theme:', theme);
+        }
         set((state) => {
           const newThemes = { ...state.sectionThemes, [sectionId]: theme };
-          console.log('[SectionThemingStore] New themes state:', newThemes);
+          if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+            console.log('[SectionThemingStore] New themes state:', newThemes);
+          }
           return { sectionThemes: newThemes };
         });
       },
@@ -41,7 +45,9 @@ export const useSectionThemingStore = create<SectionThemingState>()(
       getSectionTheme: (sectionId) => {
         const state = get();
         const theme = state.sectionThemes[sectionId] ?? null;
-        console.log('[SectionThemingStore] Getting theme for section:', sectionId, 'Found:', theme, 'All themes:', state.sectionThemes);
+        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+          console.log('[SectionThemingStore] Getting theme for section:', sectionId, 'Found:', theme, 'All themes:', state.sectionThemes);
+        }
         return theme;
       },
       

@@ -129,8 +129,12 @@ export function ModalContent({ children, className, ...props }: ModalContentProp
     return null;
   }
 
+  // Определяем ширину из className
+  const hasLargeWidth = className?.includes('max-w-[95vw]') || className?.includes('max-w-7xl');
+  const maxWidthClass = hasLargeWidth ? 'max-w-[95vw]' : 'max-w-xl';
+  
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div
         className={cn(
           'absolute inset-0 bg-[color:var(--surface-overlay)] backdrop-blur-sm transition-opacity duration-200 ease-out',
@@ -139,7 +143,7 @@ export function ModalContent({ children, className, ...props }: ModalContentProp
         aria-hidden="true"
         onClick={() => context.onOpenChange(false)}
       />
-      <div className="relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col">
+      <div className={cn('relative z-10 flex max-h-[90vh] w-full flex-col', maxWidthClass)}>
         <div
           ref={contentRef}
           role="dialog"
@@ -150,7 +154,7 @@ export function ModalContent({ children, className, ...props }: ModalContentProp
           className={cn(
             'relative overflow-hidden rounded-3xl border border-[color:var(--surface-border-strong)] bg-[color:var(--surface-popover)] shadow-[0_28px_68px_-28px_rgba(15,23,42,0.9)] outline-none transition-transform duration-200 ease-out',
             isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
-            className
+            className?.replace(/max-w-\[95vw\]|max-w-7xl/g, '').trim() || className
           )}
           {...props}
         >

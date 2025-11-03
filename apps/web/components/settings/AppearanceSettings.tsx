@@ -34,14 +34,18 @@ export default function AppearanceSettings({ onSelectSection }: AppearanceSettin
   };
 
   const handleSaveTheme = (sectionId: string, theme: SectionTheme) => {
-    console.log('[AppearanceSettings] Saving theme for section:', sectionId, 'Theme:', theme);
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[AppearanceSettings] Saving theme for section:', sectionId, 'Theme:', theme);
+    }
     setSectionTheme(sectionId, theme);
     
     // Проверяем что тема сохранилась
-    setTimeout(() => {
-      const saved = useSectionThemingStore.getState().getSectionTheme(sectionId);
-      console.log('[AppearanceSettings] Theme saved, verifying:', saved);
-    }, 100);
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      setTimeout(() => {
+        const saved = useSectionThemingStore.getState().getSectionTheme(sectionId);
+        console.log('[AppearanceSettings] Theme saved, verifying:', saved);
+      }, 100);
+    }
     
     setSelectedSectionId(null);
     onSelectSection?.(null);

@@ -29,7 +29,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
 
   return (
     <Modal open={open} onOpenChange={onClose}>
-      <ModalContent className="h-[90vh] max-w-7xl w-[95vw] flex flex-col p-0">
+      <ModalContent className="h-[90vh] max-w-[95vw] flex flex-col p-0">
         <ModalHeader className="px-6 py-5 border-b border-neutral-800">
           <div className="flex items-center justify-between">
             <div>
@@ -89,7 +89,7 @@ export default function PlatformSettingsModal({ open, onClose }: PlatformSetting
 
           {/* Контент */}
           <div className="flex-1 overflow-y-auto bg-neutral-950">
-            <div className="p-6">
+            <div className="p-6 max-w-5xl mx-auto">
               {activeSection === 'appearance' && <AppearanceSettings />}
               {activeSection === 'interface' && (
                 <div className="space-y-6">

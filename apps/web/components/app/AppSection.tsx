@@ -84,8 +84,30 @@ export default function AppSection({
     );
   }
 
+  // Применяем тему с приоритетом над глобальными стилями
+  const finalClassName = useMemo(() => {
+    if (!theme) return 'space-y-6';
+    
+    // Для вариантов с темой используем важные классы
+    if (theme.variant === 'minimal') {
+      return 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4';
+    }
+    if (theme.variant === 'accent') {
+      return 'space-y-6 rounded-3xl border p-6';
+    }
+    if (theme.variant === 'bordered') {
+      return 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6';
+    }
+    return sectionClassName;
+  }, [theme, sectionClassName]);
+
   return (
-    <section className={sectionClassName} style={sectionStyles}>
+    <section 
+      className={finalClassName} 
+      style={sectionStyles}
+      data-section-theme={theme?.variant || 'default'}
+      data-section-id={sectionId || 'none'}
+    >
       <header className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
