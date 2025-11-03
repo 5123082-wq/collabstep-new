@@ -1,5 +1,11 @@
 'use client';
 
+// TODO: Подключить к реальному API когда backend будет готов
+// - Создать API endpoints для audit logs (GET /api/admin/audit с фильтрами)
+// - Заменить mockAuditEvents на реальные API вызовы
+// - Добавить loading/error states и пагинацию
+// - Использовать типы AuditLogEntry из @collabverse/api
+
 import { useState } from 'react';
 import { File, Search, Filter, Clock } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';

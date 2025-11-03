@@ -1,68 +1,132 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Search, Filter, Shield, UserX, UserCheck, MoreVertical } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
 import clsx from 'clsx';
+import type { AdminUserView } from '@collabverse/api';
 
 interface User {
   id: string;
   email: string;
   displayName: string;
   roles: string[];
-  status: 'active' | 'suspended' | 'banned' | 'pending';
+  status: 'active' | 'suspended' | 'invited';
   lastLoginAt: string;
   createdAt: string;
 }
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'user@example.com',
-    displayName: 'Иван Петров',
-    roles: ['FOUNDER'],
-    status: 'active',
-    lastLoginAt: '2025-01-30T10:30:00Z',
-    createdAt: '2024-01-15T00:00:00Z'
-  },
-  {
-    id: '2',
-    email: 'tester@example.com',
-    displayName: 'Тестировщик Сидоров',
-    roles: ['SPECIALIST'],
-    status: 'active',
-    lastLoginAt: '2025-01-29T15:20:00Z',
-    createdAt: '2024-06-01T00:00:00Z'
-  },
-  {
-    id: '3',
-    email: 'suspended@example.com',
-    displayName: 'Заблокированный Пользователь',
-    roles: ['USER'],
-    status: 'suspended',
-    lastLoginAt: '2025-01-28T08:00:00Z',
-    createdAt: '2024-03-20T00:00:00Z'
-  }
-];
+function convertAdminUserToUser(adminUser: AdminUserView): User {
+  return {
+    id: adminUser.userId,
+    email: adminUser.email || adminUser.userId,
+    displayName: adminUser.name,
+    roles: adminUser.roles,
+    status: adminUser.status,
+    lastLoginAt: adminUser.updatedAt, // Using updatedAt as lastLoginAt approximation
+    createdAt: adminUser.updatedAt // Using updatedAt as createdAt approximation
+  };
+}
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
 
-  const handleSuspend = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: 'suspended' as const } : u))
-    );
-    toast('Пользователь заблокирован', 'warning');
-  };
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/admin/users', {
+        cache: 'no-store'
+      });
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить пользователей');
+      }
+      const data = (await response.json()) as { items: AdminUserView[] };
+      const converted = data.items.map(convertAdminUserToUser);
+      setUsers(converted);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      toast('Не удалось загрузить пользователей', 'warning');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleActivate = (userId: string) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === userId ? { ...u, status: 'active' as const } : u))
-    );
-    toast('Пользователь активирован', 'success');
-  };
+  useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
+
+  const handleSuspend = useCallback(
+    async (userId: string) => {
+      setUpdatingIds((prev) => new Set(prev).add(userId));
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'suspended' })
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || 'Не удалось обновить пользователя');
+        }
+
+        const data = (await response.json()) as { item: AdminUserView };
+        const updatedUser = convertAdminUserToUser(data.item);
+        setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+        toast('Пользователь заблокирован', 'warning');
+      } catch (err) {
+        console.error(err);
+        toast(err instanceof Error ? err.message : 'Не удалось заблокировать пользователя', 'warning');
+      } finally {
+        setUpdatingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      }
+    },
+    []
+  );
+
+  const handleActivate = useCallback(
+    async (userId: string) => {
+      setUpdatingIds((prev) => new Set(prev).add(userId));
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'active' })
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || 'Не удалось обновить пользователя');
+        }
+
+        const data = (await response.json()) as { item: AdminUserView };
+        const updatedUser = convertAdminUserToUser(data.item);
+        setUsers((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+        toast('Пользователь активирован', 'success');
+      } catch (err) {
+        console.error(err);
+        toast(err instanceof Error ? err.message : 'Не удалось активировать пользователя', 'warning');
+      } finally {
+        setUpdatingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      }
+    },
+    []
+  );
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -115,15 +179,36 @@ export default function AdminUsersPage() {
               <option value="all">Все статусы</option>
               <option value="active">Активные</option>
               <option value="suspended">Заблокированные</option>
-              <option value="banned">Забаненные</option>
-              <option value="pending">Ожидают активации</option>
+              <option value="invited">Приглашённые</option>
             </select>
           </div>
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 p-12 text-center">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-neutral-500 border-r-transparent"></div>
+          <p className="mt-4 text-sm text-neutral-400">Загрузка пользователей...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6">
+          <p className="text-sm text-rose-100">{error}</p>
+          <button
+            onClick={() => void loadUsers()}
+            className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/20 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-500/30"
+          >
+            Повторить попытку
+          </button>
+        </div>
+      )}
+
       {/* Users Table */}
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 overflow-hidden">
+      {!loading && !error && (
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-950/60 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="border-b border-neutral-800 bg-neutral-950/80">
@@ -185,37 +270,49 @@ export default function AdminUsersPage() {
                           ? 'bg-green-500/20 text-green-100'
                           : user.status === 'suspended'
                           ? 'bg-orange-500/20 text-orange-100'
-                          : user.status === 'banned'
-                          ? 'bg-rose-500/20 text-rose-100'
-                          : 'bg-neutral-500/20 text-neutral-100'
+                          : 'bg-blue-500/20 text-blue-100'
                       )}
                     >
                       {user.status === 'active'
                         ? 'Активен'
                         : user.status === 'suspended'
                         ? 'Заблокирован'
-                        : user.status === 'banned'
-                        ? 'Забанен'
-                        : 'Ожидает'}
+                        : 'Приглашён'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {user.status === 'suspended' || user.status === 'banned' ? (
+                      {user.status !== 'active' ? (
                         <button
                           onClick={() => handleActivate(user.id)}
-                          className="rounded-xl border border-green-500/40 bg-green-500/10 p-2 text-green-100 transition hover:bg-green-500/20"
+                          disabled={updatingIds.has(user.id)}
+                          className={clsx(
+                            'rounded-xl border border-green-500/40 bg-green-500/10 p-2 text-green-100 transition hover:bg-green-500/20',
+                            updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
+                          )}
                           title="Активировать"
                         >
-                          <UserCheck className="h-4 w-4" />
+                          {updatingIds.has(user.id) ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                          ) : (
+                            <UserCheck className="h-4 w-4" />
+                          )}
                         </button>
                       ) : (
                         <button
                           onClick={() => handleSuspend(user.id)}
-                          className="rounded-xl border border-orange-500/40 bg-orange-500/10 p-2 text-orange-100 transition hover:bg-orange-500/20"
+                          disabled={updatingIds.has(user.id)}
+                          className={clsx(
+                            'rounded-xl border border-orange-500/40 bg-orange-500/10 p-2 text-orange-100 transition hover:bg-orange-500/20',
+                            updatingIds.has(user.id) && 'cursor-not-allowed opacity-50'
+                          )}
                           title="Заблокировать"
                         >
-                          <UserX className="h-4 w-4" />
+                          {updatingIds.has(user.id) ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent"></div>
+                          ) : (
+                            <UserX className="h-4 w-4" />
+                          )}
                         </button>
                       )}
                       <button
@@ -232,12 +329,13 @@ export default function AdminUsersPage() {
             </tbody>
           </table>
         </div>
-      </div>
 
-      {filteredUsers.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
-          <p className="text-sm text-neutral-400">Пользователи не найдены</p>
-        </div>
+        {filteredUsers.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-neutral-800 bg-neutral-950/60 p-12 text-center">
+            <p className="text-sm text-neutral-400">Пользователи не найдены</p>
+          </div>
+        )}
+      </div>
       )}
     </div>
   );
