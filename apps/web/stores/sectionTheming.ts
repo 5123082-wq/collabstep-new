@@ -29,14 +29,20 @@ export const useSectionThemingStore = create<SectionThemingState>()(
     (set, get) => ({
       sectionThemes: {},
       
-      setSectionTheme: (sectionId, theme) =>
-        set((state) => ({
-          sectionThemes: { ...state.sectionThemes, [sectionId]: theme }
-        })),
+      setSectionTheme: (sectionId, theme) => {
+        console.log('[SectionThemingStore] Setting theme for section:', sectionId, 'Theme:', theme);
+        set((state) => {
+          const newThemes = { ...state.sectionThemes, [sectionId]: theme };
+          console.log('[SectionThemingStore] New themes state:', newThemes);
+          return { sectionThemes: newThemes };
+        });
+      },
       
       getSectionTheme: (sectionId) => {
         const state = get();
-        return state.sectionThemes[sectionId] ?? null;
+        const theme = state.sectionThemes[sectionId] ?? null;
+        console.log('[SectionThemingStore] Getting theme for section:', sectionId, 'Found:', theme, 'All themes:', state.sectionThemes);
+        return theme;
       },
       
       resetSectionTheme: (sectionId) =>
@@ -47,7 +53,11 @@ export const useSectionThemingStore = create<SectionThemingState>()(
       
       resetAll: () => set({ sectionThemes: {} })
     }),
-    { name: 'cv-section-theming' }
+    { 
+      name: 'cv-section-theming',
+      // Добавляем версионирование для избежания проблем с миграцией
+      version: 1
+    }
   )
 );
 

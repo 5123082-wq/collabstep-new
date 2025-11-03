@@ -45,10 +45,24 @@ export default function AppSection({
   const pathname = usePathname();
   
   // Определяем текущий раздел и применяем тему
-  const sectionId = useMemo(() => detectSectionFromPath(pathname || ''), [pathname]);
-  const theme = useSectionThemingStore((state) => 
-    sectionId ? state.getSectionTheme(sectionId) : null
-  );
+  const sectionId = useMemo(() => {
+    const detected = detectSectionFromPath(pathname || '');
+    // Отладка (можно убрать в продакшене)
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[AppSection] Pathname:', pathname, 'SectionId:', detected);
+    }
+    return detected;
+  }, [pathname]);
+  
+  const theme = useSectionThemingStore((state) => {
+    if (!sectionId) return null;
+    const themeForSection = state.getSectionTheme(sectionId);
+    // Отладка (можно убрать в продакшене)
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[AppSection] SectionId:', sectionId, 'Theme:', themeForSection, 'All themes:', state.sectionThemes);
+    }
+    return themeForSection;
+  });
   const sectionClassName = useMemo(() => generateSectionClassName(theme), [theme]);
   const sectionStyles = useMemo(() => getSectionThemeStyles(theme), [theme]);
 

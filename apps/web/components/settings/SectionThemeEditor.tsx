@@ -39,7 +39,7 @@ export default function SectionThemeEditor({
       {/* Варианты оформления */}
       <section>
         <h5 className="text-sm font-semibold text-white mb-3">Вариант оформления</h5>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {SECTION_THEME_VARIANTS.map((variant) => {
             const isSelected = theme.variant === variant.id;
             return (
@@ -49,16 +49,19 @@ export default function SectionThemeEditor({
                 onClick={() => setTheme({ ...theme, variant: variant.id })}
                 className={clsx(
                   'relative overflow-hidden rounded-xl border p-4 text-left transition',
+                  'min-h-[140px] flex flex-col',
                   isSelected
                     ? 'border-indigo-500 bg-indigo-500/10 shadow-lg shadow-indigo-500/20'
                     : 'border-neutral-800 bg-neutral-900/60 hover:border-indigo-500/40'
                 )}
               >
-                <div className={clsx('mb-3 h-16 w-full rounded-lg', variant.previewClassName.split(' ')[2] || 'bg-neutral-800')} />
-                <p className={clsx('text-xs font-semibold', isSelected ? 'text-indigo-100' : 'text-white')}>
-                  {variant.label}
-                </p>
-                <p className="mt-1 text-[10px] text-neutral-400">{variant.description}</p>
+                <div className={clsx('mb-3 h-16 w-full rounded-lg flex-shrink-0', variant.previewClassName.split(' ')[2] || 'bg-neutral-800')} />
+                <div className="flex-1 flex flex-col">
+                  <p className={clsx('text-xs font-semibold', isSelected ? 'text-indigo-100' : 'text-white')}>
+                    {variant.label}
+                  </p>
+                  <p className="mt-1 text-[10px] text-neutral-400">{variant.description}</p>
+                </div>
               </button>
             );
           })}
