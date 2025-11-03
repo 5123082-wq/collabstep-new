@@ -1,5 +1,11 @@
 'use client';
 
+// TODO: Подключить к реальному API когда backend будет готов
+// - Создать API endpoints для support tools (GET /api/admin/support/sessions, POST /api/admin/support/impersonate)
+// - Заменить mockSessions на реальные API вызовы
+// - Добавить loading/error states
+// - Использовать типы из @collabverse/api
+
 import { useState } from 'react';
 import { UserSearch, Activity, RefreshCw } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';

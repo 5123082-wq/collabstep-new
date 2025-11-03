@@ -1,5 +1,11 @@
 'use client';
 
+// TODO: Подключить к реальному API когда backend будет готов
+// - Создать API endpoints для roles (GET /api/admin/roles, POST /api/admin/roles, PATCH /api/admin/roles/[id], DELETE /api/admin/roles/[id])
+// - Заменить mockRoles на реальные API вызовы
+// - Добавить loading/error states
+// - Использовать типы из @collabverse/api
+
 import { useState } from 'react';
 import { Shield, Users, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';

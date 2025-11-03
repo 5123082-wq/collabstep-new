@@ -1,5 +1,11 @@
 'use client';
 
+// TODO: Подключить к реальному API когда backend будет готов
+// - Создать API endpoints для segments (GET /api/admin/segments, POST /api/admin/segments, PATCH /api/admin/segments/[id])
+// - Заменить mockSegments на реальные API вызовы
+// - Добавить loading/error states
+// - Использовать типы из @collabverse/api
+
 import { useState } from 'react';
 import { Plus, Users, Filter, Shield } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';

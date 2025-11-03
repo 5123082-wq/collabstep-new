@@ -1,5 +1,11 @@
 'use client';
 
+// TODO: Подключить к реальному API когда backend будет готов
+// - Создать API endpoints для releases (GET /api/admin/releases, POST /api/admin/releases, PATCH /api/admin/releases/[id])
+// - Заменить mockReleases на реальные API вызовы
+// - Добавить loading/error states
+// - Использовать типы из @collabverse/api
+
 import { useState } from 'react';
 import { Calendar, Play, Pause, X } from 'lucide-react';
 import { toast } from '@/lib/ui/toast';
