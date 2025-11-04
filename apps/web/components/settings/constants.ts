@@ -26,14 +26,14 @@ export const SECTION_THEME_VARIANTS = [
   {
     id: 'default' as const,
     label: 'По умолчанию',
-    description: 'Стандартное оформление с нейтральными цветами',
-    previewClassName: 'rounded-3xl border border-neutral-900 bg-neutral-950/60 p-6'
+    description: 'Стандартное оформление без дополнительных эффектов',
+    previewClassName: 'space-y-6'
   },
   {
-    id: 'accent' as const,
-    label: 'Акцентный',
-    description: 'Выделение с акцентным цветом',
-    previewClassName: 'rounded-3xl border border-indigo-500/40 bg-indigo-500/10 p-6'
+    id: 'elevated' as const,
+    label: 'Приподнятая карточка',
+    description: 'Карточка с тенью и приподнятым эффектом',
+    previewClassName: 'rounded-3xl border border-neutral-800 bg-neutral-950/70 p-6 shadow-lg'
   },
   {
     id: 'minimal' as const,
@@ -44,8 +44,14 @@ export const SECTION_THEME_VARIANTS = [
   {
     id: 'bordered' as const,
     label: 'С рамкой',
-    description: 'Четкие границы и контрастный фон',
-    previewClassName: 'rounded-2xl border-2 border-neutral-800 bg-neutral-950/80 p-6'
+    description: 'Четкая цветная рамка с акцентным цветом',
+    previewClassName: 'rounded-2xl border-2 border-indigo-500/60 bg-neutral-950/80 p-6'
+  },
+  {
+    id: 'glass' as const,
+    label: 'Стеклянный эффект',
+    description: 'Эффект размытия фона (backdrop blur)',
+    previewClassName: 'rounded-3xl border border-neutral-800 bg-neutral-950/60 p-6 backdrop-blur-xl'
   }
 ];
 
@@ -55,6 +61,13 @@ export const ACCENT_COLORS = [
   { id: 'amber' as const, label: 'Янтарный', className: 'border-amber-500/40 bg-amber-500/10' },
   { id: 'rose' as const, label: 'Розовый', className: 'border-rose-500/40 bg-rose-500/10' },
   { id: 'blue' as const, label: 'Синий', className: 'border-blue-500/40 bg-blue-500/10' },
-  { id: 'purple' as const, label: 'Фиолетовый', className: 'border-purple-500/40 bg-purple-500/10' }
+  { id: 'purple' as const, label: 'Фиолетовый', className: 'border-purple-500/40 bg-purple-500/10' },
+  { id: 'neutral' as const, label: 'Нейтральный', className: 'border-neutral-500/40 bg-neutral-500/10' }
+];
+
+export const INTENSITY_LEVELS = [
+  { id: 'subtle' as const, label: 'Ненавязчивый', description: 'Легкий эффект' },
+  { id: 'base' as const, label: 'Стандартный', description: 'Обычная интенсивность' },
+  { id: 'strong' as const, label: 'Выраженный', description: 'Сильный эффект' }
 ];
 

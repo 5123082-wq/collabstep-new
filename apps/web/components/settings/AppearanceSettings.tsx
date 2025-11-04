@@ -100,13 +100,15 @@ export default function AppearanceSettings({ onSelectSection }: AppearanceSettin
             const isSelected = selectedSectionId === section.id;
             const hasCustomTheme = !!sectionThemes[section.id];
             const themeLabel =
-              theme.variant === 'accent'
-                ? `Акцентный · ${ACCENT_COLORS.find((c) => c.id === theme.accentColor)?.label}`
+              theme.variant === 'bordered'
+                ? `С рамкой · ${ACCENT_COLORS.find((c) => c.id === theme.accentColor)?.label}`
                 : theme.variant === 'minimal'
                   ? 'Минималистичный'
-                  : theme.variant === 'bordered'
-                    ? 'С рамкой'
-                    : 'По умолчанию';
+                  : theme.variant === 'elevated'
+                    ? 'Приподнятая карточка'
+                    : theme.variant === 'glass'
+                      ? 'Стеклянный эффект'
+                      : 'По умолчанию';
 
             return (
               <div key={section.id}>
@@ -136,19 +138,25 @@ export default function AppearanceSettings({ onSelectSection }: AppearanceSettin
                       <div
                         className={clsx(
                           'h-8 w-8 rounded-lg border',
-                          theme.variant === 'accent' || theme.variant === 'bordered'
+                          theme.variant === 'bordered'
                             ? 'border-2'
                             : 'border'
                         )}
                         style={{
                           backgroundColor:
-                            theme.variant === 'accent' || theme.variant === 'bordered'
+                            theme.variant === 'bordered'
                               ? `${getThemePreviewColor(theme.accentColor)}33`
-                              : 'transparent',
+                              : theme.variant === 'elevated'
+                                ? 'rgba(99, 102, 241, 0.1)'
+                                : theme.variant === 'glass'
+                                  ? 'rgba(148, 163, 184, 0.1)'
+                                  : 'transparent',
                           borderColor:
-                            theme.variant === 'accent' || theme.variant === 'bordered'
+                            theme.variant === 'bordered'
                               ? getThemePreviewColor(theme.accentColor)
-                              : 'rgba(255, 255, 255, 0.1)'
+                              : theme.variant === 'elevated'
+                                ? 'rgba(99, 102, 241, 0.3)'
+                                : 'rgba(255, 255, 255, 0.1)'
                         }}
                       />
 

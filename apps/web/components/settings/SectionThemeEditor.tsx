@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import clsx from 'clsx';
 import type { SectionTheme } from '@/stores/sectionTheming';
-import { SECTION_THEME_VARIANTS, ACCENT_COLORS } from './constants';
+import { SECTION_THEME_VARIANTS, ACCENT_COLORS, INTENSITY_LEVELS } from './constants';
 import { getThemePreviewColor } from '@/lib/utils/sectionTheme';
 
 type SectionThemeEditorProps = {
@@ -19,7 +19,7 @@ export default function SectionThemeEditor({
   sectionLabel,
   currentTheme,
   onSave,
-  onCancel
+  onCancel,
 }: SectionThemeEditorProps) {
   const [theme, setTheme] = useState<SectionTheme>(currentTheme);
 
@@ -39,7 +39,7 @@ export default function SectionThemeEditor({
       {/* Варианты оформления */}
       <section>
         <h5 className="text-sm font-semibold text-white mb-3">Вариант оформления</h5>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {SECTION_THEME_VARIANTS.map((variant) => {
             const isSelected = theme.variant === variant.id;
             return (
@@ -55,7 +55,12 @@ export default function SectionThemeEditor({
                     : 'border-neutral-800 bg-neutral-900/60 hover:border-indigo-500/40'
                 )}
               >
-                <div className={clsx('mb-3 h-16 w-full rounded-lg flex-shrink-0', variant.previewClassName.split(' ')[2] || 'bg-neutral-800')} />
+                <div
+                  className={clsx(
+                    'mb-3 h-16 w-full rounded-lg flex-shrink-0',
+                    variant.previewClassName.split(' ')[2] || 'bg-neutral-800'
+                  )}
+                />
                 <div className="flex-1 flex flex-col">
                   <p className={clsx('text-xs font-semibold', isSelected ? 'text-indigo-100' : 'text-white')}>
                     {variant.label}
@@ -68,8 +73,8 @@ export default function SectionThemeEditor({
         </div>
       </section>
 
-      {/* Акцентный цвет (показываем только для accent и bordered) */}
-      {(theme.variant === 'accent' || theme.variant === 'bordered') && (
+      {/* Акцентный цвет (показываем только для bordered) */}
+      {theme.variant === 'bordered' && (
         <section>
           <h5 className="text-sm font-semibold text-white mb-3">Акцентный цвет</h5>
           <div className="flex flex-wrap gap-2">
@@ -93,26 +98,39 @@ export default function SectionThemeEditor({
             })}
           </div>
           <p className="mt-2 text-xs text-neutral-400">
-            Выбранный цвет: <span className="text-white">{ACCENT_COLORS.find(c => c.id === theme.accentColor)?.label}</span>
+            Выбранный цвет:{' '}
+            <span className="text-white">{ACCENT_COLORS.find((c) => c.id === theme.accentColor)?.label}</span>
           </p>
         </section>
       )}
 
-      {/* Прозрачность (для accent и bordered) */}
-      {(theme.variant === 'accent' || theme.variant === 'bordered') && (
+      {/* Уровень интенсивности */}
+      {(theme.variant === 'bordered' || theme.variant === 'elevated' || theme.variant === 'glass') && (
         <section>
-          <div className="flex items-center justify-between mb-2">
-            <h5 className="text-sm font-semibold text-white">Прозрачность рамки</h5>
-            <span className="text-xs text-neutral-400">{theme.borderOpacity}%</span>
+          <h5 className="text-sm font-semibold text-white mb-3">Интенсивность</h5>
+          <div className="grid grid-cols-3 gap-3">
+            {INTENSITY_LEVELS.map((level) => {
+              const isSelected = theme.intensity === level.id;
+              return (
+                <button
+                  key={level.id}
+                  type="button"
+                  onClick={() => setTheme({ ...theme, intensity: level.id })}
+                  className={clsx(
+                    'rounded-xl border p-3 text-left transition',
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-500/10'
+                      : 'border-neutral-800 bg-neutral-900/60 hover:border-indigo-500/40'
+                  )}
+                >
+                  <p className={clsx('text-xs font-semibold', isSelected ? 'text-indigo-100' : 'text-white')}>
+                    {level.label}
+                  </p>
+                  <p className="mt-1 text-[10px] text-neutral-400">{level.description}</p>
+                </button>
+              );
+            })}
           </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={theme.borderOpacity}
-            onChange={(e) => setTheme({ ...theme, borderOpacity: Number(e.target.value) })}
-            className="w-full h-2 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-          />
         </section>
       )}
 
@@ -123,14 +141,16 @@ export default function SectionThemeEditor({
           className={clsx(
             theme.variant === 'default' && 'space-y-6',
             theme.variant === 'minimal' && 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4',
-            theme.variant === 'accent' &&
-              `space-y-6 rounded-3xl border p-6 ${
-                ACCENT_COLORS.find((c) => c.id === theme.accentColor)?.className || ''
-              }`,
+            theme.variant === 'elevated' &&
+              'space-y-6 rounded-3xl border border-neutral-800 bg-neutral-950/70 p-6 shadow-lg',
+            theme.variant === 'glass' &&
+              'space-y-6 rounded-3xl border border-neutral-800 bg-neutral-950/60 p-6 backdrop-blur-xl',
             theme.variant === 'bordered' &&
               `space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6 ${
                 ACCENT_COLORS.find((c) => c.id === theme.accentColor)?.className || ''
-              }`
+              }`,
+            theme.intensity === 'subtle' && 'opacity-90',
+            theme.intensity === 'strong' && 'shadow-xl'
           )}
         >
           <div className="flex items-center justify-between">
@@ -168,4 +188,3 @@ export default function SectionThemeEditor({
     </div>
   );
 }
-
