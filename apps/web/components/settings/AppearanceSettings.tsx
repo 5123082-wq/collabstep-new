@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import clsx from 'clsx';
 import type { SectionTheme } from '@/stores/sectionTheming';
-import { useSectionThemingStore, DEFAULT_THEME } from '@/stores/sectionTheming';
+import { useSectionThemingStore, DEFAULT_SECTION_THEME } from '@/stores/sectionTheming';
 import { GLOBAL_SECTIONS, ACCENT_COLORS } from './constants';
 import { getThemePreviewColor } from '@/lib/utils/sectionTheme';
 import SectionThemeEditor from './SectionThemeEditor';
@@ -96,7 +96,7 @@ export default function AppearanceSettings({ onSelectSection }: AppearanceSettin
           </div>
         ) : (
           filteredSections.map((section) => {
-            const theme = sectionThemes[section.id] ?? DEFAULT_THEME;
+            const theme = sectionThemes[section.id] ?? DEFAULT_SECTION_THEME;
             const isSelected = selectedSectionId === section.id;
             const hasCustomTheme = !!sectionThemes[section.id];
             const themeLabel =

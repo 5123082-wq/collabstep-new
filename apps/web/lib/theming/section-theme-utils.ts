@@ -1,4 +1,4 @@
-import type { SectionTheme, SectionVariant, SectionAccentColor, IntensityLevel } from '@/stores/sectionTheming';
+import type { SectionTheme, SectionAccentColor } from '@/stores/sectionTheming';
 
 // Маппинг акцентных цветов на CSS-переменные
 const ACCENT_COLOR_VARS: Record<SectionAccentColor, string> = {

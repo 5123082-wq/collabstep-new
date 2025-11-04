@@ -10,7 +10,6 @@ import { useSectionThemingStore } from '@/stores/sectionTheming';
 import {
   generateSectionClassName,
   getSectionThemeStyles,
-  getSectionTailwindClasses,
 } from '@/lib/theming/section-theme-utils';
 
 type Access = 'finance' | 'admin' | null;
@@ -59,12 +58,11 @@ export default function AppSection({
     return detected;
   }, [pathname]);
   
-  const sectionThemes = useSectionThemingStore((state) => state.sectionThemes);
   const theme = useMemo(() => {
     if (!sectionId) return null;
     const themeForSection = useSectionThemingStore.getState().getSectionTheme(sectionId);
     return themeForSection;
-  }, [sectionId, sectionThemes]);
+  }, [sectionId]);
 
   // Генерируем классы и стили на основе темы
   const sectionClassName = useMemo(() => generateSectionClassName(theme), [theme]);
