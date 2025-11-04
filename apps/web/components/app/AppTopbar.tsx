@@ -331,8 +331,6 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
             </svg>
             {currentSubscriptionLabel}
           </button>
-          <IconButton icon="bell" label="Уведомления" />
-          <IconButton icon="chat" label="Сообщения" />
           <IconButton icon="wallet" label="Кошелёк" />
           <ThemeToggle />
           <AccountMenu 
