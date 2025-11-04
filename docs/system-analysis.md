@@ -1,5 +1,5 @@
 status: active
-last_reviewed: 2025-02-15
+last_reviewed: 2025-11-04
 owner: docs
 
 # Системный обзор Collabverse
