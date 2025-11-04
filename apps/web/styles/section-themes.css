@@ -1,34 +1,199 @@
-/* Стили для тем разделов с высоким приоритетом */
-/* Эти стили применяются только когда у секции есть data-section-theme */
-/* Используем более специфичный селектор чтобы перекрыть глобальные стили */
-section[data-section-theme='minimal'],
+/* ============================================
+   Стили для тем секций
+   Использует CSS-переменные из design-tokens.ts
+   ============================================ */
+
+/* Базовый стиль для всех секций */
+.cs-section {
+  transition: all 200ms ease;
+}
+
+/* ============================================
+   Варианты секций
+   ============================================ */
+
+/* Default - без дополнительного оформления */
+.cs-section--default {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Elevated - приподнятая карточка */
+.cs-section--elevated {
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-base);
+  background-color: var(--surface-elevated);
+  padding: 1.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Minimal - минималистичный стиль */
+.cs-section--minimal {
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-muted);
+  padding: 1rem;
+  gap: 1rem;
+}
+
+/* Bordered - с акцентной рамкой */
+.cs-section--bordered {
+  border-radius: 1rem;
+  border-width: 2px;
+  border-style: solid;
+  background-color: var(--surface-base);
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+/* Glass - стеклянный эффект */
+.cs-section--glass {
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-base);
+  backdrop-filter: blur(16px);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   Акцентные цвета для bordered вариантов
+   ============================================ */
+
+.cs-section--bordered.cs-section--indigo {
+  border-color: rgba(99, 102, 241, 0.55);
+}
+
+.cs-section--bordered.cs-section--indigo.cs-section--strong {
+  border-color: rgba(99, 102, 241, 0.75);
+  background-color: rgba(99, 102, 241, 0.05);
+}
+
+.cs-section--bordered.cs-section--emerald {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+
+.cs-section--bordered.cs-section--emerald.cs-section--strong {
+  border-color: rgba(34, 197, 94, 0.75);
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.cs-section--bordered.cs-section--amber {
+  border-color: rgba(251, 191, 36, 0.55);
+}
+
+.cs-section--bordered.cs-section--amber.cs-section--strong {
+  border-color: rgba(251, 191, 36, 0.75);
+  background-color: rgba(251, 191, 36, 0.05);
+}
+
+.cs-section--bordered.cs-section--rose {
+  border-color: rgba(244, 63, 94, 0.55);
+}
+
+.cs-section--bordered.cs-section--rose.cs-section--strong {
+  border-color: rgba(244, 63, 94, 0.75);
+  background-color: rgba(244, 63, 94, 0.05);
+}
+
+.cs-section--bordered.cs-section--blue {
+  border-color: rgba(59, 130, 246, 0.55);
+}
+
+.cs-section--bordered.cs-section--blue.cs-section--strong {
+  border-color: rgba(59, 130, 246, 0.75);
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+.cs-section--bordered.cs-section--purple {
+  border-color: rgba(168, 85, 247, 0.55);
+}
+
+.cs-section--bordered.cs-section--purple.cs-section--strong {
+  border-color: rgba(168, 85, 247, 0.75);
+  background-color: rgba(168, 85, 247, 0.05);
+}
+
+.cs-section--bordered.cs-section--neutral {
+  border-color: var(--border-base);
+}
+
+.cs-section--bordered.cs-section--neutral.cs-section--strong {
+  border-color: var(--border-strong);
+  background-color: var(--surface-muted);
+}
+
+/* ============================================
+   Уровни интенсивности
+   ============================================ */
+
+.cs-section--subtle {
+  opacity: 0.92;
+}
+
+.cs-section--subtle:hover {
+  opacity: 1;
+}
+
+/* Base - стандартная интенсивность (по умолчанию) */
+
+.cs-section--strong {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================
+   Адаптация для светлой темы
+   ============================================ */
+
+html[data-theme='light'] .cs-section--elevated,
+html[data-theme='light'] .cs-section--glass {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme='light'] .cs-section--strong {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================
+   Анимации и состояния
+   ============================================ */
+
+.cs-section--elevated:hover,
+.cs-section--glass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 10px 10px -5px rgba(0, 0, 0, 0.06);
+}
+
+.cs-section--bordered:hover {
+  border-color: var(--accent-border-strong, var(--border-strong));
+}
+
+/* ============================================
+   Устаревшие data-атрибуты (для обратной совместимости)
+   Постепенно мигрировать на классы выше
+   ============================================ */
+
 [data-section-theme='minimal'] {
-  gap: 1rem !important;
-  border-radius: 1rem !important;
-  border: 1px solid rgb(38, 38, 38) !important;
-  background-color: rgba(10, 10, 10, 0.4) !important;
-  padding: 1rem !important;
+  border-radius: 1rem;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--surface-muted);
+  padding: 1rem;
+  gap: 1rem;
 }
 
-section[data-section-theme='accent'],
-section[data-section-theme='bordered'],
-[data-section-theme='accent'],
-[data-section-theme='bordered'] {
-  gap: 1.5rem !important;
-  padding: 1.5rem !important;
-}
-
-section[data-section-theme='accent'],
 [data-section-theme='accent'] {
-  border-radius: 1.5rem !important;
-  border: 1px solid !important;
+  border-radius: 1.5rem;
+  border: 1px solid var(--accent-border);
+  background-color: var(--accent-bg);
+  padding: 1.5rem;
+  gap: 1.5rem;
 }
 
-section[data-section-theme='bordered'],
 [data-section-theme='bordered'] {
-  border-radius: 1rem !important;
-  border-width: 2px !important;
-  border-style: solid !important;
-  background-color: rgba(10, 10, 10, 0.8) !important;
+  border-radius: 1rem;
+  border: 2px solid var(--border-base);
+  background-color: var(--surface-base);
+  padding: 1.5rem;
+  gap: 1.5rem;
 }
-

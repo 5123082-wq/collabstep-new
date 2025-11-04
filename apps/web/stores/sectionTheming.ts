@@ -1,25 +1,75 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Варианты визуального стиля секции
+export type SectionVariant = 'default' | 'elevated' | 'minimal' | 'bordered' | 'glass';
+
+// Акцентные цвета для секций
+export type SectionAccentColor = 'indigo' | 'emerald' | 'amber' | 'rose' | 'blue' | 'purple' | 'neutral';
+
+// Уровни интенсивности
+export type IntensityLevel = 'subtle' | 'base' | 'strong';
+
+// Конфигурация темы секции
 export type SectionTheme = {
-  variant: 'default' | 'accent' | 'minimal' | 'bordered';
-  accentColor: 'indigo' | 'emerald' | 'amber' | 'rose' | 'blue' | 'purple';
-  borderOpacity: number; // 0-100
-  bgOpacity: number; // 0-100
+  variant: SectionVariant;
+  accentColor: SectionAccentColor;
+  intensity: IntensityLevel;
   customClassName?: string;
 };
 
-export const DEFAULT_THEME: SectionTheme = {
+// Значения по умолчанию
+export const DEFAULT_SECTION_THEME: SectionTheme = {
   variant: 'default',
   accentColor: 'indigo',
-  borderOpacity: 100,
-  bgOpacity: 60
+  intensity: 'base',
+};
+
+// Предустановленные темы для быстрого доступа
+export const PRESET_THEMES: Record<string, SectionTheme> = {
+  default: DEFAULT_SECTION_THEME,
+  card: {
+    variant: 'elevated',
+    accentColor: 'indigo',
+    intensity: 'base',
+  },
+  minimal: {
+    variant: 'minimal',
+    accentColor: 'neutral',
+    intensity: 'subtle',
+  },
+  accent: {
+    variant: 'bordered',
+    accentColor: 'indigo',
+    intensity: 'strong',
+  },
+  success: {
+    variant: 'bordered',
+    accentColor: 'emerald',
+    intensity: 'base',
+  },
+  warning: {
+    variant: 'bordered',
+    accentColor: 'amber',
+    intensity: 'base',
+  },
+  danger: {
+    variant: 'bordered',
+    accentColor: 'rose',
+    intensity: 'base',
+  },
+  glass: {
+    variant: 'glass',
+    accentColor: 'indigo',
+    intensity: 'subtle',
+  },
 };
 
 type SectionThemingState = {
   sectionThemes: Record<string, SectionTheme>;
   setSectionTheme: (sectionId: string, theme: SectionTheme) => void;
   getSectionTheme: (sectionId: string) => SectionTheme | null;
+  applyPreset: (sectionId: string, presetName: keyof typeof PRESET_THEMES) => void;
   resetSectionTheme: (sectionId: string) => void;
   resetAll: () => void;
 };
@@ -28,42 +78,38 @@ export const useSectionThemingStore = create<SectionThemingState>()(
   persist(
     (set, get) => ({
       sectionThemes: {},
-      
+
       setSectionTheme: (sectionId, theme) => {
-        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-          console.log('[SectionThemingStore] Setting theme for section:', sectionId, 'Theme:', theme);
-        }
-        set((state) => {
-          const newThemes = { ...state.sectionThemes, [sectionId]: theme };
-          if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-            console.log('[SectionThemingStore] New themes state:', newThemes);
-          }
-          return { sectionThemes: newThemes };
-        });
+        set((state) => ({
+          sectionThemes: { ...state.sectionThemes, [sectionId]: theme },
+        }));
       },
-      
+
       getSectionTheme: (sectionId) => {
         const state = get();
-        const theme = state.sectionThemes[sectionId] ?? null;
-        if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-          console.log('[SectionThemingStore] Getting theme for section:', sectionId, 'Found:', theme, 'All themes:', state.sectionThemes);
-        }
-        return theme;
+        return state.sectionThemes[sectionId] ?? null;
       },
-      
+
+      applyPreset: (sectionId, presetName) => {
+        const preset = PRESET_THEMES[presetName];
+        if (preset) {
+          set((state) => ({
+            sectionThemes: { ...state.sectionThemes, [sectionId]: preset },
+          }));
+        }
+      },
+
       resetSectionTheme: (sectionId) =>
         set((state) => {
           const { [sectionId]: _, ...rest } = state.sectionThemes;
           return { sectionThemes: rest };
         }),
-      
-      resetAll: () => set({ sectionThemes: {} })
+
+      resetAll: () => set({ sectionThemes: {} }),
     }),
-    { 
+    {
       name: 'cv-section-theming',
-      // Добавляем версионирование для избежания проблем с миграцией
-      version: 1
+      version: 2, // Увеличили версию для миграции
     }
   )
 );
-

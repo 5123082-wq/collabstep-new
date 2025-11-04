@@ -1,116 +1,280 @@
 export type ThemeName = 'dark' | 'light';
 
-type TokenRecord = Record<string, string>;
+// Семантические токены для различных элементов интерфейса
+type SemanticTokens = {
+  // Основные поверхности
+  surface: {
+    canvas: string;
+    base: string;
+    elevated: string;
+    muted: string;
+    popover: string;
+    overlay: string;
+  };
+  // Границы
+  border: {
+    subtle: string;
+    base: string;
+    strong: string;
+  };
+  // Текст
+  text: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+    muted: string;
+    inverse: string;
+  };
+  // Акцентные цвета
+  accent: {
+    bg: string;
+    bgStrong: string;
+    border: string;
+    borderStrong: string;
+    text: string;
+    textStrong: string;
+  };
+  // Кнопки
+  button: {
+    primaryBg: string;
+    primaryBgHover: string;
+    primaryBgActive: string;
+    primaryBorder: string;
+    primaryText: string;
+    secondaryBg: string;
+    secondaryBgHover: string;
+    secondaryBorder: string;
+    secondaryText: string;
+    ghostBg: string;
+    ghostBgHover: string;
+    ghostText: string;
+    dangerBg: string;
+    dangerBgHover: string;
+    dangerBgActive: string;
+    dangerBorder: string;
+    dangerText: string;
+  };
+  // Интерактивные элементы
+  interactive: {
+    bg: string;
+    bgHover: string;
+    bgActive: string;
+    border: string;
+    borderHover: string;
+    text: string;
+  };
+  // Статусы
+  status: {
+    successBg: string;
+    successBorder: string;
+    successText: string;
+    warningBg: string;
+    warningBorder: string;
+    warningText: string;
+    errorBg: string;
+    errorBorder: string;
+    errorText: string;
+    infoBg: string;
+    infoBorder: string;
+    infoText: string;
+  };
+};
+
+type SpacingTokens = {
+  contentInlinePadding: string;
+  railCollapsedWidth: string;
+  railDockSpacing: string;
+  railSafeGap: string;
+  railSafeArea: string;
+};
+
+type ThemeTokens = SemanticTokens & SpacingTokens;
 
 type DesignTokens = {
-  shared: TokenRecord;
-  themes: Record<ThemeName, TokenRecord>;
+  themes: Record<ThemeName, ThemeTokens>;
 };
 
 export const designTokens: DesignTokens = {
-  shared: {
-    'content-inline-padding': '20px',
-    'rail-collapsed-width': '56px',
-    'rail-dock-spacing': '1rem',
-    'rail-safe-gap': '5px',
-    'rail-safe-area': 'calc(var(--rail-collapsed-width) + var(--rail-dock-spacing) + var(--rail-safe-gap))'
-  },
   themes: {
     dark: {
-      'surface-canvas': '#040712',
-      'surface-base': 'rgba(9, 13, 23, 0.92)',
-      'surface-muted': 'rgba(12, 18, 30, 0.85)',
-      'surface-popover': 'rgba(11, 16, 27, 0.96)',
-      'surface-overlay': 'rgba(4, 7, 18, 0.68)',
-      'surface-border-subtle': 'rgba(148, 163, 184, 0.24)',
-      'surface-border-strong': 'rgba(165, 180, 203, 0.36)',
-      'surface-chip': '#0f172a',
-      'text-primary': '#f8fafc',
-      'text-secondary': '#cbd5f5',
-      'text-tertiary': '#94a3b8',
-      'text-chip': '#e2e8f0',
-      'accent-border': 'rgba(129, 140, 248, 0.55)',
-      'accent-border-strong': 'rgba(99, 102, 241, 0.75)',
-      'accent-bg': 'rgba(99, 102, 241, 0.16)',
-      'accent-bg-strong': 'rgba(99, 102, 241, 0.22)',
-      'accent-foreground': '#ffffff',
-      'button-primary-bg': '#6366f1',
-      'button-primary-bg-hover': '#4f46e5',
-      'button-primary-bg-active': '#4338ca',
-      'button-primary-border': '#4f46e5',
-      'button-primary-border-strong': '#4338ca',
-      'button-primary-foreground': '#ffffff',
-      'button-danger-bg': '#ef4444',
-      'button-danger-bg-hover': '#dc2626',
-      'button-danger-bg-active': '#b91c1c',
-      'button-danger-border': '#f87171',
-      'button-danger-border-strong': '#b91c1c',
-      'button-danger-foreground': '#ffffff',
-      'button-ghost-foreground': '#cbd5f5',
-      'button-trendy-bg': '#474973',
-      'button-trendy-bg-hover': '#3b3d61',
-      'button-trendy-bg-active': '#2f304f',
-      'button-trendy-border': '#6c6da4',
-      'button-trendy-border-strong': '#9a9ccd',
-      'button-trendy-foreground': '#ffffff',
-      'theme-control-bg': 'rgba(15, 23, 42, 0.72)',
-      'theme-control-border': 'rgba(99, 102, 241, 0.42)',
-      'theme-control-border-hover': 'rgba(129, 140, 248, 0.75)',
-      'theme-control-foreground': '#cbd5ff',
-      'theme-control-foreground-hover': '#e2e8ff'
+      // Поверхности
+      surface: {
+        canvas: '#040712',
+        base: 'rgba(9, 13, 23, 0.92)',
+        elevated: 'rgba(15, 23, 42, 0.95)',
+        muted: 'rgba(12, 18, 30, 0.85)',
+        popover: 'rgba(11, 16, 27, 0.96)',
+        overlay: 'rgba(4, 7, 18, 0.68)',
+      },
+      // Границы
+      border: {
+        subtle: 'rgba(148, 163, 184, 0.24)',
+        base: 'rgba(148, 163, 184, 0.35)',
+        strong: 'rgba(165, 180, 203, 0.45)',
+      },
+      // Текст
+      text: {
+        primary: '#f8fafc',
+        secondary: '#cbd5f5',
+        tertiary: '#94a3b8',
+        muted: '#64748b',
+        inverse: '#0f172a',
+      },
+      // Акценты
+      accent: {
+        bg: 'rgba(99, 102, 241, 0.16)',
+        bgStrong: 'rgba(99, 102, 241, 0.22)',
+        border: 'rgba(129, 140, 248, 0.55)',
+        borderStrong: 'rgba(99, 102, 241, 0.75)',
+        text: '#a5b4fc',
+        textStrong: '#c7d2fe',
+      },
+      // Кнопки
+      button: {
+        primaryBg: '#6366f1',
+        primaryBgHover: '#4f46e5',
+        primaryBgActive: '#4338ca',
+        primaryBorder: '#4f46e5',
+        primaryText: '#ffffff',
+        secondaryBg: 'rgba(15, 23, 42, 0.72)',
+        secondaryBgHover: 'rgba(30, 41, 59, 0.85)',
+        secondaryBorder: 'rgba(148, 163, 184, 0.38)',
+        secondaryText: '#cbd5f5',
+        ghostBg: 'transparent',
+        ghostBgHover: 'rgba(99, 102, 241, 0.12)',
+        ghostText: '#cbd5f5',
+        dangerBg: '#ef4444',
+        dangerBgHover: '#dc2626',
+        dangerBgActive: '#b91c1c',
+        dangerBorder: '#f87171',
+        dangerText: '#ffffff',
+      },
+      // Интерактивные элементы
+      interactive: {
+        bg: 'rgba(15, 23, 42, 0.72)',
+        bgHover: 'rgba(30, 41, 59, 0.85)',
+        bgActive: 'rgba(51, 65, 85, 0.92)',
+        border: 'rgba(99, 102, 241, 0.42)',
+        borderHover: 'rgba(129, 140, 248, 0.75)',
+        text: '#cbd5ff',
+      },
+      // Статусы
+      status: {
+        successBg: 'rgba(34, 197, 94, 0.16)',
+        successBorder: 'rgba(34, 197, 94, 0.55)',
+        successText: '#86efac',
+        warningBg: 'rgba(251, 191, 36, 0.16)',
+        warningBorder: 'rgba(251, 191, 36, 0.55)',
+        warningText: '#fcd34d',
+        errorBg: 'rgba(239, 68, 68, 0.16)',
+        errorBorder: 'rgba(239, 68, 68, 0.55)',
+        errorText: '#fca5a5',
+        infoBg: 'rgba(59, 130, 246, 0.16)',
+        infoBorder: 'rgba(59, 130, 246, 0.55)',
+        infoText: '#93c5fd',
+      },
+      // Spacing (общие для всех тем)
+      contentInlinePadding: '20px',
+      railCollapsedWidth: '56px',
+      railDockSpacing: '1rem',
+      railSafeGap: '5px',
+      railSafeArea: 'calc(56px + 1rem + 5px)',
     },
     light: {
-      'surface-canvas': '#f4f6fb',
-      'surface-base': 'rgba(255, 255, 255, 0.96)',
-      'surface-muted': 'rgba(241, 245, 249, 0.92)',
-      'surface-popover': 'rgba(255, 255, 255, 0.98)',
-      'surface-overlay': 'rgba(15, 23, 42, 0.45)',
-      'surface-border-subtle': 'rgba(148, 163, 184, 0.35)',
-      'surface-border-strong': 'rgba(100, 116, 139, 0.45)',
-      'surface-chip': 'rgba(15, 23, 42, 0.08)',
-      'text-primary': '#0f172a',
-      'text-secondary': '#1f2937',
-      'text-tertiary': '#334155',
-      'text-chip': '#0f172a',
-      'accent-border': 'rgba(79, 70, 229, 0.55)',
-      'accent-border-strong': 'rgba(67, 56, 202, 0.75)',
-      'accent-bg': 'rgba(99, 102, 241, 0.16)',
-      'accent-bg-strong': 'rgba(79, 70, 229, 0.18)',
-      'accent-foreground': '#ffffff',
-      'button-primary-bg': '#6366f1',
-      'button-primary-bg-hover': '#4f46e5',
-      'button-primary-bg-active': '#4338ca',
-      'button-primary-border': '#6366f1',
-      'button-primary-border-strong': '#4f46e5',
-      'button-primary-foreground': '#ffffff',
-      'button-danger-bg': '#ef4444',
-      'button-danger-bg-hover': '#dc2626',
-      'button-danger-bg-active': '#b91c1c',
-      'button-danger-border': '#fca5a5',
-      'button-danger-border-strong': '#dc2626',
-      'button-danger-foreground': '#ffffff',
-      'button-ghost-foreground': '#6366f1',
-      'button-trendy-bg': '#474973',
-      'button-trendy-bg-hover': '#3b3d61',
-      'button-trendy-bg-active': '#2f304f',
-      'button-trendy-border': '#6c6da4',
-      'button-trendy-border-strong': '#9a9ccd',
-      'button-trendy-foreground': '#ffffff',
-      'theme-control-bg': 'rgba(148, 163, 184, 0.18)',
-      'theme-control-border': 'rgba(148, 163, 184, 0.38)',
-      'theme-control-border-hover': 'rgba(79, 70, 229, 0.6)',
-      'theme-control-foreground': '#1e293b',
-      'theme-control-foreground-hover': '#312e81'
-    }
-  }
+      // Поверхности
+      surface: {
+        canvas: '#f4f6fb',
+        base: 'rgba(255, 255, 255, 0.96)',
+        elevated: 'rgba(255, 255, 255, 0.98)',
+        muted: 'rgba(241, 245, 249, 0.92)',
+        popover: 'rgba(255, 255, 255, 0.98)',
+        overlay: 'rgba(15, 23, 42, 0.45)',
+      },
+      // Границы
+      border: {
+        subtle: 'rgba(148, 163, 184, 0.28)',
+        base: 'rgba(148, 163, 184, 0.45)',
+        strong: 'rgba(100, 116, 139, 0.55)',
+      },
+      // Текст
+      text: {
+        primary: '#0f172a',
+        secondary: '#1f2937',
+        tertiary: '#334155',
+        muted: '#64748b',
+        inverse: '#ffffff',
+      },
+      // Акценты
+      accent: {
+        bg: 'rgba(99, 102, 241, 0.12)',
+        bgStrong: 'rgba(79, 70, 229, 0.18)',
+        border: 'rgba(79, 70, 229, 0.55)',
+        borderStrong: 'rgba(67, 56, 202, 0.75)',
+        text: '#4f46e5',
+        textStrong: '#4338ca',
+      },
+      // Кнопки
+      button: {
+        primaryBg: '#6366f1',
+        primaryBgHover: '#4f46e5',
+        primaryBgActive: '#4338ca',
+        primaryBorder: '#6366f1',
+        primaryText: '#ffffff',
+        secondaryBg: 'rgba(148, 163, 184, 0.12)',
+        secondaryBgHover: 'rgba(148, 163, 184, 0.22)',
+        secondaryBorder: 'rgba(148, 163, 184, 0.38)',
+        secondaryText: '#1e293b',
+        ghostBg: 'transparent',
+        ghostBgHover: 'rgba(99, 102, 241, 0.08)',
+        ghostText: '#4f46e5',
+        dangerBg: '#ef4444',
+        dangerBgHover: '#dc2626',
+        dangerBgActive: '#b91c1c',
+        dangerBorder: '#fca5a5',
+        dangerText: '#ffffff',
+      },
+      // Интерактивные элементы
+      interactive: {
+        bg: 'rgba(148, 163, 184, 0.18)',
+        bgHover: 'rgba(148, 163, 184, 0.28)',
+        bgActive: 'rgba(148, 163, 184, 0.38)',
+        border: 'rgba(148, 163, 184, 0.38)',
+        borderHover: 'rgba(79, 70, 229, 0.6)',
+        text: '#1e293b',
+      },
+      // Статусы
+      status: {
+        successBg: 'rgba(34, 197, 94, 0.12)',
+        successBorder: 'rgba(34, 197, 94, 0.45)',
+        successText: '#15803d',
+        warningBg: 'rgba(251, 191, 36, 0.12)',
+        warningBorder: 'rgba(251, 191, 36, 0.45)',
+        warningText: '#b45309',
+        errorBg: 'rgba(239, 68, 68, 0.12)',
+        errorBorder: 'rgba(239, 68, 68, 0.45)',
+        errorText: '#b91c1c',
+        infoBg: 'rgba(59, 130, 246, 0.12)',
+        infoBorder: 'rgba(59, 130, 246, 0.45)',
+        infoText: '#1d4ed8',
+      },
+      // Spacing (общие для всех тем)
+      contentInlinePadding: '20px',
+      railCollapsedWidth: '56px',
+      railDockSpacing: '1rem',
+      railSafeGap: '5px',
+      railSafeArea: 'calc(56px + 1rem + 5px)',
+    },
+  },
 };
 
 export const DEFAULT_THEME: ThemeName = 'dark';
 
-export function getResolvedTokens(theme: ThemeName): TokenRecord {
-  return { ...designTokens.shared, ...designTokens.themes[theme] };
+// Утилиты для работы с токенами
+export function getResolvedTokens(theme: ThemeName): ThemeTokens {
+  return designTokens.themes[theme];
 }
 
+// Применение токенов к DOM
 export function applyThemeTokens(theme: ThemeName) {
   if (typeof document === 'undefined') {
     return;
@@ -118,29 +282,46 @@ export function applyThemeTokens(theme: ThemeName) {
 
   const root = document.documentElement;
   const tokens = getResolvedTokens(theme);
-  for (const [token, value] of Object.entries(tokens)) {
+
+  // Применяем токены как CSS-переменные
+  const flatTokens = flattenTokens(tokens);
+  for (const [token, value] of Object.entries(flatTokens)) {
     root.style.setProperty(`--${token}`, value);
   }
+
   root.dataset.theme = theme;
   root.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
 }
 
-export function getCssVarReference(token: string) {
-  return `var(--${token})`;
+// Преобразование вложенной структуры токенов в плоскую для CSS-переменных
+function flattenTokens(obj: Record<string, any>, prefix = ''): Record<string, string> {
+  const result: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const tokenName = prefix ? `${prefix}-${camelToKebab(key)}` : camelToKebab(key);
+
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      Object.assign(result, flattenTokens(value, tokenName));
+    } else {
+      result[tokenName] = String(value);
+    }
+  }
+
+  return result;
 }
 
-export function getTailwindColorTokens(): Record<string, string> {
-  const themeTokens = designTokens.themes.dark;
-  return Object.fromEntries(Object.keys(themeTokens).map((token) => [token, getCssVarReference(token)]));
+// Преобразование camelCase в kebab-case
+function camelToKebab(str: string): string {
+  return str.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-export function getTailwindSpacingTokens(): Record<string, string> {
-  const spacingTokens: Record<string, string> = {
-    'content-inline': getCssVarReference('content-inline-padding'),
-    'rail-collapsed': getCssVarReference('rail-collapsed-width'),
-    'rail-dock-spacing': getCssVarReference('rail-dock-spacing'),
-    'rail-safe-gap': getCssVarReference('rail-safe-gap'),
-    'rail-safe-area': getCssVarReference('rail-safe-area')
-  };
-  return spacingTokens;
+// Получение ссылки на CSS-переменную
+export function getCssVar(path: string): string {
+  return `var(--${path})`;
+}
+
+// Генерация Tailwind токенов из дизайн-токенов
+export function getTailwindTokens(): Record<string, string> {
+  const tokens = flattenTokens(designTokens.themes.dark);
+  return Object.fromEntries(Object.keys(tokens).map((token) => [token, getCssVar(token)]));
 }
