@@ -5,10 +5,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { AuditLogEntry } from '@collabverse/api';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
-import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
+import type { Iteration, ProjectWorkflow, Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
 import { flags } from '@/lib/flags';
 import CalendarView from '@/components/project/views/CalendarView';
 import TimelineView from '@/components/project/views/TimelineView';
+import KanbanView from '../components/kanban-view';
+import ListView from '../components/list-view';
 
 type TaskItem = Pick<
   Task,
@@ -47,7 +49,10 @@ type TaskUpdatePayload = {
   iterationId?: string | null;
   assigneeId?: string | null;
   startAt?: string | null;
+  startDate?: string | null;
   dueAt?: string | null;
+  priority?: 'low' | 'med' | 'high' | 'urgent' | null;
+  storyPoints?: number | null;
   labels?: string[];
 };
 
@@ -225,6 +230,7 @@ export default function ProjectTasksPageClient({
 
   const [view, setView] = useState<BoardView>(defaultView);
   const [items, setItems] = useState<TaskItem[]>([]);
+  const [taskTree, setTaskTree] = useState<TaskTreeNode[]>([]); // Tree view for ListView
   const [workflow, setWorkflow] = useState<ProjectWorkflow | null>(null);
   const [iterations, setIterations] = useState<IterationItem[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<string | 'all'>('all');
@@ -322,19 +328,50 @@ export default function ProjectTasksPageClient({
       if (selectedIteration !== 'all') {
         params.set('iterationId', selectedIteration);
       }
+      // Request tree view for ListView
+      if (view === 'list') {
+        params.set('view', 'tree');
+      }
       const query = params.toString();
       const response = await fetch(`/api/projects/${projectId}/tasks${query ? `?${query}` : ''}`);
       if (!response.ok) {
         throw new Error('Не удалось загрузить задачи');
       }
-      const data = (await response.json()) as { items?: TaskItem[] };
-      setItems(Array.isArray(data.items) ? data.items : []);
+      const data = (await response.json()) as { items?: TaskItem[]; tree?: TaskTreeNode[] };
+      if (Array.isArray(data.items)) {
+        setItems(data.items);
+      }
+      if (Array.isArray(data.tree)) {
+        setTaskTree(data.tree);
+      } else if (Array.isArray(data.items)) {
+        // Convert flat list to tree if needed
+        const taskMap = new Map<string, TaskTreeNode & { children?: TaskTreeNode[] }>();
+        const roots: TaskTreeNode[] = [];
+        
+        for (const task of data.items) {
+          taskMap.set(task.id, { ...task, children: [] });
+        }
+        
+        for (const task of data.items) {
+          const node = taskMap.get(task.id)!;
+          if (task.parentId && taskMap.has(task.parentId)) {
+            const parent = taskMap.get(task.parentId)!;
+            if (!parent.children) {
+              parent.children = [];
+            }
+            parent.children.push(node);
+          } else {
+            roots.push(node);
+          }
+        }
+        setTaskTree(roots);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
     } finally {
       setLoading(false);
     }
-  }, [projectId, selectedIteration]);
+  }, [projectId, selectedIteration, view]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadWorkflow(), loadIterations(), loadTasks()]);
@@ -580,87 +617,22 @@ export default function ProjectTasksPageClient({
             Пока нет задач. Добавьте первую, чтобы начать работу.
           </div>
         ) : view === 'kanban' ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {grouped.map((column) => (
-              <div
-                key={column.status}
-                className="flex flex-col gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4"
-                onDragOver={(event) => {
-                  if (!isDndActive) {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'move';
-                }}
-                onDrop={(event) => {
-                  if (!isDndActive) {
-                    return;
-                  }
-                  event.preventDefault();
-                  const taskId = event.dataTransfer.getData('text/plain');
-                  if (taskId) {
-                    void handleTransition(taskId, column.status);
-                  }
-                }}
-              >
-                <div>
-                  <p className="text-sm font-semibold capitalize text-white">{column.status.replace(/_/g, ' ')}</p>
-                  <p className="text-xs text-neutral-500">{column.tasks.length} задач</p>
-                </div>
-                <div className="space-y-3">
-                  {column.tasks.map((task) => (
-                    <article
-                      key={task.id}
-                      draggable={isDndActive}
-                      onDragStart={(event) => {
-                        if (!isDndActive) {
-                          return;
-                        }
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', task.id);
-                      }}
-                      onClick={() => handleTaskClick(task.id)}
-                      className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
-                    >
-                      <h3 className="text-sm font-semibold text-white">{task.title}</h3>
-                      {task.iterationId ? (
-                        <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
-                          {iterationNames.get(task.iterationId) ?? task.iterationId}
-                        </span>
-                      ) : null}
-                      {renderStatusControls(task)}
-                    </article>
-                  ))}
-                  {column.tasks.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-neutral-800 p-3 text-xs text-neutral-500">Нет задач</div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
+          <KanbanView
+            statuses={statuses}
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskDrop={handleTransition}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+          />
         ) : view === 'list' ? (
-          <ul className="space-y-3">
-            {items.map((task) => (
-              <li
-                key={task.id}
-                onClick={() => handleTaskClick(task.id)}
-                className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-indigo-400"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{task.title}</div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
-                  </div>
-                  {task.iterationId ? (
-                    <span className="rounded-lg border border-neutral-800 px-2 py-1 text-xs text-neutral-400">
-                      Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
-                    </span>
-                  ) : null}
-                </div>
-                {renderStatusControls(task)}
-              </li>
-            ))}
-          </ul>
+          <ListView
+            tree={taskTree}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+            showTableFormat={false}
+          />
         ) : view === 'calendar' ? (
           <CalendarView
             tasks={items}
@@ -716,6 +688,8 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, proje
   const [assigneeId, setAssigneeId] = useState('');
   const [startAt, setStartAt] = useState('');
   const [dueAt, setDueAt] = useState('');
+  const [priority, setPriority] = useState<'low' | 'med' | 'high' | 'urgent' | ''>('');
+  const [storyPoints, setStoryPoints] = useState('');
   const [labels, setLabels] = useState('');
   const [isSaving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -737,6 +711,8 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, proje
     setAssigneeId(task.assigneeId ?? '');
     setStartAt(toInputDateTime(task.startAt));
     setDueAt(toInputDateTime(task.dueAt));
+    setPriority((task.priority as 'low' | 'med' | 'high' | 'urgent') || '');
+    setStoryPoints(typeof task.storyPoints === 'number' ? String(task.storyPoints) : '');
     setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
     setError(null);
     setEstimatedInput(
@@ -876,6 +852,15 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, proje
         if (parsedLabels.join('|') !== currentLabels.join('|')) {
           payload.labels = parsedLabels;
         }
+        if (priority && priority !== (task.priority || '')) {
+          payload.priority = priority as 'low' | 'med' | 'high' | 'urgent';
+        } else if (!priority && task.priority) {
+          payload.priority = null;
+        }
+        const nextStoryPoints = storyPoints ? Number.parseInt(storyPoints, 10) : null;
+        if (nextStoryPoints !== (task.storyPoints ?? null)) {
+          payload.storyPoints = Number.isFinite(nextStoryPoints) ? nextStoryPoints : null;
+        }
 
         if (Object.keys(payload).length === 0) {
           onClose();
@@ -890,7 +875,7 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, proje
         setSaving(false);
       }
     },
-    [assigneeId, description, dueAt, iterationId, labels, onClose, onSubmit, startAt, status, task, title]
+    [assigneeId, description, dueAt, iterationId, labels, onClose, onSubmit, priority, startAt, status, storyPoints, task, title]
   );
 
   return (
@@ -976,6 +961,33 @@ function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, proje
                     className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
                     value={dueAt}
                     onChange={(event) => setDueAt(event.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Приоритет</span>
+                  <select
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={priority}
+                    onChange={(event) => setPriority(event.target.value as 'low' | 'med' | 'high' | 'urgent' | '')}
+                  >
+                    <option value="">Без приоритета</option>
+                    <option value="low">Низкий</option>
+                    <option value="med">Средний</option>
+                    <option value="high">Высокий</option>
+                    <option value="urgent">Срочно</option>
+                  </select>
+                </label>
+                <label className="space-y-2 text-sm text-neutral-200">
+                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Story Points</span>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+                    value={storyPoints}
+                    onChange={(event) => setStoryPoints(event.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="0"
                   />
                 </label>
               </div>
