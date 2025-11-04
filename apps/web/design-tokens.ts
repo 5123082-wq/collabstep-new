@@ -325,3 +325,14 @@ export function getTailwindTokens(): Record<string, string> {
   const tokens = flattenTokens(designTokens.themes.dark);
   return Object.fromEntries(Object.keys(tokens).map((token) => [token, getCssVar(token)]));
 }
+
+// Генерация Tailwind spacing токенов
+export function getTailwindSpacingTokens(): Record<string, string> {
+  return {
+    'content-inline': getCssVar('content-inline-padding'),
+    'rail-collapsed': getCssVar('rail-collapsed-width'),
+    'rail-dock-spacing': getCssVar('rail-dock-spacing'),
+    'rail-safe-gap': getCssVar('rail-safe-gap'),
+    'rail-safe-area': getCssVar('rail-safe-area'),
+  };
+}

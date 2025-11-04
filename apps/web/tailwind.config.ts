@@ -1,20 +1,15 @@
 import type { Config } from 'tailwindcss';
-import { getTailwindTokens } from './design-tokens';
+import { getTailwindTokens, getTailwindSpacingTokens } from './design-tokens';
 
 const tokens = getTailwindTokens();
+const spacingTokens = getTailwindSpacingTokens();
 
 const config: Config = {
   content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: tokens,
-      spacing: {
-        'content-inline': tokens['content-inline-padding'],
-        'rail-collapsed': tokens['rail-collapsed-width'],
-        'rail-dock-spacing': tokens['rail-dock-spacing'],
-        'rail-safe-gap': tokens['rail-safe-gap'],
-        'rail-safe-area': tokens['rail-safe-area'],
-      },
+      spacing: spacingTokens,
       fontFamily: {
         sans: [
           'var(--font-sans)',
