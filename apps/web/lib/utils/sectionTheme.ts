@@ -1,71 +1,7 @@
 import type { SectionTheme } from '@/stores/sectionTheming';
 
 /**
- * Получает CSS классы для акцентного цвета с учетом прозрачности
- * Используем inline стили для точного контроля прозрачности
- */
-export function getAccentColorStyles(
-  color: SectionTheme['accentColor'],
-  borderOpacity: number,
-  bgOpacity: number
-): { borderColor: string; backgroundColor: string } {
-  const colorMap: Record<SectionTheme['accentColor'], { border: string; bg: string }> = {
-    indigo: { border: '#6366f1', bg: '#6366f1' },
-    emerald: { border: '#10b981', bg: '#10b981' },
-    amber: { border: '#f59e0b', bg: '#f59e0b' },
-    rose: { border: '#f43f5e', bg: '#f43f5e' },
-    blue: { border: '#3b82f6', bg: '#3b82f6' },
-    purple: { border: '#8b5cf6', bg: '#8b5cf6' }
-  };
-
-  const colors = colorMap[color] || colorMap.indigo;
-
-  const hexToRgba = (hex: string, opacity: number) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity / 100})`;
-  };
-
-  return {
-    borderColor: hexToRgba(colors.border, borderOpacity / 100),
-    backgroundColor: hexToRgba(colors.bg, bgOpacity / 1000) // bg более прозрачный
-  };
-}
-
-/**
- * Генерирует классы для секции на основе темы
- */
-export function generateSectionClassName(theme: SectionTheme | null): string {
-  if (!theme || theme.customClassName) {
-    return theme?.customClassName || 'space-y-6';
-  }
-
-  const baseClasses = {
-    default: 'space-y-6',
-    minimal: 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4',
-    accent: 'space-y-6 rounded-3xl border p-6',
-    bordered: 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6'
-  };
-
-  return baseClasses[theme.variant];
-}
-
-/**
- * Получает inline стили для вариантов accent и bordered
- */
-export function getSectionThemeStyles(
-  theme: SectionTheme | null
-): { borderColor?: string; backgroundColor?: string } | undefined {
-  if (!theme || (theme.variant !== 'accent' && theme.variant !== 'bordered')) {
-    return undefined;
-  }
-
-  return getAccentColorStyles(theme.accentColor, theme.borderOpacity, theme.bgOpacity);
-}
-
-/**
- * Получает цвет для предпросмотра
+ * Получает цвет для предпросмотра темы
  */
 export function getThemePreviewColor(color: SectionTheme['accentColor']): string {
   const colorMap: Record<SectionTheme['accentColor'], string> = {
@@ -74,8 +10,58 @@ export function getThemePreviewColor(color: SectionTheme['accentColor']): string
     amber: '#f59e0b',
     rose: '#f43f5e',
     blue: '#3b82f6',
-    purple: '#8b5cf6'
+    purple: '#8b5cf6',
+    neutral: '#94a3b8',
   };
   return colorMap[color] || colorMap.indigo;
 }
 
+/**
+ * Генерирует классы для секции на основе темы
+ * @deprecated Используйте generateSectionClassName из @/lib/theming/section-theme-utils
+ */
+export function generateSectionClassName(theme: SectionTheme | null): string {
+  if (!theme || theme.customClassName) {
+    return theme?.customClassName || 'space-y-6';
+  }
+
+  const baseClasses: Record<SectionTheme['variant'], string> = {
+    default: 'space-y-6',
+    minimal: 'space-y-4 rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4',
+    elevated: 'space-y-6 rounded-3xl border border-neutral-800 bg-neutral-950/70 p-6 shadow-lg',
+    bordered: 'space-y-6 rounded-2xl border-2 bg-neutral-950/80 p-6',
+    glass: 'space-y-6 rounded-3xl border border-neutral-800 bg-neutral-950/60 p-6 backdrop-blur-xl',
+  };
+
+  return baseClasses[theme.variant];
+}
+
+/**
+ * Получает inline стили для темы секции
+ * @deprecated Используйте getSectionThemeStyles из @/lib/theming/section-theme-utils
+ */
+export function getSectionThemeStyles(
+  theme: SectionTheme | null
+): React.CSSProperties | undefined {
+  if (!theme) {
+    return undefined;
+  }
+
+  const styles: React.CSSProperties = {};
+
+  // Для bordered варианта применяем цвет рамки
+  if (theme.variant === 'bordered') {
+    const color = getThemePreviewColor(theme.accentColor);
+    const opacity = theme.intensity === 'subtle' ? 0.3 : theme.intensity === 'strong' ? 0.7 : 0.5;
+    styles.borderColor = `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`;
+  }
+
+  // Применяем интенсивность
+  if (theme.intensity === 'subtle') {
+    styles.opacity = 0.9;
+  } else if (theme.intensity === 'strong') {
+    styles.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
+  }
+
+  return Object.keys(styles).length > 0 ? styles : undefined;
+}
