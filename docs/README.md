@@ -1,29 +1,27 @@
 # Collabverse Documentation
 
-## Active
+> **Последнее обновление:** 2025-11-04
 
-- [Roadmap (PLAN.md)](PLAN.md)
-- [System analysis](system-analysis.md)
+## Основная документация
 
-## Guides
+- [Roadmap (PLAN.md)](PLAN.md) — дорожная карта проекта
+- [System analysis](system-analysis.md) — системный анализ архитектуры
 
-- [Настройка окружения](guides/setup.md)
-- [Release checklist (pre-5 RC)](guides/release-checklist.md)
+## Руководства
 
-## Architecture Decisions
+- [Настройка окружения](guides/setup.md) — установка и запуск
+- [Release checklist](guides/release-checklist.md) — чек-лист перед релизом
 
-- [ADR-0001: Projects overview roll-out](adr/ADR-0001-projects-overview.md)
-- [ADR-0002: Project creation wizard](adr/ADR-0002-project-wizard.md)
+## Техническая документация
 
-## Archive
+### UI компоненты
+- [Alert](../apps/web/docs/ui/alert.md) — статусные сообщения
+- [Button](../apps/web/docs/ui/button.md) — кнопки и состояния
+- [Form](../apps/web/docs/ui/form.md) — формы и валидация
+- [Input](../apps/web/docs/ui/input.md) — текстовые поля
+- [Modal](../apps/web/docs/ui/modal.md) — модальные окна
 
-- [Stage 1 diff skeleton](archive/STAGE1_DIFF_SKELETON.md)
-- [Stage 2 overview plan](archive/p2-overview-plan.md)
-- [Stage III wizard plan](archive/p3-wizard-plan.md)
+### Модули приложения
+- [Админ-панель](../apps/web/app/(app)/app/admin/README.md) — управление платформой
 
-## Reports
-
-- [Docs inventory](\_report/docs-inventory.md)
-- [P4 conflict report](\_report/p4-conflict-report.md)
-
-> План `docs/PLAN.md` остаётся источником правды по стадиям и не перемещается.
+> План `docs/PLAN.md` является источником правды по стадиям разработки.
