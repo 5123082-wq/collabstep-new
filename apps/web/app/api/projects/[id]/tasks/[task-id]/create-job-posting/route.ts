@@ -38,7 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { taskId, title, description, budget, skills } = parsed.data;
 
   // Get task details
-  const task = tasksRepository.findById(taskId);
+  const projectTasks = tasksRepository.list({ projectId: params.id });
+  const task = projectTasks.find((t) => t.id === taskId);
   if (!task || task.projectId !== params.id) {
     return NextResponse.json({ error: 'task_not_found' }, { status: 404 });
   }
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     taskId,
     title: title || task.title,
     description: description || task.description || '',
-    budget: budget || task.estimatedTime ? (task.estimatedTime * 1000).toFixed(0) : undefined, // Convert hours to rough estimate
+    budget: budget || (task.estimatedTime ? Math.round(task.estimatedTime * 1000) : undefined), // Convert hours to rough estimate (keep as number)
     skills: skills || extractSkillsFromDescription(task.description || ''),
     status: 'draft' as const,
     createdAt: new Date().toISOString()

@@ -149,16 +149,38 @@ export function ListView({
   }
 
   const renderTaskList = (tasks: TaskTreeNode[]) => {
-    // Rebuild tree structure from flat list
+    // Create a map of all tasks from the original tree for parent lookup
+    const allTasksMap = new Map<string, TaskTreeNode>();
+    const flattenTree = (nodes: TaskTreeNode[]) => {
+      for (const node of nodes) {
+        allTasksMap.set(node.id, node);
+        if (node.children) {
+          flattenTree(node.children);
+        }
+      }
+    };
+    flattenTree(tree);
+
+    // Create a set of task IDs that should be displayed
+    const displayTaskIds = new Set(tasks.map((t) => t.id));
+
+    // Rebuild tree structure preserving parent-child relationships
     const taskMap = new Map<string, TaskTreeNode & { children?: TaskTreeNode[] }>();
     const roots: TaskTreeNode[] = [];
 
-    // First pass: create all nodes
+    // First pass: create nodes only for tasks that should be displayed
+    // Include parents even if they're not in the filtered list (for proper hierarchy)
     for (const task of tasks) {
       taskMap.set(task.id, { ...task, children: [] });
+      
+      // Ensure parent is in the map if it exists in the original tree
+      if (task.parentId && allTasksMap.has(task.parentId) && !taskMap.has(task.parentId)) {
+        const parentTask = allTasksMap.get(task.parentId)!;
+        taskMap.set(task.parentId, { ...parentTask, children: [] });
+      }
     }
 
-    // Second pass: build tree
+    // Second pass: build tree relationships
     for (const task of tasks) {
       const node = taskMap.get(task.id)!;
       if (task.parentId && taskMap.has(task.parentId)) {
@@ -172,9 +194,24 @@ export function ListView({
       }
     }
 
+    // Filter roots to only show tasks that are actually in the display list
+    const filteredRoots = roots.filter((node) => {
+      const shouldInclude = (n: TaskTreeNode): boolean => {
+        if (displayTaskIds.has(n.id)) {
+          return true;
+        }
+        // Include if any descendant should be displayed
+        if (n.children) {
+          return n.children.some((child) => shouldInclude(child));
+        }
+        return false;
+      };
+      return shouldInclude(node);
+    });
+
     return (
       <div className="flex flex-col gap-2" data-view-mode="list">
-        {roots.map((node) => (
+        {filteredRoots.map((node) => (
           <ListNode
             key={node.id}
             node={node}

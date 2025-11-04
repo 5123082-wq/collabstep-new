@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { Task, TaskStatus } from '@/domain/projects/types';
 import type { TaskDependency } from '@/domain/projects/task-dependency';
@@ -10,10 +10,10 @@ import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { 
-  FileText, 
+  File, 
   MessageSquare, 
-  History, 
-  Link2, 
+  Clock, 
+  Link, 
   Upload, 
   UserPlus,
   AlertTriangle,
@@ -72,21 +72,6 @@ export function TaskDrawer({
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  // Load data when task changes
-  useEffect(() => {
-    if (!open || !task) {
-      return;
-    }
-
-    setIsLoading(true);
-    Promise.all([
-      loadComments(),
-      loadDependencies(),
-      loadHistory(),
-      loadAttachments()
-    ]).finally(() => setIsLoading(false));
-  }, [open, task?.id]);
-
   const loadComments = useCallback(async () => {
     if (!task) return;
     try {
@@ -143,6 +128,21 @@ export function TaskDrawer({
     }
   }, [task, projectId]);
 
+  // Load data when task changes
+  useEffect(() => {
+    if (!open || !task) {
+      return;
+    }
+
+    setIsLoading(true);
+    void Promise.all([
+      loadComments(),
+      loadDependencies(),
+      loadHistory(),
+      loadAttachments()
+    ]).finally(() => setIsLoading(false));
+  }, [open, task, loadComments, loadDependencies, loadHistory, loadAttachments]);
+
   const handleCreateComment = useCallback(async () => {
     if (!task || !commentText.trim() || isSubmittingComment) return;
 
@@ -192,10 +192,10 @@ export function TaskDrawer({
   }, [task, projectId, onRefresh]);
 
   const tabs = [
-    { id: 'details' as const, label: 'Детали', icon: FileText },
-    { id: 'dependencies' as const, label: 'Зависимости', icon: Link2 },
+    { id: 'details' as const, label: 'Детали', icon: File },
+    { id: 'dependencies' as const, label: 'Зависимости', icon: Link },
     { id: 'comments' as const, label: 'Комментарии', icon: MessageSquare },
-    { id: 'history' as const, label: 'История', icon: History },
+    { id: 'history' as const, label: 'История', icon: Clock },
     { id: 'files' as const, label: 'Файлы', icon: Upload }
   ];
 
@@ -335,6 +335,8 @@ function TaskDetailsTab({
   const [dueAt, setDueAt] = useState(task.dueAt ? toInputDateTime(task.dueAt) : '');
   const [storyPoints, setStoryPoints] = useState('');
   const [labels, setLabels] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState('');
+  const [loggedTime, setLoggedTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -348,6 +350,16 @@ function TaskDetailsTab({
     setDueAt(task.dueAt ? toInputDateTime(task.dueAt) : '');
     setStoryPoints(task.storyPoints ? String(task.storyPoints) : '');
     setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
+    setEstimatedTime(
+      typeof task.estimatedTime === 'number' && Number.isFinite(task.estimatedTime)
+        ? String(task.estimatedTime)
+        : ''
+    );
+    setLoggedTime(
+      typeof task.loggedTime === 'number' && Number.isFinite(task.loggedTime)
+        ? String(task.loggedTime)
+        : ''
+    );
   }, [task]);
 
   const fromInputDate = (value: string): string | null => {
@@ -365,27 +377,39 @@ function TaskDetailsTab({
         updates.title = title.trim();
       }
       if (description !== (task.description || '')) {
-        updates.description = description || null;
+        if (description) {
+          updates.description = description;
+        }
       }
       if (status !== task.status) {
-        updates.status = status as TaskStatus;
+        updates.status = status;
       }
       if (priority !== (task.priority || '')) {
-        updates.priority = priority ? (priority as Task['priority']) : undefined;
+        if (priority) {
+          updates.priority = priority as 'low' | 'med' | 'high' | 'urgent';
+        }
       }
       if (iterationId !== (task.iterationId || '')) {
-        updates.iterationId = iterationId || undefined;
+        if (iterationId) {
+          updates.iterationId = iterationId;
+        }
       }
       if (assigneeId !== (task.assigneeId || '')) {
-        updates.assigneeId = assigneeId || undefined;
+        if (assigneeId) {
+          updates.assigneeId = assigneeId;
+        }
       }
       const nextStart = fromInputDate(startAt);
       if (nextStart !== (task.startAt || null)) {
-        updates.startAt = nextStart || undefined;
+        if (nextStart) {
+          updates.startAt = nextStart;
+        }
       }
       const nextDue = fromInputDate(dueAt);
       if (nextDue !== (task.dueAt || null)) {
-        updates.dueAt = nextDue || undefined;
+        if (nextDue) {
+          updates.dueAt = nextDue;
+        }
       }
       const nextStoryPoints = storyPoints ? Number.parseInt(storyPoints, 10) : null;
       if (nextStoryPoints !== (task.storyPoints ?? null)) {
@@ -398,6 +422,22 @@ function TaskDetailsTab({
       const currentLabels = Array.isArray(task.labels) ? task.labels : [];
       if (parsedLabels.join('|') !== currentLabels.join('|')) {
         updates.labels = parsedLabels;
+      }
+      if (estimatedTime) {
+        const nextEstimatedTime = Number.parseFloat(estimatedTime);
+        if (Number.isFinite(nextEstimatedTime) && nextEstimatedTime >= 0 && nextEstimatedTime !== (task.estimatedTime ?? null)) {
+          updates.estimatedTime = nextEstimatedTime;
+        }
+      } else if (task.estimatedTime !== null && task.estimatedTime !== undefined) {
+        updates.estimatedTime = null;
+      }
+      if (loggedTime) {
+        const nextLoggedTime = Number.parseFloat(loggedTime);
+        if (Number.isFinite(nextLoggedTime) && nextLoggedTime >= 0 && nextLoggedTime !== (task.loggedTime ?? null)) {
+          updates.loggedTime = nextLoggedTime;
+        }
+      } else if (task.loggedTime !== null && task.loggedTime !== undefined) {
+        updates.loggedTime = null;
       }
 
       if (Object.keys(updates).length > 0) {
@@ -523,30 +563,62 @@ function TaskDetailsTab({
             />
           </div>
         </div>
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
-            Story Points
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={storyPoints}
-            onChange={(e) => setStoryPoints(e.target.value.replace(/[^0-9]/g, ''))}
-            className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-            placeholder="0"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+              Story Points
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={storyPoints}
+              onChange={(e) => setStoryPoints(e.target.value.replace(/[^0-9]/g, ''))}
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+              Оценка времени (ч)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={estimatedTime}
+              onChange={(e) => setEstimatedTime(e.target.value.replace(/[^0-9.]/g, ''))}
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              placeholder="0"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
-            Метки
-          </label>
-          <input
-            type="text"
-            value={labels}
-            onChange={(e) => setLabels(e.target.value)}
-            className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-            placeholder="product, design, urgent"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+              Залогировано времени (ч)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={loggedTime}
+              onChange={(e) => setLoggedTime(e.target.value.replace(/[^0-9.]/g, ''))}
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              placeholder="0"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
+              Метки
+            </label>
+            <input
+              type="text"
+              value={labels}
+              onChange={(e) => setLabels(e.target.value)}
+              className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
+              placeholder="product, design, urgent"
+            />
+          </div>
         </div>
       </div>
 
@@ -583,7 +655,7 @@ function DependenciesTab({
 }: {
   task: Task;
   projectId: string;
-  projectKey?: string;
+  projectKey?: string | undefined;
   dependencies: TaskDependency[];
   isLoading: boolean;
   onRefresh: () => Promise<void>;
@@ -650,7 +722,7 @@ function DependenciesTab({
 
       {blockers.length === 0 && blocked.length === 0 && (
         <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-center">
-          <Link2 className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
+          <Link className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
           <p className="text-sm text-neutral-400">Нет зависимостей</p>
         </div>
       )}
@@ -755,25 +827,25 @@ function HistoryTab({
   return (
     <div className="space-y-3">
       {history.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-center">
-          <History className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
-          <p className="text-sm text-neutral-400">Нет истории изменений</p>
-        </div>
-      ) : (
-        history.map((entry) => (
-          <div key={entry.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-4 w-4 text-indigo-400 mt-0.5" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-white">{getActionLabel(entry.action)}</p>
-                <p className="text-xs text-neutral-500 mt-1">
-                  {entry.userEmail || entry.userId} · {format(new Date(entry.createdAt), 'd MMM yyyy, HH:mm', { locale: ru })}
-                </p>
-              </div>
+            <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-center">
+              <Clock className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
+              <p className="text-sm text-neutral-400">Нет истории изменений</p>
             </div>
-          </div>
-        ))
-      )}
+          ) : (
+            history.map((entry) => (
+              <div key={entry.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-indigo-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-white">{getActionLabel(entry.action)}</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      {entry.actorId || 'Система'} · {format(new Date(entry.createdAt), 'd MMM yyyy, HH:mm', { locale: ru })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
     </div>
   );
 }
@@ -837,8 +909,8 @@ function FilesTab({
               key={attachment.id}
               className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900/60 p-3"
             >
-              <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-neutral-400" />
+            <div className="flex items-center gap-3">
+              <File className="h-5 w-5 text-neutral-400" />
                 <div>
                   <p className="text-sm font-medium text-white">{attachment.filename}</p>
                   {attachment.size && (
