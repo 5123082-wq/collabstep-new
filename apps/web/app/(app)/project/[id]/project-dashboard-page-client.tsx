@@ -1,32 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import type { Project } from '@/domain/projects/types';
+import { useEffect, useState, useCallback } from 'react';
+import type { Project, Task } from '@/domain/projects/types';
+import type { TaskDependency } from '@/domain/projects/task-dependency';
+import type { AuditLogEntry } from '@collabverse/api';
+import ProgressWidget from '@/components/project/widgets/ProgressWidget';
+import DeadlinesWidget from '@/components/project/widgets/DeadlinesWidget';
+import ActivityWidget from '@/components/project/widgets/ActivityWidget';
+import BudgetWidget from '@/components/project/widgets/BudgetWidget';
+import DependenciesWidget from '@/components/project/widgets/DependenciesWidget';
 
 const quickLinks = [
   { href: (id: string) => `/project/${id}/tasks`, label: 'Задачи' },
   { href: (id: string) => `/project/${id}/files`, label: 'Файлы' },
   { href: (id: string) => `/project/${id}/chat`, label: 'Чат' },
   { href: (id: string) => `/project/${id}/settings`, label: 'Настройки' }
-] as const;
-
-const widgets = [
-  {
-    id: 'progress',
-    title: 'Прогресс проекта',
-    description: 'Обновления появятся, когда команда начнёт работу.'
-  },
-  {
-    id: 'team',
-    title: 'Команда и роли',
-    description: 'Здесь отобразится состав команды и ответственные.'
-  },
-  {
-    id: 'next-steps',
-    title: 'Следующие шаги',
-    description: 'Добавьте задачи, чтобы увидеть ближайшие активности.'
-  }
 ] as const;
 
 type ProjectDashboardPageClientProps = {
@@ -39,27 +28,78 @@ type ProjectResponse = Project & {
 
 export function ProjectDashboardPageClient({ projectId }: ProjectDashboardPageClientProps) {
   const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [dependencies, setDependencies] = useState<TaskDependency[]>([]);
+  const [activities, setActivities] = useState<AuditLogEntry[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const loadProject = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить проект');
+      }
+      const data = (await response.json()) as ProjectResponse;
+      setProject(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      setProject(null);
+    }
+  }, [projectId]);
+
+  const loadTasks = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/tasks`);
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить задачи');
+      }
+      const data = (await response.json()) as { items?: Task[]; tree?: Task[] };
+      setTasks(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      console.error('Failed to load tasks:', err);
+      setTasks([]);
+    }
+  }, [projectId]);
+
+  const loadDependencies = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/dependencies`);
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить зависимости');
+      }
+      const data = (await response.json()) as { items?: TaskDependency[] };
+      setDependencies(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      console.error('Failed to load dependencies:', err);
+      setDependencies([]);
+    }
+  }, [projectId]);
+
+  const loadActivities = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}/activity?limit=10`);
+      if (!response.ok) {
+        throw new Error('Не удалось загрузить активность');
+      }
+      const data = (await response.json()) as { items?: AuditLogEntry[] };
+      setActivities(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      console.error('Failed to load activities:', err);
+      setActivities([]);
+    }
+  }, [projectId]);
+
   useEffect(() => {
     let cancelled = false;
-    async function loadProject() {
+    async function loadAll() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/projects/${projectId}`);
-        if (!response.ok) {
-          throw new Error('Не удалось загрузить проект');
-        }
-        const data = (await response.json()) as ProjectResponse;
-        if (!cancelled) {
-          setProject(data);
-        }
+        await Promise.all([loadProject(), loadTasks(), loadDependencies(), loadActivities()]);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
-          setProject(null);
         }
       } finally {
         if (!cancelled) {
@@ -68,12 +108,12 @@ export function ProjectDashboardPageClient({ projectId }: ProjectDashboardPageCl
       }
     }
 
-    void loadProject();
+    void loadAll();
 
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [loadProject, loadTasks, loadDependencies, loadActivities]);
 
   if (isLoading) {
     return (
@@ -117,15 +157,26 @@ export function ProjectDashboardPageClient({ projectId }: ProjectDashboardPageCl
         </nav>
       </header>
       <section className="grid gap-4 md:grid-cols-2">
-        {widgets.map((widget) => (
-          <article key={widget.id} className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-6">
-            <h2 className="text-lg font-semibold text-white">{widget.title}</h2>
-            <p className="text-sm text-neutral-400">{widget.description}</p>
-            <div className="rounded-xl border border-dashed border-neutral-800/70 bg-neutral-950/60 p-4 text-xs text-neutral-500">
-              Виджет появится в следующих итерациях CRM.
-            </div>
-          </article>
-        ))}
+        <ProgressWidget tasks={tasks} isLoading={isLoading} />
+        {project && (
+          <>
+            <DeadlinesWidget
+              tasks={tasks}
+              projectId={projectId}
+              projectKey={project.key}
+              isLoading={isLoading}
+            />
+            <BudgetWidget project={project} isLoading={isLoading} />
+            <DependenciesWidget
+              tasks={tasks}
+              dependencies={dependencies}
+              projectId={projectId}
+              projectKey={project.key}
+              isLoading={isLoading}
+            />
+          </>
+        )}
+        <ActivityWidget activities={activities} isLoading={isLoading} />
       </section>
     </div>
   );

@@ -1,11 +1,31 @@
 import { memory } from '../data/memory';
 import type { TaskDependency } from '../types';
+import { tasksRepository } from './tasks-repository';
 
 function cloneDependency(dep: TaskDependency): TaskDependency {
   return { ...dep };
 }
 
 export class TaskDependenciesRepository {
+  /**
+   * List all dependencies, optionally filtered by project
+   */
+  list(options: { projectId?: string } = {}): TaskDependency[] {
+    let items = memory.TASK_DEPENDENCIES;
+
+    if (options.projectId) {
+      // Get all tasks for the project to filter dependencies
+      const projectTasks = tasksRepository.list({ projectId: options.projectId });
+      const taskIds = new Set(projectTasks.map((task) => task.id));
+      
+      items = items.filter(
+        (dep) => taskIds.has(dep.dependentTaskId) && taskIds.has(dep.blockerTaskId)
+      );
+    }
+
+    return items.map(cloneDependency);
+  }
+
   /**
    * List all dependencies for a task (as blocker or dependent)
    */
