@@ -215,7 +215,7 @@ export default function AppTopbar({ onOpenCreate, onOpenPalette, onOpenSettings,
     return () => {
       body.classList.remove(...classes);
     };
-  }, [bgPreset, pathname]);
+  }, [bgPreset]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-900/60 bg-neutral-950/80 backdrop-blur">
