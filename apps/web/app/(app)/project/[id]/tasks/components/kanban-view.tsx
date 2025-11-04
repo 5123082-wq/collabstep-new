@@ -19,6 +19,7 @@ import TaskCard, { TASK_STATUS_LABELS } from './task-card';
 type KanbanViewProps = {
   statuses: TaskStatus[];
   tasks: Task[];
+  projectKey?: string;
   onTaskDrop: (taskId: string, toStatus: TaskStatus) => Promise<void> | void;
   onTaskClick?: (taskId: string) => void;
   isLoading?: boolean;
@@ -29,7 +30,7 @@ type Column = {
   tasks: Task[];
 };
 
-export function KanbanView({ statuses, tasks, onTaskDrop, onTaskClick, isLoading }: KanbanViewProps) {
+export function KanbanView({ statuses, tasks, projectKey, onTaskDrop, onTaskClick, isLoading }: KanbanViewProps) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -68,6 +69,7 @@ export function KanbanView({ statuses, tasks, onTaskDrop, onTaskClick, isLoading
           <KanbanColumn
             key={column.status}
             column={column}
+            projectKey={projectKey}
             isLoading={Boolean(isLoading && column.tasks.length === 0)}
             activeTaskId={activeTaskId}
             {...(onTaskClick ? { onTaskClick } : {})}
@@ -80,12 +82,13 @@ export function KanbanView({ statuses, tasks, onTaskDrop, onTaskClick, isLoading
 
 type KanbanColumnProps = {
   column: Column;
+  projectKey?: string;
   isLoading: boolean;
   onTaskClick?: (taskId: string) => void;
   activeTaskId: string | null;
 };
 
-function KanbanColumn({ column, isLoading, onTaskClick, activeTaskId }: KanbanColumnProps) {
+function KanbanColumn({ column, projectKey, isLoading, onTaskClick, activeTaskId }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: `column-${column.status}`, data: { status: column.status } });
   return (
     <div
@@ -107,6 +110,7 @@ function KanbanColumn({ column, isLoading, onTaskClick, activeTaskId }: KanbanCo
           <DraggableTaskCard
             key={task.id}
             task={task}
+            projectKey={projectKey}
             isActive={activeTaskId === task.id}
             {...(onTaskClick ? { onTaskClick } : {})}
           />
@@ -128,11 +132,12 @@ function KanbanColumn({ column, isLoading, onTaskClick, activeTaskId }: KanbanCo
 
 type DraggableTaskCardProps = {
   task: Task;
+  projectKey?: string;
   onTaskClick?: (taskId: string) => void;
   isActive: boolean;
 };
 
-function DraggableTaskCard({ task, onTaskClick, isActive }: DraggableTaskCardProps) {
+function DraggableTaskCard({ task, projectKey, onTaskClick, isActive }: DraggableTaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: task.id,
     data: { status: task.status }
@@ -147,7 +152,7 @@ function DraggableTaskCard({ task, onTaskClick, isActive }: DraggableTaskCardPro
       {...listeners}
       {...attributes}
     >
-      <TaskCard task={task} {...(onTaskClick ? { onClick: onTaskClick } : {})} />
+      <TaskCard task={task} projectKey={projectKey} {...(onTaskClick ? { onClick: onTaskClick } : {})} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
+import { projectsRepository, tasksRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { TaskStatus } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
@@ -15,9 +15,12 @@ const TaskPatchSchema = z.object({
   iterationId: z.string().nullable().optional(),
   assigneeId: z.string().nullable().optional(),
   startAt: z.string().datetime().nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
+  priority: z.enum(['low', 'med', 'high', 'urgent']).optional(),
   labels: z.array(z.string()).optional(),
   estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  storyPoints: z.number().int().nonnegative().nullable().optional(),
   loggedTime: z.number().int().nonnegative().optional()
 });
 
@@ -44,12 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const idx = memory.TASKS.findIndex((task) => task.id === params['task-id'] && task.projectId === params.id);
-  if (idx === -1) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  const existing = memory.TASKS[idx];
+  const existing = tasksRepository.list({ projectId: params.id }).find((t) => t.id === params['task-id']);
   if (!existing) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -57,80 +55,46 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = parsed.data;
   const before = { ...existing };
 
-  if (typeof body.title === 'string') {
-    existing.title = body.title;
-  }
-  if (body.description !== undefined) {
-    existing.description = body.description ?? '';
-  }
+  // Validate status against workflow
   if (body.status) {
     const flow = memory.WORKFLOWS[params.id]?.statuses ?? ['new', 'in_progress', 'review', 'done'];
     if (!flow.includes(body.status)) {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
-    existing.status = body.status;
-  }
-  if (body.iterationId !== undefined) {
-    if (body.iterationId === null || body.iterationId === '') {
-      delete existing.iterationId;
-    } else {
-      existing.iterationId = body.iterationId;
-    }
-  }
-  if (body.assigneeId !== undefined) {
-    if (body.assigneeId === null || body.assigneeId === '') {
-      delete existing.assigneeId;
-    } else {
-      existing.assigneeId = body.assigneeId;
-    }
-  }
-  if (body.startAt !== undefined) {
-    if (body.startAt === null || body.startAt === '') {
-      delete existing.startAt;
-    } else {
-      existing.startAt = body.startAt;
-    }
-  }
-  if (body.dueAt !== undefined) {
-    if (body.dueAt === null || body.dueAt === '') {
-      delete existing.dueAt;
-    } else {
-      existing.dueAt = body.dueAt;
-    }
-  }
-  if (body.labels !== undefined) {
-    existing.labels = body.labels;
   }
 
-  if (body.parentId !== undefined) {
-    if (body.parentId === null || body.parentId === '') {
-      existing.parentId = null;
-    } else {
-      existing.parentId = body.parentId;
-    }
-  }
+  const updated = tasksRepository.update(params['task-id'], {
+    ...(body.title ? { title: body.title } : {}),
+    ...(body.description !== undefined ? { description: body.description ?? '' } : {}),
+    ...(body.status ? { status: body.status } : {}),
+    ...(body.iterationId !== undefined ? { iterationId: body.iterationId ?? undefined } : {}),
+    ...(body.assigneeId !== undefined ? { assigneeId: body.assigneeId ?? undefined } : {}),
+    ...(body.startDate !== undefined || body.startAt !== undefined
+      ? { startDate: body.startDate ?? body.startAt ?? undefined, startAt: body.startDate ?? body.startAt ?? undefined }
+      : {}),
+    ...(body.dueAt !== undefined ? { dueAt: body.dueAt ?? undefined } : {}),
+    ...(body.priority ? { priority: body.priority } : {}),
+    ...(body.labels !== undefined ? { labels: body.labels } : {}),
+    ...(body.parentId !== undefined ? { parentId: body.parentId ?? null } : {}),
+    ...(body.estimatedTime !== undefined ? { estimatedTime: body.estimatedTime } : {}),
+    ...(body.storyPoints !== undefined ? { storyPoints: body.storyPoints } : {}),
+    ...(body.loggedTime !== undefined ? { loggedTime: body.loggedTime } : {})
+  });
 
-  if (body.estimatedTime !== undefined) {
-    existing.estimatedTime = body.estimatedTime;
+  if (!updated) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
-
-  if (body.loggedTime !== undefined) {
-    existing.loggedTime = body.loggedTime;
-  }
-
-  existing.updatedAt = new Date().toISOString();
-  memory.TASKS[idx] = existing;
 
   recordAudit({
     action: 'task.updated',
-    entity: { type: 'task', id: existing.id },
+    entity: { type: 'task', id: updated.id },
     projectId: params.id,
     ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
-    after: existing
+    after: updated
   });
 
-  return NextResponse.json(existing);
+  return NextResponse.json(updated);
 }
 
 

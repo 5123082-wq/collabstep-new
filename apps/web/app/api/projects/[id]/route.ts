@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { flags } from '@/lib/flags';
 import type { Project, ProjectStage } from '@/domain/projects/types';
-import { memory } from '@/mocks/projects-memory';
 import { recordAudit } from '@/lib/audit/log';
 import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { getDemoSessionFromCookies } from '@/lib/auth/demo-session.server';
@@ -32,7 +31,7 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const project = memory.PROJECTS.find((item) => item.id === params.id);
+  const project = projectsRepository.findById(params.id);
   if (!project) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -53,75 +52,70 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const idx = memory.PROJECTS.findIndex((item) => item.id === params.id);
-  if (idx === -1) {
+  const project = projectsRepository.findById(params.id);
+  if (!project) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   // Check access for private projects
   const session = getDemoSessionFromCookies();
   const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
-  const project = memory.PROJECTS[idx];
   
-  if (project && !projectsRepository.hasAccess(project.id, currentUserId)) {
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
     return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
   const body = (await req.json().catch(() => ({}))) as Partial<Project> & Record<string, unknown>;
-  const { id: _id, createdAt: _createdAt, ownerId: _ownerId, updatedAt: _updatedAt, archived: _archived, ...rest } = body;
-  const safe: Partial<Omit<Project, 'id' | 'createdAt' | 'ownerId' | 'updatedAt' | 'archived'>> = {};
   const allowedStages: ProjectStage[] = ['discovery', 'design', 'build', 'launch', 'support'];
 
-  if (typeof rest.title === 'string' && rest.title.trim()) {
-    safe.title = rest.title.trim();
+  const patch: Parameters<typeof projectsRepository.update>[1] = {};
+
+  if (typeof body.title === 'string' && body.title.trim()) {
+    patch.title = body.title.trim();
   }
-  if (typeof rest.description === 'string') {
-    safe.description = rest.description;
+  if (typeof body.description === 'string') {
+    patch.description = body.description;
   }
-  if (typeof rest.deadline === 'string') {
-    safe.deadline = rest.deadline;
+  if (typeof body.deadline === 'string') {
+    patch.deadline = body.deadline;
   }
-  if (typeof rest.stage === 'string' && allowedStages.includes(rest.stage as ProjectStage)) {
-    safe.stage = rest.stage as ProjectStage;
+  if (typeof body.stage === 'string' && allowedStages.includes(body.stage as ProjectStage)) {
+    patch.stage = body.stage as ProjectStage;
+  }
+  if (typeof body.key === 'string' && body.key.trim()) {
+    patch.key = body.key.trim();
+  }
+  if (typeof body.status === 'string' && ['draft', 'active', 'on_hold', 'completed', 'archived'].includes(body.status)) {
+    patch.status = body.status as Project['status'];
   }
 
   const budgetPlannedPatch = parseBudgetPatch(body.budgetPlanned);
   if (budgetPlannedPatch !== undefined) {
-    safe.budgetPlanned = budgetPlannedPatch;
+    patch.budgetPlanned = budgetPlannedPatch;
   }
 
   const budgetSpentPatch = parseBudgetPatch(body.budgetSpent);
   if (budgetSpentPatch !== undefined) {
-    safe.budgetSpent = budgetSpentPatch;
+    patch.budgetSpent = budgetSpentPatch;
   }
-  const current = memory.PROJECTS[idx];
-  if (!current) {
+
+  const before = { ...project };
+  const updated = projectsRepository.update(params.id, patch);
+
+  if (!updated) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const merged: Project = {
-    ...current,
-    ...safe,
-    updatedAt: new Date().toISOString(),
-    id: current.id,
-    ownerId: current.ownerId,
-    createdAt: current.createdAt,
-    archived: current.archived,
-    title: safe.title ?? current.title
-  };
-
-  memory.PROJECTS[idx] = merged;
-
   recordAudit({
     action: 'project.updated',
-    entity: { type: 'project', id: merged.id },
-    projectId: merged.id,
-    workspaceId: merged.workspaceId,
-    before: current,
-    after: merged
+    entity: { type: 'project', id: updated.id },
+    projectId: updated.id,
+    workspaceId: updated.workspaceId,
+    before,
+    after: updated
   });
 
-  return NextResponse.json(merged);
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
@@ -129,35 +123,32 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const idx = memory.PROJECTS.findIndex((item) => item.id === params.id);
-  if (idx === -1) {
+  const project = projectsRepository.findById(params.id);
+  if (!project) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   // Check access for private projects
   const session = getDemoSessionFromCookies();
   const currentUserId = session?.email ?? DEFAULT_WORKSPACE_USER_ID;
-  const project = memory.PROJECTS[idx];
   
-  if (project && !projectsRepository.hasAccess(project.id, currentUserId)) {
+  if (!projectsRepository.hasAccess(project.id, currentUserId)) {
     return NextResponse.json({ error: 'Access denied' }, { status: 403 });
   }
 
-  const existing = memory.PROJECTS[idx];
-  memory.PROJECTS.splice(idx, 1);
-  memory.TASKS = memory.TASKS.filter((task) => task.projectId !== params.id);
-  memory.ITERATIONS = memory.ITERATIONS.filter((iteration) => iteration.projectId !== params.id);
-  delete memory.WORKFLOWS[params.id];
+  const deleted = projectsRepository.delete(params.id);
 
-  if (existing) {
-    recordAudit({
-      action: 'project.deleted',
-      entity: { type: 'project', id: existing.id },
-      projectId: existing.id,
-      workspaceId: existing.workspaceId,
-      before: existing
-    });
+  if (!deleted) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+
+  recordAudit({
+    action: 'project.deleted',
+    entity: { type: 'project', id: project.id },
+    projectId: project.id,
+    workspaceId: project.workspaceId,
+    before: project
+  });
 
   return NextResponse.json({ success: true });
 }

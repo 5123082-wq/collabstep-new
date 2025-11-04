@@ -215,6 +215,8 @@ export async function POST(req: NextRequest) {
         ? body.ownerId
         : DEFAULT_WORKSPACE_USER_ID,
     workspaceId,
+    key: typeof body.key === 'string' ? body.key : undefined,
+    status: typeof body.status === 'string' && ['draft', 'active', 'on_hold', 'completed', 'archived'].includes(body.status) ? body.status : undefined,
     stage,
     deadline: typeof body.deadline === 'string' && body.deadline ? body.deadline : undefined,
     type,

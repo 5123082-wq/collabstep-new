@@ -20,12 +20,16 @@ export interface Iteration {
 
 export type ProjectType = 'product' | 'marketing' | 'operations' | 'service' | 'internal';
 
+export type ProjectStatus = 'draft' | 'active' | 'on_hold' | 'completed' | 'archived';
+
 export interface Project {
   id: ID;
   workspaceId: ID;
+  key: string; // Unique project key per workspace (e.g., "PROJ", "ABC")
   title: string;
   description?: string;
   ownerId: ID;
+  status: ProjectStatus; // Lifecycle status
   deadline?: string;
   stage?: ProjectStage;
   type?: ProjectType;
@@ -33,7 +37,7 @@ export interface Project {
   budgetPlanned: number | null;
   budgetSpent: number | null;
   workflowId?: ID;
-  archived: boolean;
+  archived: boolean; // Legacy field, kept for backward compatibility
   createdAt: string;
   updatedAt: string;
 }
@@ -71,19 +75,22 @@ export interface Attachment {
 export interface Task {
   id: ID;
   projectId: ID;
+  number: number; // Auto-increment per project (e.g., PROJ-123)
   parentId: ID | null;
   title: string;
   description?: string;
   status: TaskStatus;
   iterationId?: ID;
   assigneeId?: ID;
-  startAt?: string;
-  dueAt?: string;
-  priority?: 'low' | 'med' | 'high';
+  startAt?: string; // Start date
+  startDate?: string; // Alias for startAt
+  dueAt?: string; // Due date
+  priority?: 'low' | 'med' | 'high' | 'urgent';
   labels?: string[];
   attachments?: FileObject[];
-  estimatedTime?: number | null;
-  loggedTime?: number | null;
+  estimatedTime?: number | null; // In hours
+  storyPoints?: number | null; // Story points estimation
+  loggedTime?: number | null; // In minutes
   createdAt: string;
   updatedAt: string;
 }

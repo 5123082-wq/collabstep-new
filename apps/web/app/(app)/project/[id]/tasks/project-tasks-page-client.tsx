@@ -7,19 +7,24 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
 import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
 import { flags } from '@/lib/flags';
+import CalendarView from '@/components/project/views/CalendarView';
+import TimelineView from '@/components/project/views/TimelineView';
 
 type TaskItem = Pick<
   Task,
   | 'id'
+  | 'number'
   | 'title'
   | 'status'
   | 'iterationId'
   | 'description'
   | 'assigneeId'
   | 'startAt'
+  | 'startDate'
   | 'dueAt'
   | 'labels'
   | 'estimatedTime'
+  | 'storyPoints'
   | 'loggedTime'
 >;
 
@@ -30,6 +35,7 @@ type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt' | 'activity';
 type ProjectTasksPageClientProps = {
   projectId: string;
   projectTitle: string;
+  projectKey?: string; // Optional project key
   initialView?: string;
   viewsEnabled?: boolean;
 };
@@ -194,12 +200,14 @@ function fromInputDate(value: string): string | null {
 export default function ProjectTasksPageClient({
   projectId,
   projectTitle,
+  projectKey,
   initialView,
   viewsEnabled = false
 }: ProjectTasksPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [projectKeyState, setProjectKeyState] = useState<string>(projectKey ?? 'PROJ');
   const availableViews = useMemo<BoardView[]>(() => {
     const base: BoardView[] = ['list', 'kanban'];
     if (viewsEnabled) {
@@ -257,6 +265,26 @@ export default function ProjectTasksPageClient({
     },
     [pathname, router, searchParams]
   );
+
+  const loadProject = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (response.ok) {
+        const project = (await response.json()) as { key?: string };
+        if (project.key) {
+          setProjectKeyState(project.key);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load project:', err);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectKey) {
+      void loadProject();
+    }
+  }, [projectKey, loadProject]);
 
   const loadWorkflow = useCallback(async () => {
     try {
@@ -634,10 +662,20 @@ export default function ProjectTasksPageClient({
             ))}
           </ul>
         ) : view === 'calendar' ? (
-          <CalendarView tasks={items} />
-        ) : (
-          <GanttView tasks={items} />
-        )}
+          <CalendarView
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+          />
+        ) : view === 'gantt' ? (
+          <TimelineView
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+          />
+        ) : null}
       </section>
 
       <TaskDrawer
@@ -1228,200 +1266,6 @@ function IterationModal({ open, onClose, onSubmit }: IterationModalProps) {
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-type TimelineTask = Pick<TaskItem, 'id' | 'title' | 'status' | 'startAt' | 'dueAt'>;
-
-type CalendarViewProps = {
-  tasks: TimelineTask[];
-};
-
-function CalendarView({ tasks }: CalendarViewProps) {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const days: { date: Date; key: string; currentMonth: boolean }[] = [];
-  let cursor = new Date(calendarStart);
-  while (cursor <= calendarEnd) {
-    const day = new Date(cursor);
-    days.push({ date: day, key: formatDateKey(day), currentMonth: day.getMonth() === monthStart.getMonth() });
-    cursor = addDays(cursor, 1);
-  }
-
-  const tasksByDay = new Map<string, TimelineTask[]>();
-  for (const task of tasks) {
-    const start = parseISODate(task.startAt ?? task.dueAt);
-    const end = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-    if (!start && !end) {
-      continue;
-    }
-    const rangeStart = start ?? end;
-    const rangeEnd = end ?? start ?? rangeStart;
-    if (!rangeStart || !rangeEnd) {
-      continue;
-    }
-    let dayCursor = new Date(rangeStart);
-    dayCursor.setHours(0, 0, 0, 0);
-    const finalDay = new Date(rangeEnd);
-    finalDay.setHours(0, 0, 0, 0);
-    while (dayCursor <= finalDay) {
-      const key = formatDateKey(dayCursor);
-      if (!tasksByDay.has(key)) {
-        tasksByDay.set(key, []);
-      }
-      tasksByDay.get(key)?.push(task);
-      dayCursor = addDays(dayCursor, 1);
-    }
-  }
-
-  const monthFormatter = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }),
-    []
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold capitalize text-white">{monthFormatter.format(monthStart)}</h3>
-        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Календарный обзор</p>
-      </div>
-      <div className="grid grid-cols-7 gap-2 text-xs text-neutral-500">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-center">
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => {
-          const dayTasks = tasksByDay.get(day.key) ?? [];
-          return (
-            <div
-              key={day.key}
-              className={`min-h-[120px] rounded-xl border border-neutral-800 bg-neutral-950/70 p-2 text-xs transition ${
-                day.currentMonth ? 'text-neutral-200' : 'text-neutral-500 opacity-60'
-              }`}
-            >
-              <p className="text-right text-[11px] font-semibold">{day.date.getDate()}</p>
-              <div className="mt-2 space-y-1">
-                {dayTasks.map((task) => (
-                  <div key={task.id} className="rounded-lg bg-indigo-500/20 p-2 text-[11px] text-indigo-100">
-                    <p className="font-semibold leading-tight text-white">{task.title}</p>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-200">{task.status}</p>
-                  </div>
-                ))}
-                {dayTasks.length === 0 ? <p className="text-[10px] text-neutral-600">Нет задач</p> : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-type GanttViewProps = {
-  tasks: TimelineTask[];
-};
-
-function GanttView({ tasks }: GanttViewProps) {
-  const dates = tasks.reduce(
-    (acc, task) => {
-      const start = parseISODate(task.startAt ?? task.dueAt);
-      const end = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-      if (start && (!acc.min || start < acc.min)) {
-        acc.min = start;
-      }
-      if (end && (!acc.max || end > acc.max)) {
-        acc.max = end;
-      }
-      return acc;
-    },
-    { min: null as Date | null, max: null as Date | null }
-  );
-
-  const today = new Date();
-  const start = startOfWeek(dates.min ?? today);
-  const end = endOfWeek(dates.max ?? addDays(today, 21));
-
-  const weeks: Date[] = [];
-  let cursor = new Date(start);
-  while (cursor <= end && weeks.length < 16) {
-    weeks.push(new Date(cursor));
-    cursor = addDays(cursor, 7);
-  }
-  if (weeks.length === 0) {
-    weeks.push(new Date(start));
-  }
-
-  const headerFormatter = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'short', day: 'numeric' }),
-    []
-  );
-
-  const gridStyle = useMemo(() => ({ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }), [weeks.length]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Гантт</h3>
-        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Обзор по неделям</p>
-      </div>
-      <div className="grid grid-cols-[220px_1fr] gap-4">
-        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Задачи</div>
-        <div className="overflow-hidden rounded-xl border border-neutral-800">
-          <div className="grid text-xs text-neutral-400" style={gridStyle}>
-            {weeks.map((week) => (
-              <div key={week.toISOString()} className="border-l border-neutral-800 bg-neutral-900/60 px-2 py-1 first:border-l-0">
-                {headerFormatter.format(week)}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-[220px_1fr] gap-4">
-        <div className="space-y-3">
-          {tasks.map((task) => (
-            <div key={task.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-white">
-              <p className="font-semibold leading-tight">{task.title}</p>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-200">{task.status}</p>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-3">
-          {tasks.map((task) => {
-            const startDate = parseISODate(task.startAt ?? task.dueAt);
-            const endDate = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-            const hasDates = Boolean(startDate || endDate);
-            const rangeStart = startDate ?? endDate ?? start;
-            const rangeEnd = endDate ?? startDate ?? rangeStart;
-            const startIndex = Math.max(0, Math.floor((rangeStart.getTime() - start.getTime()) / WEEK_MS));
-            const endIndex = Math.max(startIndex, Math.floor((rangeEnd.getTime() - start.getTime()) / WEEK_MS));
-            const gridColumnStart = startIndex + 1;
-            const gridColumnEnd = Math.min(weeks.length + 1, endIndex + 2);
-            return (
-              <div key={task.id} className="grid" style={gridStyle}>
-                <div
-                  className={`relative h-9 rounded-full border border-indigo-500/50 bg-indigo-500/20 ${
-                    hasDates ? '' : 'opacity-60'
-                  }`}
-                  style={{ gridColumnStart, gridColumnEnd }}
-                >
-                  <div className="absolute inset-1 rounded-full bg-indigo-500/30" />
-                  {!hasDates ? (
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] text-neutral-300">
-                      Даты не указаны
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

@@ -79,10 +79,12 @@ const TaskCreate = z.object({
   iterationId: z.string().optional(),
   assigneeId: z.string().optional(),
   startAt: z.string().datetime().optional(),
+  startDate: z.string().datetime().optional(),
   dueAt: z.string().datetime().optional(),
-  priority: z.enum(['low', 'med', 'high']).optional(),
+  priority: z.enum(['low', 'med', 'high', 'urgent']).optional(),
   labels: z.array(z.string()).optional(),
   estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  storyPoints: z.number().int().nonnegative().nullable().optional(),
   loggedTime: z.number().int().nonnegative().optional()
 });
 
@@ -123,11 +125,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ...(b.description !== undefined ? { description: b.description } : {}),
     ...(b.iterationId ? { iterationId: b.iterationId } : {}),
     ...(b.assigneeId ? { assigneeId: b.assigneeId } : {}),
-    ...(b.startAt ? { startAt: b.startAt } : {}),
+    ...(b.startDate ? { startDate: b.startDate } : b.startAt ? { startAt: b.startAt } : {}),
     ...(b.dueAt ? { dueAt: b.dueAt } : {}),
     ...(b.priority ? { priority: b.priority } : {}),
     ...(Array.isArray(b.labels) ? { labels: b.labels } : {}),
     ...(b.estimatedTime !== undefined ? { estimatedTime: b.estimatedTime } : {}),
+    ...(b.storyPoints !== undefined ? { storyPoints: b.storyPoints } : {}),
     ...(b.loggedTime !== undefined ? { loggedTime: b.loggedTime } : { loggedTime: 0 })
   }) as Task;
 

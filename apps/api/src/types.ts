@@ -8,6 +8,7 @@ export type ProjectType =
   | 'operations'
   | 'service'
   | 'internal';
+export type ProjectStatus = 'draft' | 'active' | 'on_hold' | 'completed' | 'archived';
 export type TaskStatus = 'new' | 'in_progress' | 'review' | 'done' | 'blocked';
 export type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'payable' | 'closed';
 
@@ -27,9 +28,11 @@ export interface Iteration {
 export interface Project {
   id: ID;
   workspaceId: ID;
+  key: string; // Unique project key per workspace (e.g., "PROJ", "ABC")
   title: string;
   description?: string;
   ownerId: ID;
+  status: ProjectStatus; // Lifecycle status: draft, active, on_hold, completed, archived
   deadline?: string;
   stage?: ProjectStage;
   type?: ProjectType;
@@ -37,7 +40,7 @@ export interface Project {
   budgetPlanned: number | null;
   budgetSpent: number | null;
   workflowId?: ID;
-  archived: boolean;
+  archived: boolean; // Legacy field, kept for backward compatibility
   createdAt: string;
   updatedAt: string;
 }
@@ -111,22 +114,33 @@ export interface TaskComment {
   updatedAt: string;
 }
 
+export interface TaskDependency {
+  id: ID;
+  dependentTaskId: ID; // Task that is blocked
+  blockerTaskId: ID; // Task that blocks
+  type: 'blocks' | 'relates_to';
+  createdAt: string;
+}
+
 export interface Task {
   id: ID;
   projectId: ID;
+  number: number; // Auto-increment per project (e.g., PROJ-123)
   parentId: ID | null;
   title: string;
   description?: string;
   status: TaskStatus;
   iterationId?: ID;
   assigneeId?: ID;
-  startAt?: string;
-  dueAt?: string;
-  priority?: 'low' | 'med' | 'high';
+  startAt?: string; // Start date (aliased from startDate)
+  startDate?: string; // Alias for startAt, for consistency
+  dueAt?: string; // Due date
+  priority?: 'low' | 'med' | 'high' | 'urgent';
   labels?: string[];
   attachments?: FileObject[];
-  estimatedTime?: number | null;
-  loggedTime?: number | null;
+  estimatedTime?: number | null; // In hours
+  storyPoints?: number | null; // Story points estimation
+  loggedTime?: number | null; // In minutes
   createdAt: string;
   updatedAt: string;
 }
@@ -214,7 +228,8 @@ export interface DomainEvent<TPayload = unknown> {
   createdAt: string;
 }
 
-export type ProjectStatus = 'active' | 'archived';
+// Legacy type kept for backward compatibility with ProjectCard
+export type ProjectCardStatus = 'active' | 'archived';
 
 export interface WorkspaceUser {
   id: ID;
@@ -251,7 +266,7 @@ export interface ProjectCard {
   description: string;
   type?: ProjectType;
   visibility: ProjectVisibility;
-  status: ProjectStatus;
+  status: ProjectCardStatus; // Legacy status for cards
   owner: ProjectCardOwner;
   members: ProjectCardMember[];
   createdAt: string;
@@ -276,7 +291,7 @@ export interface ProjectCard {
 }
 
 export interface ProjectCardFilters {
-  status?: 'all' | ProjectStatus;
+  status?: 'all' | ProjectCardStatus;
   ownerIds?: ID[];
   memberIds?: ID[];
   tags?: string[];

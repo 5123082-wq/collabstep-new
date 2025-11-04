@@ -4,6 +4,7 @@ export { DEFAULT_WORKSPACE_USER_ID, DEFAULT_ACCOUNT_ID, DEFAULT_WORKSPACE_ID } f
 export { ProjectsRepository, projectsRepository } from './repositories/projects-repository';
 export { TemplatesRepository, templatesRepository } from './repositories/templates-repository';
 export { TasksRepository, tasksRepository } from './repositories/tasks-repository';
+export { TaskDependenciesRepository, taskDependenciesRepository } from './repositories/task-dependencies-repository';
 export {
   FilesRepository,
   filesRepository,
@@ -65,6 +66,7 @@ export {
   type ExpenseStoreDriver
 } from './stores/expense-store-factory';
 export { amountToCents, centsToAmount } from './utils/money';
+export { formatTaskKey, parseTaskKey } from './utils/task-key';
 export {
   adminModulesRepository,
   AdminModulesRepository
