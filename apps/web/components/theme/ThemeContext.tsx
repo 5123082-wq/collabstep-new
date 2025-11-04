@@ -23,44 +23,97 @@ function getSystemTheme(): ResolvedTheme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function getStoredMode(): ThemeMode {
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'system') {
+      return stored;
+    }
+  } catch (error) {
+    // Игнорируем ошибки при чтении из localStorage
+  }
+  return 'system';
+}
+
 type ThemeProviderProps = {
   children: ReactNode;
 };
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [mode, setMode] = useState<ThemeMode>(() => 'system');
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => DEFAULT_THEME);
-
-  useEffect(() => {
+  // Инициализируем сразу из localStorage, чтобы избежать задержки и конфликта с ThemeScript
+  const [mode, setMode] = useState<ThemeMode>(() => getStoredMode());
+  
+  // Инициализируем resolvedTheme из уже применённой темы или вычисляем из mode
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     if (typeof window === 'undefined') {
+      return DEFAULT_THEME;
+    }
+    // Проверяем, какая тема уже применена ThemeScript
+    const appliedTheme = document.documentElement.dataset.theme as ThemeName | undefined;
+    if (appliedTheme === 'light' || appliedTheme === 'dark') {
+      return appliedTheme;
+    }
+    // Если тема ещё не применена, вычисляем из mode
+    const stored = getStoredMode();
+    if (stored === 'system') {
+      return getSystemTheme();
+    }
+    return stored as ThemeName;
+  });
+
+  // Флаг для отслеживания первой инициализации
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Синхронизируемся с темой, которая уже применена ThemeScript при первой загрузке
+  useEffect(() => {
+    if (typeof window === 'undefined' || isInitialized) {
       return;
     }
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        setMode(stored);
-      }
-    } catch (error) {
-      console.error('Failed to read theme from storage', error);
-    }
-  }, []);
 
+    setIsInitialized(true);
+    
+    // Проверяем текущую применённую тему из DOM
+    const appliedTheme = document.documentElement.dataset.theme as ThemeName | undefined;
+    if (appliedTheme === 'light' || appliedTheme === 'dark') {
+      // Синхронизируем resolvedTheme с уже применённой темой
+      setResolvedTheme(appliedTheme);
+    } else {
+      // Если тема не применена, применяем нашу
+      const stored = getStoredMode();
+      const systemTheme = getSystemTheme();
+      const nextTheme: ResolvedTheme = stored === 'system' ? systemTheme : (stored as ThemeName);
+      setResolvedTheme(nextTheme);
+      applyThemeTokens(nextTheme);
+    }
+  }, [isInitialized]);
+
+  // Применяем тему только при изменении mode после инициализации
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !isInitialized) {
       return;
     }
 
     const systemTheme = getSystemTheme();
     const nextTheme: ResolvedTheme = mode === 'system' ? systemTheme : (mode as ThemeName);
-    setResolvedTheme(nextTheme);
-    applyThemeTokens(nextTheme);
+    
+    // Применяем тему только если она отличается от текущей
+    const currentApplied = document.documentElement.dataset.theme as ThemeName | undefined;
+    if (currentApplied !== nextTheme) {
+      setResolvedTheme(nextTheme);
+      applyThemeTokens(nextTheme);
+    }
 
+    // Сохраняем только при реальном изменении пользователем (не при инициализации)
     try {
       window.localStorage.setItem(STORAGE_KEY, mode);
     } catch (error) {
       console.error('Failed to save theme to storage', error);
     }
 
+    // Обработчик изменения системной темы
     const handler = (event: MediaQueryListEvent) => {
       if (mode === 'system') {
         const updated: ResolvedTheme = event.matches ? 'dark' : 'light';
@@ -72,7 +125,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
-  }, [mode]);
+  }, [mode, isInitialized]);
 
   const setModeSafe = useCallback((next: ThemeMode) => {
     setMode(next);
@@ -90,12 +143,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     });
   }, []);
 
-  const value = useMemo<ThemeContextValue>(() => ({ mode, resolvedTheme, setMode: setModeSafe, cycleMode }), [
-    mode,
-    resolvedTheme,
-    cycleMode,
-    setModeSafe
-  ]);
+  const value = useMemo<ThemeContextValue>(
+    () => ({ mode, resolvedTheme, setMode: setModeSafe, cycleMode }),
+    [mode, resolvedTheme, cycleMode, setModeSafe]
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
