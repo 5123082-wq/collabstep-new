@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addMinutes } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Task } from '@/domain/projects/types';
 import { tasksToCalendarEvents, getTaskStatusColor } from '@/lib/project/calendar-utils';
@@ -54,17 +54,17 @@ export function CalendarView({ tasks, projectKey, onTaskClick, onEventDrop, isLo
     };
   };
 
-  const handleSelectEvent = (event: (typeof events)[0]) => {
+  const handleSelectEvent = useCallback((event: (typeof events)[0]) => {
     if (onTaskClick) {
       onTaskClick(event.resource.task.id);
     }
-  };
+  }, [onTaskClick]);
 
-  const handleEventDrop = (args: { event: (typeof events)[0]; start: Date; end: Date }) => {
+  const handleEventDropOrResize = useCallback((args: { event: (typeof events)[0]; start: Date; end: Date }) => {
     if (onEventDrop) {
       onEventDrop(args.event.resource.task.id, args.start, args.end);
     }
-  };
+  }, [onEventDrop]);
 
   if (isLoading) {
     return (
@@ -75,7 +75,7 @@ export function CalendarView({ tasks, projectKey, onTaskClick, onEventDrop, isLo
   }
 
   return (
-    <div className="h-[600px] rounded-2xl border border-neutral-900 bg-neutral-950/40 p-4">
+    <div className="rbc-calendar-wrapper h-[600px] rounded-2xl border border-neutral-900 bg-neutral-950/40 p-4">
       <Calendar
         localizer={localizer}
         events={events}
@@ -87,6 +87,10 @@ export function CalendarView({ tasks, projectKey, onTaskClick, onEventDrop, isLo
         onNavigate={setDate}
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventStyleGetter}
+        draggableAccessor={() => true}
+        resizable
+        onEventDrop={handleEventDropOrResize}
+        onEventResize={handleEventDropOrResize}
         messages={{
           next: 'Следующий',
           previous: 'Предыдущий',

@@ -28,6 +28,10 @@ type TaskItem = Pick<
   | 'estimatedTime'
   | 'storyPoints'
   | 'loggedTime'
+  | 'projectId'
+  | 'parentId'
+  | 'createdAt'
+  | 'updatedAt'
 >;
 
 type IterationItem = Pick<Iteration, 'id' | 'title'>;
@@ -539,6 +543,35 @@ export default function ProjectTasksPageClient({
     },
     [loadIterations, projectId]
   );
+
+  const handleEventDrop = useCallback(
+    async (taskId: string, newStart: Date, newEnd: Date) => {
+      try {
+        await handleTaskUpdate(taskId, {
+          startDate: newStart.toISOString(),
+          dueAt: newEnd.toISOString()
+        });
+      } catch (error) {
+        console.error('Failed to update task dates:', error);
+      }
+    },
+    [handleTaskUpdate]
+  );
+
+  const handleTaskDateChange = useCallback(
+    async (taskId: string, startDate: Date, dueDate: Date) => {
+      try {
+        await handleTaskUpdate(taskId, {
+          startDate: startDate.toISOString(),
+          dueAt: dueDate.toISOString()
+        });
+      } catch (error) {
+        console.error('Failed to update task dates:', error);
+      }
+    },
+    [handleTaskUpdate]
+  );
+
   return (
     <ProjectPageFrame
       slug="tasks"
@@ -638,6 +671,7 @@ export default function ProjectTasksPageClient({
             tasks={items}
             projectKey={projectKeyState}
             onTaskClick={handleTaskClick}
+            onEventDrop={handleEventDrop}
             isLoading={isLoading}
           />
         ) : view === 'gantt' ? (
@@ -645,6 +679,7 @@ export default function ProjectTasksPageClient({
             tasks={items}
             projectKey={projectKeyState}
             onTaskClick={handleTaskClick}
+            onTaskDateChange={handleTaskDateChange}
             isLoading={isLoading}
           />
         ) : null}
