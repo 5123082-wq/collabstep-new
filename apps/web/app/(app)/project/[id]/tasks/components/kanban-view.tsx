@@ -40,7 +40,7 @@ type SwimLane = {
 export function KanbanView({
   statuses,
   tasks,
-  projectKey,
+  projectKey = 'PROJ',
   onTaskDrop,
   onTaskClick,
   isLoading,
