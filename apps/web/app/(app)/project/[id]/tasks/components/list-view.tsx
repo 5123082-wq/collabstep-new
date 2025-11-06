@@ -23,7 +23,7 @@ type FlatTaskNode = TaskTreeNode & { depth: number };
 
 export function ListView({
   tree,
-  projectKey,
+  projectKey: projectKeyProp = 'PROJ',
   onTaskClick,
   isLoading,
   emptyMessage = 'Задачи не найдены',
@@ -31,6 +31,7 @@ export function ListView({
   sortBy = null,
   groupBy = null
 }: ListViewProps) {
+  const projectKey: string = projectKeyProp;
   const [sortField, setSortField] = useState<SortField | null>(sortBy || null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [groupField, setGroupField] = useState<GroupField | null>(groupBy || null);
@@ -368,7 +369,7 @@ export function ListView({
 type ListNodeProps = {
   node: TaskTreeNode;
   depth: number;
-  projectKey?: string;
+  projectKey: string;
   showMetadata?: boolean;
   onTaskClick?: (taskId: string) => void;
 };
