@@ -63,23 +63,51 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
-  const updated = tasksRepository.update(params['task-id'], {
-    ...(body.title ? { title: body.title } : {}),
-    ...(body.description !== undefined ? { description: body.description ?? '' } : {}),
-    ...(body.status ? { status: body.status } : {}),
-    ...(body.iterationId !== undefined ? { iterationId: body.iterationId ?? undefined } : {}),
-    ...(body.assigneeId !== undefined ? { assigneeId: body.assigneeId ?? undefined } : {}),
-    ...(body.startDate !== undefined || body.startAt !== undefined
-      ? { startDate: body.startDate ?? body.startAt ?? undefined, startAt: body.startDate ?? body.startAt ?? undefined }
-      : {}),
-    ...(body.dueAt !== undefined ? { dueAt: body.dueAt ?? undefined } : {}),
-    ...(body.priority ? { priority: body.priority } : {}),
-    ...(body.labels !== undefined ? { labels: body.labels } : {}),
-    ...(body.parentId !== undefined ? { parentId: body.parentId ?? null } : {}),
-    ...(body.estimatedTime !== undefined ? { estimatedTime: body.estimatedTime } : {}),
-    ...(body.storyPoints !== undefined ? { storyPoints: body.storyPoints } : {}),
-    ...(body.loggedTime !== undefined ? { loggedTime: body.loggedTime } : {})
-  });
+  const updatePayload: Record<string, unknown> = {};
+  
+  if (body.title) {
+    updatePayload.title = body.title;
+  }
+  if (body.description !== undefined) {
+    updatePayload.description = body.description ?? '';
+  }
+  if (body.status) {
+    updatePayload.status = body.status;
+  }
+  if (body.iterationId !== undefined) {
+    updatePayload.iterationId = body.iterationId;
+  }
+  if (body.assigneeId !== undefined) {
+    updatePayload.assigneeId = body.assigneeId;
+  }
+  if (body.startDate !== undefined || body.startAt !== undefined) {
+    const startValue = body.startDate ?? body.startAt;
+    updatePayload.startDate = startValue;
+    updatePayload.startAt = startValue;
+  }
+  if (body.dueAt !== undefined) {
+    updatePayload.dueAt = body.dueAt;
+  }
+  if (body.priority) {
+    updatePayload.priority = body.priority;
+  }
+  if (body.labels !== undefined) {
+    updatePayload.labels = body.labels;
+  }
+  if (body.parentId !== undefined) {
+    updatePayload.parentId = body.parentId;
+  }
+  if (body.estimatedTime !== undefined) {
+    updatePayload.estimatedTime = body.estimatedTime;
+  }
+  if (body.storyPoints !== undefined) {
+    updatePayload.storyPoints = body.storyPoints;
+  }
+  if (body.loggedTime !== undefined) {
+    updatePayload.loggedTime = body.loggedTime;
+  }
+
+  const updated = tasksRepository.update(params['task-id'], updatePayload);
 
   if (!updated) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
