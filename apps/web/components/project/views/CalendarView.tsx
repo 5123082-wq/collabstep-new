@@ -87,9 +87,6 @@ export function CalendarView({ tasks, projectKey, onTaskClick, onEventDrop, isLo
         onNavigate={setDate}
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventStyleGetter}
-        resizable
-        onEventDrop={handleEventDropOrResize}
-        onEventResize={handleEventDropOrResize}
         messages={{
           next: 'Следующий',
           previous: 'Предыдущий',
