@@ -77,7 +77,7 @@ export function ActivityWidget({ activities, isLoading }: ActivityWidgetProps) {
                 <p className="text-sm text-white">{getActivityLabel(entry)}</p>
                 <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
                   <Users className="h-3 w-3" />
-                  <span>{entry.userId || entry.userEmail || 'Система'}</span>
+                  <span>{entry.actorId || 'Система'}</span>
                   <span>·</span>
                   <span>{format(new Date(entry.createdAt), 'd MMM, HH:mm', { locale: ru })}</span>
                 </div>
