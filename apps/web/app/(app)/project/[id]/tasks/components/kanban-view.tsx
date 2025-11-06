@@ -148,6 +148,7 @@ export function KanbanView({
                       isLoading={Boolean(isLoading && laneTasks.length === 0)}
                       activeTaskId={activeTaskId}
                       showCount={true}
+                      totalCount={laneTasks.length}
                       {...(onTaskClick ? { onTaskClick } : {})}
                     />
                   );
@@ -179,7 +180,7 @@ export function KanbanView({
             isLoading={Boolean(isLoading && column.tasks.length === 0)}
             activeTaskId={activeTaskId}
             showCount={true}
-            totalCount={columnTotals.get(column.status)}
+            totalCount={columnTotals.get(column.status) || 0}
             {...(onTaskClick ? { onTaskClick } : {})}
           />
         ))}
