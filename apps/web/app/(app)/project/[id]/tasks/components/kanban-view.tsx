@@ -194,7 +194,7 @@ export function KanbanView({
 
 type KanbanColumnProps = {
   column: Column;
-  projectKey?: string;
+  projectKey: string;
   isLoading: boolean;
   onTaskClick?: (taskId: string) => void;
   activeTaskId: string | null;
@@ -278,7 +278,7 @@ function KanbanColumn({
 
 type DraggableTaskCardProps = {
   task: Task;
-  projectKey?: string;
+  projectKey: string;
   onTaskClick?: (taskId: string) => void;
   isActive: boolean;
 };
