@@ -40,7 +40,7 @@ type SwimLane = {
 export function KanbanView({
   statuses,
   tasks,
-  projectKey = 'PROJ',
+  projectKey: projectKeyProp = 'PROJ',
   onTaskDrop,
   onTaskClick,
   isLoading,
@@ -48,6 +48,9 @@ export function KanbanView({
 }: KanbanViewProps) {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  
+  // Ensure projectKey is always a string
+  const projectKey: string = projectKeyProp;
 
   const columns = useMemo<Column[]>(() => {
     return statuses.map((status) => ({
