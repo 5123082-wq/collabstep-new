@@ -374,7 +374,7 @@ type ListNodeProps = {
   onTaskClick?: (taskId: string) => void;
 };
 
-function ListNode({ node, depth, projectKey, showMetadata, onTaskClick }: ListNodeProps) {
+function ListNode({ node, depth, projectKey, showMetadata = false, onTaskClick }: ListNodeProps) {
   const children = node.children;
   const hasChildren = Array.isArray(children) && children.length > 0;
   const [expanded, setExpanded] = useState(true);
