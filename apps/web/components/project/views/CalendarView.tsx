@@ -87,7 +87,6 @@ export function CalendarView({ tasks, projectKey, onTaskClick, onEventDrop, isLo
         onNavigate={setDate}
         onSelectEvent={handleSelectEvent}
         eventPropGetter={eventStyleGetter}
-        draggableAccessor={() => true}
         resizable
         onEventDrop={handleEventDropOrResize}
         onEventResize={handleEventDropOrResize}
