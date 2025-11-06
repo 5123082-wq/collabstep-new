@@ -15,7 +15,7 @@ export function formatTaskKey(projectKey: string, taskNumber: number): string {
  */
 export function parseTaskKey(taskKey: string): { projectKey: string; number: number } | null {
   const match = taskKey.match(/^([A-Z0-9]+)-(\d+)$/i);
-  if (!match) {
+  if (!match || !match[1] || !match[2]) {
     return null;
   }
   return {
