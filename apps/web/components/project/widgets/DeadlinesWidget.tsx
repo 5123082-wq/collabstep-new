@@ -6,7 +6,7 @@ import { format, differenceInDays, isPast, isToday, isTomorrow } from 'date-fns'
 import { ru } from 'date-fns/locale';
 import type { Task } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { Calendar, CheckCircle2 } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 
 type DeadlinesWidgetProps = {
@@ -89,7 +89,7 @@ export function DeadlinesWidget({ tasks, projectId, projectKey, isLoading }: Dea
 
       {upcomingDeadlines.length === 0 ? (
         <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-center">
-          <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400 mb-2" />
+          <span className="mx-auto text-2xl text-emerald-400 mb-2 block">✓</span>
           <p className="text-sm text-neutral-400">Нет предстоящих дедлайнов</p>
         </div>
       ) : (

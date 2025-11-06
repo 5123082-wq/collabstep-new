@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { TaskDependency } from '@/domain/projects/task-dependency';
 import type { Task } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { Link2, CheckCircle2 } from 'lucide-react';
+import { Link2 } from 'lucide-react';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 
 type DependenciesWidgetProps = {
@@ -89,7 +89,7 @@ export function DependenciesWidget({
 
       {blockedTasks.length === 0 ? (
         <div className="rounded-xl border border-dashed border-neutral-800 p-6 text-center">
-          <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400 mb-2" />
+          <span className="mx-auto text-2xl text-emerald-400 mb-2 block">✓</span>
           <p className="text-sm text-neutral-400">Нет блокирующих зависимостей</p>
         </div>
       ) : (

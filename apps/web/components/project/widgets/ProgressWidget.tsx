@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Task } from '@/domain/projects/types';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
+import { Circle, Clock } from 'lucide-react';
 
 type ProgressWidgetProps = {
   tasks: Task[];
@@ -65,7 +65,7 @@ export function ProgressWidget({ tasks, isLoading }: ProgressWidgetProps) {
       {/* Metrics grid */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/60 p-3">
-          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+          <span className="text-emerald-400 text-lg">✓</span>
           <div>
             <p className="text-xs text-neutral-500">Завершено</p>
             <p className="text-lg font-semibold text-white">{metrics.completed}</p>

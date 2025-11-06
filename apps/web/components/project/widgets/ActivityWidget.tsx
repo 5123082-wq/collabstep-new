@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { AuditLogEntry } from '@collabverse/api';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Activity, Users, FileText, CheckCircle2 } from 'lucide-react';
+import { Activity, Users, FileText } from 'lucide-react';
 
 type ActivityWidgetProps = {
   activities: AuditLogEntry[];
@@ -20,7 +20,7 @@ export function ActivityWidget({ activities, isLoading }: ActivityWidgetProps) {
 
   const getActivityIcon = (action: string) => {
     if (action.includes('task')) {
-      return <CheckCircle2 className="h-4 w-4 text-indigo-400" />;
+      return <span className="text-indigo-400">✓</span>;
     }
     if (action.includes('file')) {
       return <FileText className="h-4 w-4 text-blue-400" />;
