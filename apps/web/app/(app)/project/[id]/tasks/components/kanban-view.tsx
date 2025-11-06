@@ -62,7 +62,7 @@ export function KanbanView({
       return [{ id: 'all', label: 'Все задачи', tasks }];
     }
 
-    const lanes: Map<string, Task[]> = new Map();
+    const lanes: Map<string, { label: string; tasks: Task[] }> = new Map();
 
     for (const task of tasks) {
       let key = '';
@@ -84,15 +84,15 @@ export function KanbanView({
       }
 
       if (!lanes.has(key)) {
-        lanes.set(key, []);
+        lanes.set(key, { label, tasks: [] });
       }
-      lanes.get(key)!.push(task);
+      lanes.get(key)!.tasks.push(task);
     }
 
-    return Array.from(lanes.entries()).map(([id, laneTasks]) => ({
+    return Array.from(lanes.entries()).map(([id, laneData]) => ({
       id,
-      label,
-      tasks: laneTasks
+      label: laneData.label,
+      tasks: laneData.tasks
     }));
   }, [tasks, groupBy]);
 
