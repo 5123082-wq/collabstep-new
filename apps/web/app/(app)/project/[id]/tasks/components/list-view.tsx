@@ -95,7 +95,7 @@ export function ListView({
       return { '': sortedTasks };
     }
 
-    const groups: Record<string, TaskTreeNode[]> = {};
+    const groups: Record<string, FlatTaskNode[]> = {};
 
     for (const task of sortedTasks) {
       let key = '';
@@ -114,7 +114,7 @@ export function ListView({
       if (!groups[key]) {
         groups[key] = [];
       }
-      groups[key].push(task);
+      groups[key]!.push(task);
     }
 
     return groups;
