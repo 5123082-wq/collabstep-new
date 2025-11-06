@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import TaskRow from './task-row';
-import { ChevronDown, ArrowUpDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ListViewProps = {
@@ -319,33 +319,28 @@ export function ListView({
       {showTableFormat && (
         <div className="grid grid-cols-[1fr_120px_100px_120px_100px_80px] gap-3 rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-xs font-semibold text-neutral-400">
           <div className="flex items-center gap-2">
-            <span>Задача</span>
             <button onClick={() => handleSort('title')} className="hover:text-indigo-400">
-              <ArrowUpDown className="h-3 w-3" />
+              Задача ⇅
             </button>
           </div>
           <div className="flex items-center justify-center gap-2">
-            <span>Статус</span>
             <button onClick={() => handleSort('status')} className="hover:text-indigo-400">
-              <ArrowUpDown className="h-3 w-3" />
+              Статус ⇅
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span>Исполнитель</span>
             <button onClick={() => handleSort('assignee')} className="hover:text-indigo-400">
-              <ArrowUpDown className="h-3 w-3" />
+              Исполнитель ⇅
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span>Срок</span>
             <button onClick={() => handleSort('dueDate')} className="hover:text-indigo-400">
-              <ArrowUpDown className="h-3 w-3" />
+              Срок ⇅
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <span>Приоритет</span>
             <button onClick={() => handleSort('priority')} className="hover:text-indigo-400">
-              <ArrowUpDown className="h-3 w-3" />
+              Приоритет ⇅
             </button>
           </div>
           <div className="text-right">Оценка</div>
