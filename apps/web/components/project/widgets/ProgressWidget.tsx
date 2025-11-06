@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import type { Task } from '@/domain/projects/types';
-import { cn } from '@/lib/utils';
 import { CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-react';
 
 type ProgressWidgetProps = {

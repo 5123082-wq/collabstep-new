@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addMinutes } from 'date-fns';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import type { Task } from '@/domain/projects/types';
 import { tasksToCalendarEvents, getTaskStatusColor } from '@/lib/project/calendar-utils';

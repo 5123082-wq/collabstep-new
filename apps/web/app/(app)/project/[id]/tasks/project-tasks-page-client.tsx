@@ -9,8 +9,8 @@ import type { Iteration, ProjectWorkflow, Task, TaskStatus, TaskTreeNode } from 
 import { flags } from '@/lib/flags';
 import CalendarView from '@/components/project/views/CalendarView';
 import TimelineView from '@/components/project/views/TimelineView';
-import KanbanView from '../components/kanban-view';
-import ListView from '../components/list-view';
+import KanbanView from './components/kanban-view';
+import ListView from './components/list-view';
 
 type TaskItem = Pick<
   Task,

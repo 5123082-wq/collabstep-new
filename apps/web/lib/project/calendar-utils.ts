@@ -1,5 +1,5 @@
 import type { Task } from '@/domain/projects/types';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 
 export interface CalendarEvent {
   id: string;

@@ -12,7 +12,7 @@ import {
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type TimelineViewProps = {
   tasks: Task[];

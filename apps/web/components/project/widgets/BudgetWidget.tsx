@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { Project } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { DollarSign, AlertCircle } from 'lucide-react';
 
 type BudgetWidgetProps = {
   project: Project;
