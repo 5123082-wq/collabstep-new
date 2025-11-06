@@ -16,10 +16,12 @@ import type {
   ProjectBudgetSnapshot,
   ProjectMember,
   ProjectTemplate,
+  ProjectStatus,
   ProjectType,
   ProjectVisibility,
   ProjectWorkflow,
   Task,
+  TaskDependency,
   Workspace,
   WorkspaceMember,
   WorkspaceUser,
@@ -205,9 +207,11 @@ export const memory = {
     {
       id: 'proj-admin-onboarding',
       workspaceId: DEFAULT_WORKSPACE_ID,
+      key: 'ONBD',
       title: 'Онбординг команды Collabstep',
       description: 'Первые шаги команды после запуска платформы.',
       ownerId: DEFAULT_WORKSPACE_USER_ID,
+      status: 'active' as ProjectStatus,
       stage: 'design',
       type: 'product' as ProjectType,
       visibility: 'private' as ProjectVisibility,
@@ -221,9 +225,11 @@ export const memory = {
     {
       id: 'proj-admin-landing-archive',
       workspaceId: 'ws-marketing',
+      key: 'LAND',
       title: 'Редизайн лендинга (архив)',
       description: 'Завершённая инициатива по обновлению главной страницы.',
       ownerId: DEFAULT_WORKSPACE_USER_ID,
+      status: 'archived' as ProjectStatus,
       stage: 'launch',
       type: 'marketing' as ProjectType,
       visibility: 'public' as ProjectVisibility,
@@ -239,6 +245,7 @@ export const memory = {
     {
       id: 'task-admin-brief',
       projectId: 'proj-admin-onboarding',
+      number: 1,
       parentId: null,
       title: 'Подготовить бриф и дорожную карту',
       description: 'Сформировать цели, KPI и ритуалы команды.',
@@ -253,6 +260,7 @@ export const memory = {
     {
       id: 'task-admin-brief-kickoff',
       projectId: 'proj-admin-onboarding',
+      number: 2,
       parentId: 'task-admin-brief',
       title: 'Провести стартовую сессию',
       description: 'Согласовать ключевые deliverables и зоны ответственности.',
@@ -266,6 +274,7 @@ export const memory = {
     {
       id: 'task-admin-brief-survey',
       projectId: 'proj-admin-onboarding',
+      number: 3,
       parentId: 'task-admin-brief',
       title: 'Собрать ожидания стейкхолдеров',
       description: 'Интервьюировать ключевых участников и собрать потребности.',
@@ -279,6 +288,7 @@ export const memory = {
     {
       id: 'task-admin-brief-survey-report',
       projectId: 'proj-admin-onboarding',
+      number: 4,
       parentId: 'task-admin-brief-survey',
       title: 'Подготовить отчёт по интервью',
       status: 'in_progress',
@@ -290,6 +300,7 @@ export const memory = {
     {
       id: 'task-admin-design',
       projectId: 'proj-admin-onboarding',
+      number: 5,
       parentId: null,
       title: 'Собрать дизайн-концепты',
       description: 'Подготовить варианты визуального языка продукта.',
@@ -304,6 +315,7 @@ export const memory = {
     {
       id: 'task-admin-design-library',
       projectId: 'proj-admin-onboarding',
+      number: 6,
       parentId: 'task-admin-design',
       title: 'Собрать UI-кит',
       description: 'Сверстать компоненты, состояния и адаптивные варианты.',
@@ -317,6 +329,7 @@ export const memory = {
     {
       id: 'task-admin-design-library-assets',
       projectId: 'proj-admin-onboarding',
+      number: 7,
       parentId: 'task-admin-design-library',
       title: 'Подготовить ассеты для презентации',
       description: 'Экспортировать макеты и сделать превью для команды.',
@@ -329,6 +342,7 @@ export const memory = {
     {
       id: 'task-admin-landing-archive-audit',
       projectId: 'proj-admin-landing-archive',
+      number: 1,
       parentId: null,
       title: 'Провести аудит контента',
       description: 'Собрать обратную связь и подготовить обновления.',
@@ -339,6 +353,10 @@ export const memory = {
       updatedAt: '2023-11-10T16:00:00.000Z'
     }
   ] as Task[],
+  TASK_DEPENDENCIES: [
+    // Example: task-admin-design-library-assets blocks task-admin-design-library
+    // This would be added when dependencies are created
+  ] as TaskDependency[],
   WORKFLOWS: {
     'proj-admin-onboarding': {
       projectId: 'proj-admin-onboarding',

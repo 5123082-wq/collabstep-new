@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectsRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
+import { projectsRepository, tasksRepository, DEFAULT_WORKSPACE_USER_ID } from '@collabverse/api';
 import { flags } from '@/lib/flags';
 import type { TaskStatus } from '@/domain/projects/types';
 import { memory } from '@/mocks/projects-memory';
@@ -15,9 +15,12 @@ const TaskPatchSchema = z.object({
   iterationId: z.string().nullable().optional(),
   assigneeId: z.string().nullable().optional(),
   startAt: z.string().datetime().nullable().optional(),
+  startDate: z.string().datetime().nullable().optional(),
   dueAt: z.string().datetime().nullable().optional(),
+  priority: z.enum(['low', 'med', 'high', 'urgent']).optional(),
   labels: z.array(z.string()).optional(),
   estimatedTime: z.number().int().nonnegative().nullable().optional(),
+  storyPoints: z.number().int().nonnegative().nullable().optional(),
   loggedTime: z.number().int().nonnegative().optional()
 });
 
@@ -44,12 +47,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
 
-  const idx = memory.TASKS.findIndex((task) => task.id === params['task-id'] && task.projectId === params.id);
-  if (idx === -1) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  const existing = memory.TASKS[idx];
+  const existing = tasksRepository.list({ projectId: params.id }).find((t) => t.id === params['task-id']);
   if (!existing) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
@@ -57,80 +55,74 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const body = parsed.data;
   const before = { ...existing };
 
-  if (typeof body.title === 'string') {
-    existing.title = body.title;
-  }
-  if (body.description !== undefined) {
-    existing.description = body.description ?? '';
-  }
+  // Validate status against workflow
   if (body.status) {
     const flow = memory.WORKFLOWS[params.id]?.statuses ?? ['new', 'in_progress', 'review', 'done'];
     if (!flow.includes(body.status)) {
       return NextResponse.json({ error: 'invalid_status' }, { status: 400 });
     }
-    existing.status = body.status;
+  }
+
+  const updatePayload: Record<string, unknown> = {};
+  
+  if (body.title) {
+    updatePayload.title = body.title;
+  }
+  if (body.description !== undefined) {
+    updatePayload.description = body.description ?? '';
+  }
+  if (body.status) {
+    updatePayload.status = body.status;
   }
   if (body.iterationId !== undefined) {
-    if (body.iterationId === null || body.iterationId === '') {
-      delete existing.iterationId;
-    } else {
-      existing.iterationId = body.iterationId;
-    }
+    updatePayload.iterationId = body.iterationId;
   }
   if (body.assigneeId !== undefined) {
-    if (body.assigneeId === null || body.assigneeId === '') {
-      delete existing.assigneeId;
-    } else {
-      existing.assigneeId = body.assigneeId;
-    }
+    updatePayload.assigneeId = body.assigneeId;
   }
-  if (body.startAt !== undefined) {
-    if (body.startAt === null || body.startAt === '') {
-      delete existing.startAt;
-    } else {
-      existing.startAt = body.startAt;
-    }
+  if (body.startDate !== undefined || body.startAt !== undefined) {
+    const startValue = body.startDate ?? body.startAt;
+    updatePayload.startDate = startValue;
+    updatePayload.startAt = startValue;
   }
   if (body.dueAt !== undefined) {
-    if (body.dueAt === null || body.dueAt === '') {
-      delete existing.dueAt;
-    } else {
-      existing.dueAt = body.dueAt;
-    }
+    updatePayload.dueAt = body.dueAt;
+  }
+  if (body.priority) {
+    updatePayload.priority = body.priority;
   }
   if (body.labels !== undefined) {
-    existing.labels = body.labels;
+    updatePayload.labels = body.labels;
   }
-
   if (body.parentId !== undefined) {
-    if (body.parentId === null || body.parentId === '') {
-      existing.parentId = null;
-    } else {
-      existing.parentId = body.parentId;
-    }
+    updatePayload.parentId = body.parentId;
   }
-
   if (body.estimatedTime !== undefined) {
-    existing.estimatedTime = body.estimatedTime;
+    updatePayload.estimatedTime = body.estimatedTime;
   }
-
+  if (body.storyPoints !== undefined) {
+    updatePayload.storyPoints = body.storyPoints;
+  }
   if (body.loggedTime !== undefined) {
-    existing.loggedTime = body.loggedTime;
+    updatePayload.loggedTime = body.loggedTime;
   }
 
-  existing.updatedAt = new Date().toISOString();
-  memory.TASKS[idx] = existing;
+  const updated = tasksRepository.update(params['task-id'], updatePayload);
+
+  if (!updated) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
 
   recordAudit({
     action: 'task.updated',
-    entity: { type: 'task', id: existing.id },
+    entity: { type: 'task', id: updated.id },
     projectId: params.id,
     ...(project.workspaceId ? { workspaceId: project.workspaceId } : {}),
     before,
-    after: existing
+    after: updated
   });
 
-  return NextResponse.json(existing);
+  return NextResponse.json(updated);
 }
 
 

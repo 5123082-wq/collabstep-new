@@ -28,12 +28,14 @@ declare module 'lucide-react' {
   export const Shield: LucideIcon;
   export const Flag: LucideIcon;
   export const File: LucideIcon;
+  export const FileText: LucideIcon;
   export const HelpCircle: LucideIcon;
   export const TrendingUp: LucideIcon;
   export const Search: LucideIcon;
   export const Filter: LucideIcon;
   export const Power: LucideIcon;
   export const ChevronDown: LucideIcon;
+  export const ChevronLeft: LucideIcon;
   export const ChevronRight: LucideIcon;
   export const UserX: LucideIcon;
   export const UserCheck: LucideIcon;
@@ -47,4 +49,7 @@ declare module 'lucide-react' {
   export const UserSearch: LucideIcon;
   export const Activity: LucideIcon;
   export const Clock: LucideIcon;
+  export const Circle: LucideIcon;
+  export const Link2: LucideIcon;
+  export const DollarSign: LucideIcon;
 }

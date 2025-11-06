@@ -83,11 +83,22 @@ export const projectSectionApi: ProjectSectionAPI = {
     const now = new Date().toISOString();
     const baseId = payload.title?.trim().toLowerCase().replace(/[^a-z0-9]+/gi, '-').replace(/(^-|-$)/g, '') ?? '';
     const generatedId = baseId ? `${baseId}-${randomUUID().slice(0, 6)}` : randomUUID();
+    
+    // Generate project key from title (first 4-6 uppercase letters)
+    const keyBase = payload.title
+      ?.trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 6) || 'PROJ';
+    const projectKey = keyBase.length >= 3 ? keyBase : `${keyBase}${randomUUID().slice(0, 3).toUpperCase()}`;
+    
     const project: Project = {
       id: generatedId,
       workspaceId: payload.workspaceId ?? DEFAULT_WORKSPACE_ID,
+      key: projectKey,
       title: payload.title,
       ownerId: resolveOwnerId(payload.ownerId),
+      status: 'draft',
       visibility: payload.visibility ?? 'private',
       workflowId: `wf-${generatedId}`,
       type: payload.type ?? 'internal',

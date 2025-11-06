@@ -1,6 +1,16 @@
 import type { Task, TaskStatus } from '@/domain/projects/types';
+import { memory } from '@/mocks/projects-memory';
 
 const DEFAULT_STATUSES: TaskStatus[] = ['new', 'in_progress', 'review', 'done'];
+
+function getNextTaskNumber(projectId: string): number {
+  const projectTasks = memory.TASKS.filter((task) => task.projectId === projectId);
+  if (projectTasks.length === 0) {
+    return 1;
+  }
+  const maxNumber = Math.max(...projectTasks.map((task) => task.number ?? 0));
+  return maxNumber + 1;
+}
 
 type TemplateTaskBlueprint = {
   title: string;
@@ -125,11 +135,13 @@ export function createTemplateTasks(templateId: string, projectId: string, now: 
     candidateBlueprints && candidateBlueprints.length > 0 ? candidateBlueprints : fallbackBlueprints;
   const createdAt = toISOString(now);
   const tasks: Task[] = [];
+  let nextNumber = getNextTaskNumber(projectId);
 
   for (const blueprint of blueprints) {
     const task: Task = {
       id: crypto.randomUUID(),
       projectId,
+      number: nextNumber++,
       parentId: null,
       title: blueprint.title,
       status: blueprint.status ?? 'new',

@@ -10,6 +10,7 @@ import type {
   ProjectCardFilters,
   ProjectCardMember,
   ProjectCardOwner,
+  ProjectCardStatus,
   ProjectCardTaskStats,
   ProjectMember,
   ProjectStatus,
@@ -35,7 +36,7 @@ export type ProjectCardSort =
   | 'alphabetical';
 
 interface InternalProjectCardFilters extends ProjectCardFilters {
-  status: 'all' | ProjectStatus;
+  status: 'all' | ProjectCardStatus;
   ownerIds: string[];
   memberIds: string[];
   tags: string[];

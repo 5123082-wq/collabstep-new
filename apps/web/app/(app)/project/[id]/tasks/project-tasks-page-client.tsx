@@ -3,24 +3,35 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { AuditLogEntry } from '@collabverse/api';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import TaskDrawer from '@/components/project/TaskDrawer';
 import ProjectPageFrame from '@/components/project/ProjectPageFrame';
-import type { Iteration, ProjectWorkflow, Task, TaskStatus } from '@/domain/projects/types';
+import type { Iteration, ProjectWorkflow, Task, TaskStatus, TaskTreeNode } from '@/domain/projects/types';
 import { flags } from '@/lib/flags';
+import CalendarView from '@/components/project/views/CalendarView';
+import TimelineView from '@/components/project/views/TimelineView';
+import KanbanView from './components/kanban-view';
+import ListView from './components/list-view';
 
 type TaskItem = Pick<
   Task,
   | 'id'
+  | 'number'
   | 'title'
   | 'status'
   | 'iterationId'
   | 'description'
   | 'assigneeId'
   | 'startAt'
+  | 'startDate'
   | 'dueAt'
   | 'labels'
   | 'estimatedTime'
+  | 'storyPoints'
   | 'loggedTime'
+  | 'projectId'
+  | 'parentId'
+  | 'createdAt'
+  | 'updatedAt'
 >;
 
 type IterationItem = Pick<Iteration, 'id' | 'title'>;
@@ -30,6 +41,7 @@ type BoardView = 'list' | 'kanban' | 'calendar' | 'gantt' | 'activity';
 type ProjectTasksPageClientProps = {
   projectId: string;
   projectTitle: string;
+  projectKey?: string; // Optional project key
   initialView?: string;
   viewsEnabled?: boolean;
 };
@@ -41,7 +53,10 @@ type TaskUpdatePayload = {
   iterationId?: string | null;
   assigneeId?: string | null;
   startAt?: string | null;
+  startDate?: string | null;
   dueAt?: string | null;
+  priority?: 'low' | 'med' | 'high' | 'urgent' | null;
+  storyPoints?: number | null;
   labels?: string[];
 };
 
@@ -194,12 +209,14 @@ function fromInputDate(value: string): string | null {
 export default function ProjectTasksPageClient({
   projectId,
   projectTitle,
+  projectKey,
   initialView,
   viewsEnabled = false
 }: ProjectTasksPageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [projectKeyState, setProjectKeyState] = useState<string>(projectKey ?? 'PROJ');
   const availableViews = useMemo<BoardView[]>(() => {
     const base: BoardView[] = ['list', 'kanban'];
     if (viewsEnabled) {
@@ -217,6 +234,7 @@ export default function ProjectTasksPageClient({
 
   const [view, setView] = useState<BoardView>(defaultView);
   const [items, setItems] = useState<TaskItem[]>([]);
+  const [taskTree, setTaskTree] = useState<TaskTreeNode[]>([]); // Tree view for ListView
   const [workflow, setWorkflow] = useState<ProjectWorkflow | null>(null);
   const [iterations, setIterations] = useState<IterationItem[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<string | 'all'>('all');
@@ -258,6 +276,26 @@ export default function ProjectTasksPageClient({
     [pathname, router, searchParams]
   );
 
+  const loadProject = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/projects/${projectId}`);
+      if (response.ok) {
+        const project = (await response.json()) as { key?: string };
+        if (project.key) {
+          setProjectKeyState(project.key);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load project:', err);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!projectKey) {
+      void loadProject();
+    }
+  }, [projectKey, loadProject]);
+
   const loadWorkflow = useCallback(async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}/workflow`);
@@ -294,19 +332,50 @@ export default function ProjectTasksPageClient({
       if (selectedIteration !== 'all') {
         params.set('iterationId', selectedIteration);
       }
+      // Request tree view for ListView
+      if (view === 'list') {
+        params.set('view', 'tree');
+      }
       const query = params.toString();
       const response = await fetch(`/api/projects/${projectId}/tasks${query ? `?${query}` : ''}`);
       if (!response.ok) {
         throw new Error('Не удалось загрузить задачи');
       }
-      const data = (await response.json()) as { items?: TaskItem[] };
-      setItems(Array.isArray(data.items) ? data.items : []);
+      const data = (await response.json()) as { items?: TaskItem[]; tree?: TaskTreeNode[] };
+      if (Array.isArray(data.items)) {
+        setItems(data.items);
+      }
+      if (Array.isArray(data.tree)) {
+        setTaskTree(data.tree);
+      } else if (Array.isArray(data.items)) {
+        // Convert flat list to tree if needed
+        const taskMap = new Map<string, TaskTreeNode & { children?: TaskTreeNode[] }>();
+        const roots: TaskTreeNode[] = [];
+        
+        for (const task of data.items) {
+          taskMap.set(task.id, { ...task, children: [] });
+        }
+        
+        for (const task of data.items) {
+          const node = taskMap.get(task.id)!;
+          if (task.parentId && taskMap.has(task.parentId)) {
+            const parent = taskMap.get(task.parentId)!;
+            if (!parent.children) {
+              parent.children = [];
+            }
+            parent.children.push(node);
+          } else {
+            roots.push(node);
+          }
+        }
+        setTaskTree(roots);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
     } finally {
       setLoading(false);
     }
-  }, [projectId, selectedIteration]);
+  }, [projectId, selectedIteration, view]);
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadWorkflow(), loadIterations(), loadTasks()]);
@@ -474,6 +543,35 @@ export default function ProjectTasksPageClient({
     },
     [loadIterations, projectId]
   );
+
+  const handleEventDrop = useCallback(
+    async (taskId: string, newStart: Date, newEnd: Date) => {
+      try {
+        await handleTaskUpdate(taskId, {
+          startDate: newStart.toISOString(),
+          dueAt: newEnd.toISOString()
+        });
+      } catch (error) {
+        console.error('Failed to update task dates:', error);
+      }
+    },
+    [handleTaskUpdate]
+  );
+
+  const handleTaskDateChange = useCallback(
+    async (taskId: string, startDate: Date, dueDate: Date) => {
+      try {
+        await handleTaskUpdate(taskId, {
+          startDate: startDate.toISOString(),
+          dueAt: dueDate.toISOString()
+        });
+      } catch (error) {
+        console.error('Failed to update task dates:', error);
+      }
+    },
+    [handleTaskUpdate]
+  );
+
   return (
     <ProjectPageFrame
       slug="tasks"
@@ -552,102 +650,52 @@ export default function ProjectTasksPageClient({
             Пока нет задач. Добавьте первую, чтобы начать работу.
           </div>
         ) : view === 'kanban' ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {grouped.map((column) => (
-              <div
-                key={column.status}
-                className="flex flex-col gap-3 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4"
-                onDragOver={(event) => {
-                  if (!isDndActive) {
-                    return;
-                  }
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = 'move';
-                }}
-                onDrop={(event) => {
-                  if (!isDndActive) {
-                    return;
-                  }
-                  event.preventDefault();
-                  const taskId = event.dataTransfer.getData('text/plain');
-                  if (taskId) {
-                    void handleTransition(taskId, column.status);
-                  }
-                }}
-              >
-                <div>
-                  <p className="text-sm font-semibold capitalize text-white">{column.status.replace(/_/g, ' ')}</p>
-                  <p className="text-xs text-neutral-500">{column.tasks.length} задач</p>
-                </div>
-                <div className="space-y-3">
-                  {column.tasks.map((task) => (
-                    <article
-                      key={task.id}
-                      draggable={isDndActive}
-                      onDragStart={(event) => {
-                        if (!isDndActive) {
-                          return;
-                        }
-                        event.dataTransfer.effectAllowed = 'move';
-                        event.dataTransfer.setData('text/plain', task.id);
-                      }}
-                      onClick={() => handleTaskClick(task.id)}
-                      className="space-y-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-3 transition hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10"
-                    >
-                      <h3 className="text-sm font-semibold text-white">{task.title}</h3>
-                      {task.iterationId ? (
-                        <span className="block text-[10px] uppercase tracking-[0.2em] text-indigo-300">
-                          {iterationNames.get(task.iterationId) ?? task.iterationId}
-                        </span>
-                      ) : null}
-                      {renderStatusControls(task)}
-                    </article>
-                  ))}
-                  {column.tasks.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-neutral-800 p-3 text-xs text-neutral-500">Нет задач</div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
+          <KanbanView
+            statuses={statuses}
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskDrop={handleTransition}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+          />
         ) : view === 'list' ? (
-          <ul className="space-y-3">
-            {items.map((task) => (
-              <li
-                key={task.id}
-                onClick={() => handleTaskClick(task.id)}
-                className="space-y-2 rounded-2xl border border-neutral-800 bg-neutral-950/80 p-4 transition hover:border-indigo-400"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-white">{task.title}</div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-indigo-300">{task.status}</div>
-                  </div>
-                  {task.iterationId ? (
-                    <span className="rounded-lg border border-neutral-800 px-2 py-1 text-xs text-neutral-400">
-                      Итерация: {iterationNames.get(task.iterationId) ?? task.iterationId}
-                    </span>
-                  ) : null}
-                </div>
-                {renderStatusControls(task)}
-              </li>
-            ))}
-          </ul>
+          <ListView
+            tree={taskTree}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            isLoading={isLoading}
+            showTableFormat={false}
+          />
         ) : view === 'calendar' ? (
-          <CalendarView tasks={items} />
-        ) : (
-          <GanttView tasks={items} />
-        )}
+          <CalendarView
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            onEventDrop={handleEventDrop}
+            isLoading={isLoading}
+          />
+        ) : view === 'gantt' ? (
+          <TimelineView
+            tasks={items}
+            projectKey={projectKeyState}
+            onTaskClick={handleTaskClick}
+            onTaskDateChange={handleTaskDateChange}
+            isLoading={isLoading}
+          />
+        ) : null}
       </section>
 
       <TaskDrawer
         open={drawerOpen && Boolean(activeTask)}
         task={activeTask}
+        projectId={projectId}
+        projectKey={projectKeyState}
         statuses={statuses}
         iterations={iterations}
         onClose={() => setDrawerOpen(false)}
-        onSubmit={handleTaskUpdate}
-        projectId={projectId}
+        onTaskUpdate={async (taskId, updates) => {
+          await handleTaskUpdate(taskId, updates as TaskUpdatePayload);
+        }}
         onRefresh={refreshAll}
       />
 
@@ -659,376 +707,8 @@ export default function ProjectTasksPageClient({
     </ProjectPageFrame>
   );
 }
-type TaskDrawerProps = {
-  open: boolean;
-  task: TaskItem | null;
-  statuses: TaskStatus[];
-  iterations: IterationItem[];
-  onClose: () => void;
-  onSubmit: (taskId: string, payload: TaskUpdatePayload) => Promise<void>;
-  projectId: string;
-  onRefresh: () => Promise<void>;
-};
 
-function TaskDrawer({ open, task, statuses, iterations, onClose, onSubmit, projectId, onRefresh }: TaskDrawerProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<TaskStatus | ''>('');
-  const [iterationId, setIterationId] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
-  const [startAt, setStartAt] = useState('');
-  const [dueAt, setDueAt] = useState('');
-  const [labels, setLabels] = useState('');
-  const [isSaving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [estimatedInput, setEstimatedInput] = useState('');
-  const [loggedTotal, setLoggedTotal] = useState(0);
-  const [loggedIncrement, setLoggedIncrement] = useState('');
-  const [timeError, setTimeError] = useState<string | null>(null);
-  const [timeSaving, setTimeSaving] = useState(false);
-  const [timeMessage, setTimeMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open || !task) {
-      return;
-    }
-    setTitle(task.title ?? '');
-    setDescription(task.description ?? '');
-    setStatus(task.status ?? 'new');
-    setIterationId(task.iterationId ?? '');
-    setAssigneeId(task.assigneeId ?? '');
-    setStartAt(toInputDateTime(task.startAt));
-    setDueAt(toInputDateTime(task.dueAt));
-    setLabels(Array.isArray(task.labels) ? task.labels.join(', ') : '');
-    setError(null);
-    setEstimatedInput(
-      typeof task.estimatedTime === 'number' && Number.isFinite(task.estimatedTime)
-        ? String(task.estimatedTime)
-        : ''
-    );
-    setLoggedTotal(typeof task.loggedTime === 'number' && Number.isFinite(task.loggedTime) ? task.loggedTime : 0);
-    setLoggedIncrement('');
-    setTimeError(null);
-    setTimeMessage(null);
-  }, [open, task]);
-
-  const handleEstimatedSave = useCallback(async () => {
-    if (!task) {
-      return;
-    }
-    const nextValue = Number.parseInt(estimatedInput, 10);
-    if (!Number.isFinite(nextValue) || nextValue < 0) {
-      setTimeError('Оценка должна быть неотрицательным числом.');
-      return;
-    }
-    setTimeSaving(true);
-    setTimeError(null);
-    setTimeMessage(null);
-    try {
-      const response = await fetch(`/api/projects/${projectId}/tasks/${task.id}/time`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estimatedTime: nextValue })
-      });
-      if (!response.ok) {
-        const message = await response.text().catch(() => '');
-        throw new Error(message || 'Не удалось обновить оценку времени');
-      }
-      const data = (await response.json()) as { estimatedTime?: number | null; loggedTime?: number | null };
-      setEstimatedInput(
-        typeof data.estimatedTime === 'number' && Number.isFinite(data.estimatedTime)
-          ? String(data.estimatedTime)
-          : ''
-      );
-      if (typeof data.loggedTime === 'number' && Number.isFinite(data.loggedTime)) {
-        setLoggedTotal(data.loggedTime);
-      }
-      setTimeMessage('Оценка обновлена');
-      await onRefresh();
-    } catch (err) {
-      setTimeError(err instanceof Error ? err.message : 'Не удалось обновить оценку времени');
-    } finally {
-      setTimeSaving(false);
-    }
-  }, [estimatedInput, onRefresh, projectId, task]);
-
-  const handleLogSubmit = useCallback(async () => {
-    if (!task) {
-      return;
-    }
-    const increment = Number.parseInt(loggedIncrement, 10);
-    if (!Number.isFinite(increment) || increment <= 0) {
-      setTimeError('Введите количество часов для добавления.');
-      return;
-    }
-    setTimeSaving(true);
-    setTimeError(null);
-    setTimeMessage(null);
-    try {
-      const response = await fetch(`/api/projects/${projectId}/tasks/${task.id}/time`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ increment })
-      });
-      if (!response.ok) {
-        const message = await response.text().catch(() => '');
-        throw new Error(message || 'Не удалось обновить учёт времени');
-      }
-      const data = (await response.json()) as { estimatedTime?: number | null; loggedTime?: number | null };
-      if (typeof data.loggedTime === 'number' && Number.isFinite(data.loggedTime)) {
-        setLoggedTotal(data.loggedTime);
-      }
-      if (typeof data.estimatedTime === 'number' && Number.isFinite(data.estimatedTime)) {
-        setEstimatedInput(String(data.estimatedTime));
-      }
-      setLoggedIncrement('');
-      setTimeMessage('Время зафиксировано');
-      await onRefresh();
-    } catch (err) {
-      setTimeError(err instanceof Error ? err.message : 'Не удалось обновить учёт времени');
-    } finally {
-      setTimeSaving(false);
-    }
-  }, [loggedIncrement, onRefresh, projectId, task]);
-
-  const handleClose = useCallback(() => {
-    if (!isSaving) {
-      onClose();
-    }
-  }, [isSaving, onClose]);
-
-  const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (!task) {
-        return;
-      }
-      setSaving(true);
-      setError(null);
-      try {
-        const payload: TaskUpdatePayload = {};
-        if (title.trim() && title.trim() !== task.title) {
-          payload.title = title.trim();
-        }
-        if (description !== (task.description ?? '')) {
-          payload.description = description ? description : '';
-        }
-        if (status && status !== task.status) {
-          payload.status = status;
-        }
-        if (iterationId !== (task.iterationId ?? '')) {
-          payload.iterationId = iterationId ? iterationId : null;
-        }
-        if (assigneeId !== (task.assigneeId ?? '')) {
-          payload.assigneeId = assigneeId ? assigneeId : null;
-        }
-        const nextStart = fromInputDate(startAt);
-        if (nextStart !== (task.startAt ?? null)) {
-          payload.startAt = nextStart;
-        }
-        const nextDue = fromInputDate(dueAt);
-        if (nextDue !== (task.dueAt ?? null)) {
-          payload.dueAt = nextDue;
-        }
-        const parsedLabels = labels
-          .split(',')
-          .map((label) => label.trim())
-          .filter((label) => label.length > 0);
-        const currentLabels = Array.isArray(task.labels) ? task.labels : [];
-        if (parsedLabels.join('|') !== currentLabels.join('|')) {
-          payload.labels = parsedLabels;
-        }
-
-        if (Object.keys(payload).length === 0) {
-          onClose();
-          return;
-        }
-
-        await onSubmit(task.id, payload);
-        onClose();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Не удалось сохранить');
-      } finally {
-        setSaving(false);
-      }
-    },
-    [assigneeId, description, dueAt, iterationId, labels, onClose, onSubmit, startAt, status, task, title]
-  );
-
-  return (
-    <Sheet open={open} onOpenChange={(next) => (!next ? handleClose() : undefined)}>
-      <SheetContent className="flex h-full flex-col bg-neutral-950/95" side="right">
-        <form className="flex h-full flex-col gap-4 p-6" onSubmit={handleSubmit}>
-          <SheetHeader>
-            <SheetTitle>Детали задачи</SheetTitle>
-            {task ? <p className="text-xs text-neutral-500">ID: {task.id}</p> : null}
-          </SheetHeader>
-          {task ? (
-            <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Название</span>
-                <input
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  required
-                />
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Описание</span>
-                <textarea
-                  className="min-h-[120px] w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Markdown или обычный текст"
-                />
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Статус</span>
-                <select
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as TaskStatus)}
-                >
-                  {statuses.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Итерация</span>
-                <select
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={iterationId}
-                  onChange={(event) => setIterationId(event.target.value)}
-                >
-                  <option value="">Без итерации</option>
-                  {iterations.map((iter) => (
-                    <option key={iter.id} value={iter.id}>
-                      {iter.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Исполнитель</span>
-                <input
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={assigneeId}
-                  onChange={(event) => setAssigneeId(event.target.value)}
-                  placeholder="user_id"
-                />
-              </label>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm text-neutral-200">
-                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Начало</span>
-                  <input
-                    type="datetime-local"
-                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                    value={startAt}
-                    onChange={(event) => setStartAt(event.target.value)}
-                  />
-                </label>
-                <label className="space-y-2 text-sm text-neutral-200">
-                  <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Дедлайн</span>
-                  <input
-                    type="datetime-local"
-                    className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                    value={dueAt}
-                    onChange={(event) => setDueAt(event.target.value)}
-                  />
-                </label>
-              </div>
-              <label className="space-y-2 text-sm text-neutral-200">
-                <span className="text-xs uppercase tracking-[0.2em] text-neutral-500">Метки</span>
-                <input
-                  className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                  value={labels}
-                  onChange={(event) => setLabels(event.target.value)}
-                  placeholder="product, design, urgent"
-                />
-              </label>
-              {flags.TASK_TIME_TRACKING ? (
-                <div className="space-y-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-neutral-100">Трекинг времени</h3>
-                    <span className="text-xs text-neutral-400">Залогировано: {loggedTotal} ч</span>
-                  </div>
-                  {timeError ? <p className="text-xs text-rose-400">{timeError}</p> : null}
-                  {timeMessage ? <p className="text-xs text-emerald-400">{timeMessage}</p> : null}
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto]">
-                    <label className="space-y-1 text-xs uppercase tracking-[0.2em] text-neutral-500">
-                      <span className="block text-neutral-400">Оценка (ч)</span>
-                      <input
-                        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                        value={estimatedInput}
-                        onChange={(event) => setEstimatedInput(event.target.value.replace(/[^0-9]/g, ''))}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        disabled={timeSaving}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => void handleEstimatedSave()}
-                      className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:opacity-60"
-                      disabled={timeSaving}
-                    >
-                      {timeSaving ? 'Сохранение…' : 'Сохранить'}
-                    </button>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr),auto]">
-                    <label className="space-y-1 text-xs uppercase tracking-[0.2em] text-neutral-500">
-                      <span className="block text-neutral-400">Добавить (ч)</span>
-                      <input
-                        className="w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none"
-                        value={loggedIncrement}
-                        onChange={(event) => setLoggedIncrement(event.target.value.replace(/[^0-9]/g, ''))}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        disabled={timeSaving}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => void handleLogSubmit()}
-                      className="rounded-xl border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-200 transition hover:border-indigo-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 disabled:opacity-60"
-                      disabled={timeSaving}
-                    >
-                      {timeSaving ? 'Сохранение…' : 'Добавить'}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              {error ? <p className="text-sm text-red-400">{error}</p> : null}
-            </div>
-          ) : (
-            <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">Задача не выбрана</div>
-          )}
-          <div className="flex justify-between gap-3 border-t border-neutral-800 pt-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="rounded-xl border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-indigo-400 hover:text-white"
-              disabled={isSaving}
-            >
-              Отменить
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 disabled:opacity-60"
-              disabled={isSaving}
-            >
-              {isSaving ? 'Сохранение…' : 'Сохранить'}
-            </button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}
+// TaskDrawer moved to @/components/project/TaskDrawer.tsx
 
 type TaskActivityViewProps = {
   projectId: string;
@@ -1228,200 +908,6 @@ function IterationModal({ open, onClose, onSubmit }: IterationModalProps) {
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-type TimelineTask = Pick<TaskItem, 'id' | 'title' | 'status' | 'startAt' | 'dueAt'>;
-
-type CalendarViewProps = {
-  tasks: TimelineTask[];
-};
-
-function CalendarView({ tasks }: CalendarViewProps) {
-  const now = new Date();
-  const monthStart = startOfMonth(now);
-  const monthEnd = endOfMonth(now);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const days: { date: Date; key: string; currentMonth: boolean }[] = [];
-  let cursor = new Date(calendarStart);
-  while (cursor <= calendarEnd) {
-    const day = new Date(cursor);
-    days.push({ date: day, key: formatDateKey(day), currentMonth: day.getMonth() === monthStart.getMonth() });
-    cursor = addDays(cursor, 1);
-  }
-
-  const tasksByDay = new Map<string, TimelineTask[]>();
-  for (const task of tasks) {
-    const start = parseISODate(task.startAt ?? task.dueAt);
-    const end = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-    if (!start && !end) {
-      continue;
-    }
-    const rangeStart = start ?? end;
-    const rangeEnd = end ?? start ?? rangeStart;
-    if (!rangeStart || !rangeEnd) {
-      continue;
-    }
-    let dayCursor = new Date(rangeStart);
-    dayCursor.setHours(0, 0, 0, 0);
-    const finalDay = new Date(rangeEnd);
-    finalDay.setHours(0, 0, 0, 0);
-    while (dayCursor <= finalDay) {
-      const key = formatDateKey(dayCursor);
-      if (!tasksByDay.has(key)) {
-        tasksByDay.set(key, []);
-      }
-      tasksByDay.get(key)?.push(task);
-      dayCursor = addDays(dayCursor, 1);
-    }
-  }
-
-  const monthFormatter = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }),
-    []
-  );
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold capitalize text-white">{monthFormatter.format(monthStart)}</h3>
-        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Календарный обзор</p>
-      </div>
-      <div className="grid grid-cols-7 gap-2 text-xs text-neutral-500">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-2 py-1 text-center">
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => {
-          const dayTasks = tasksByDay.get(day.key) ?? [];
-          return (
-            <div
-              key={day.key}
-              className={`min-h-[120px] rounded-xl border border-neutral-800 bg-neutral-950/70 p-2 text-xs transition ${
-                day.currentMonth ? 'text-neutral-200' : 'text-neutral-500 opacity-60'
-              }`}
-            >
-              <p className="text-right text-[11px] font-semibold">{day.date.getDate()}</p>
-              <div className="mt-2 space-y-1">
-                {dayTasks.map((task) => (
-                  <div key={task.id} className="rounded-lg bg-indigo-500/20 p-2 text-[11px] text-indigo-100">
-                    <p className="font-semibold leading-tight text-white">{task.title}</p>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-200">{task.status}</p>
-                  </div>
-                ))}
-                {dayTasks.length === 0 ? <p className="text-[10px] text-neutral-600">Нет задач</p> : null}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-type GanttViewProps = {
-  tasks: TimelineTask[];
-};
-
-function GanttView({ tasks }: GanttViewProps) {
-  const dates = tasks.reduce(
-    (acc, task) => {
-      const start = parseISODate(task.startAt ?? task.dueAt);
-      const end = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-      if (start && (!acc.min || start < acc.min)) {
-        acc.min = start;
-      }
-      if (end && (!acc.max || end > acc.max)) {
-        acc.max = end;
-      }
-      return acc;
-    },
-    { min: null as Date | null, max: null as Date | null }
-  );
-
-  const today = new Date();
-  const start = startOfWeek(dates.min ?? today);
-  const end = endOfWeek(dates.max ?? addDays(today, 21));
-
-  const weeks: Date[] = [];
-  let cursor = new Date(start);
-  while (cursor <= end && weeks.length < 16) {
-    weeks.push(new Date(cursor));
-    cursor = addDays(cursor, 7);
-  }
-  if (weeks.length === 0) {
-    weeks.push(new Date(start));
-  }
-
-  const headerFormatter = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'short', day: 'numeric' }),
-    []
-  );
-
-  const gridStyle = useMemo(() => ({ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }), [weeks.length]);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Гантт</h3>
-        <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">Обзор по неделям</p>
-      </div>
-      <div className="grid grid-cols-[220px_1fr] gap-4">
-        <div className="text-xs uppercase tracking-[0.2em] text-neutral-500">Задачи</div>
-        <div className="overflow-hidden rounded-xl border border-neutral-800">
-          <div className="grid text-xs text-neutral-400" style={gridStyle}>
-            {weeks.map((week) => (
-              <div key={week.toISOString()} className="border-l border-neutral-800 bg-neutral-900/60 px-2 py-1 first:border-l-0">
-                {headerFormatter.format(week)}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-[220px_1fr] gap-4">
-        <div className="space-y-3">
-          {tasks.map((task) => (
-            <div key={task.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 px-3 py-2 text-sm text-white">
-              <p className="font-semibold leading-tight">{task.title}</p>
-              <p className="text-[10px] uppercase tracking-[0.2em] text-indigo-200">{task.status}</p>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-3">
-          {tasks.map((task) => {
-            const startDate = parseISODate(task.startAt ?? task.dueAt);
-            const endDate = parseISODate(task.dueAt ?? task.startAt ?? task.dueAt);
-            const hasDates = Boolean(startDate || endDate);
-            const rangeStart = startDate ?? endDate ?? start;
-            const rangeEnd = endDate ?? startDate ?? rangeStart;
-            const startIndex = Math.max(0, Math.floor((rangeStart.getTime() - start.getTime()) / WEEK_MS));
-            const endIndex = Math.max(startIndex, Math.floor((rangeEnd.getTime() - start.getTime()) / WEEK_MS));
-            const gridColumnStart = startIndex + 1;
-            const gridColumnEnd = Math.min(weeks.length + 1, endIndex + 2);
-            return (
-              <div key={task.id} className="grid" style={gridStyle}>
-                <div
-                  className={`relative h-9 rounded-full border border-indigo-500/50 bg-indigo-500/20 ${
-                    hasDates ? '' : 'opacity-60'
-                  }`}
-                  style={{ gridColumnStart, gridColumnEnd }}
-                >
-                  <div className="absolute inset-1 rounded-full bg-indigo-500/30" />
-                  {!hasDates ? (
-                    <span className="absolute inset-0 flex items-center justify-center text-[11px] text-neutral-300">
-                      Даты не указаны
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

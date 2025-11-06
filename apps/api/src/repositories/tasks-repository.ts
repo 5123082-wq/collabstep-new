@@ -13,6 +13,7 @@ export type TaskListOptions = {
 export type CreateTaskInput = {
   id?: string;
   projectId: string;
+  number?: number; // Optional number, will be auto-generated if not provided
   parentId?: string | null;
   title: string;
   description?: string;
@@ -20,10 +21,12 @@ export type CreateTaskInput = {
   iterationId?: string;
   assigneeId?: string;
   startAt?: string;
+  startDate?: string; // Alias for startAt
   dueAt?: string;
-  priority?: 'low' | 'med' | 'high';
+  priority?: 'low' | 'med' | 'high' | 'urgent';
   labels?: string[];
   estimatedTime?: number | null;
+  storyPoints?: number | null;
   loggedTime?: number | null;
   createdAt?: string;
   updatedAt?: string;
@@ -87,13 +90,33 @@ export class TasksRepository {
     return this.list({ projectId });
   }
 
+  /**
+   * Gets the next task number for a project
+   */
+  private getNextTaskNumber(projectId: string): number {
+    const projectTasks = memory.TASKS.filter((task) => task.projectId === projectId);
+    if (projectTasks.length === 0) {
+      return 1;
+    }
+    const maxNumber = Math.max(...projectTasks.map((task) => task.number ?? 0));
+    return maxNumber + 1;
+  }
+
   create(input: CreateTaskInput): Task {
     const now = new Date().toISOString();
     const createdAt = input.createdAt ?? now;
     const updatedAt = input.updatedAt ?? createdAt;
+    
+    // Auto-generate number if not provided
+    const number = input.number ?? this.getNextTaskNumber(input.projectId);
+    
+    // Use startDate if provided, otherwise use startAt
+    const startAt = input.startDate ?? input.startAt;
+
     const task: Task = {
       id: input.id ?? crypto.randomUUID(),
       projectId: input.projectId,
+      number,
       title: input.title,
       description: input.description ?? '',
       parentId: input.parentId ?? null,
@@ -102,16 +125,117 @@ export class TasksRepository {
       updatedAt,
       ...(input.iterationId ? { iterationId: input.iterationId } : {}),
       ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
-      ...(input.startAt ? { startAt: input.startAt } : {}),
+      ...(startAt ? { startAt, startDate: startAt } : {}),
       ...(input.dueAt ? { dueAt: input.dueAt } : {}),
       ...(input.priority ? { priority: input.priority } : {}),
       ...(Array.isArray(input.labels) ? { labels: [...input.labels] } : {}),
       ...(input.estimatedTime !== undefined ? { estimatedTime: input.estimatedTime } : {}),
+      ...(input.storyPoints !== undefined ? { storyPoints: input.storyPoints } : {}),
       ...(input.loggedTime !== undefined ? { loggedTime: input.loggedTime } : {})
     };
 
     memory.TASKS.push(task);
     return enrichTask(task);
+  }
+
+  update(id: string, patch: Partial<Pick<Task, 'title' | 'description' | 'status' | 'assigneeId' | 'priority' | 'startAt' | 'startDate' | 'dueAt' | 'labels' | 'estimatedTime' | 'storyPoints' | 'loggedTime' | 'iterationId' | 'parentId'>>): Task | null {
+    const idx = memory.TASKS.findIndex((task) => task.id === id);
+    if (idx === -1) {
+      return null;
+    }
+
+    const current = memory.TASKS[idx];
+    if (!current) {
+      return null;
+    }
+
+    const updated: Task = {
+      ...current,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (typeof patch.title === 'string' && patch.title.trim()) {
+      updated.title = patch.title.trim();
+    }
+
+    if (typeof patch.description === 'string') {
+      updated.description = patch.description;
+    }
+
+    if (patch.status && ['new', 'in_progress', 'review', 'done', 'blocked'].includes(patch.status)) {
+      updated.status = patch.status;
+    }
+
+    if ('assigneeId' in patch) {
+      updated.assigneeId = patch.assigneeId ?? undefined;
+    }
+
+    if (patch.priority && ['low', 'med', 'high', 'urgent'].includes(patch.priority)) {
+      updated.priority = patch.priority;
+    }
+
+    if ('startAt' in patch || 'startDate' in patch) {
+      const startAt = patch.startDate ?? patch.startAt;
+      if (startAt) {
+        updated.startAt = startAt;
+        updated.startDate = startAt;
+      } else {
+        delete updated.startAt;
+        delete updated.startDate;
+      }
+    }
+
+    if ('dueAt' in patch) {
+      if (patch.dueAt) {
+        updated.dueAt = patch.dueAt;
+      } else {
+        delete updated.dueAt;
+      }
+    }
+
+    if ('labels' in patch) {
+      if (Array.isArray(patch.labels)) {
+        updated.labels = [...patch.labels];
+      } else {
+        delete updated.labels;
+      }
+    }
+
+    if ('estimatedTime' in patch) {
+      updated.estimatedTime = patch.estimatedTime ?? null;
+    }
+
+    if ('storyPoints' in patch) {
+      updated.storyPoints = patch.storyPoints ?? null;
+    }
+
+    if ('loggedTime' in patch) {
+      updated.loggedTime = patch.loggedTime ?? null;
+    }
+
+    if ('iterationId' in patch) {
+      updated.iterationId = patch.iterationId ?? undefined;
+    }
+
+    if ('parentId' in patch) {
+      updated.parentId = patch.parentId ?? null;
+    }
+
+    memory.TASKS[idx] = updated;
+    return enrichTask(updated);
+  }
+
+  delete(id: string): boolean {
+    const idx = memory.TASKS.findIndex((task) => task.id === id);
+    if (idx === -1) {
+      return false;
+    }
+    memory.TASKS.splice(idx, 1);
+    // Also remove dependencies for this task
+    memory.TASK_DEPENDENCIES = memory.TASK_DEPENDENCIES.filter(
+      (dep) => dep.dependentTaskId !== id && dep.blockerTaskId !== id
+    );
+    return true;
   }
 }
 
