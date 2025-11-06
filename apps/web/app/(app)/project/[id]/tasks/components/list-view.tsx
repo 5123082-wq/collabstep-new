@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { TaskTreeNode } from '@/domain/projects/types';
 import TaskRow from './task-row';
-import { ChevronDown, ChevronUp, ArrowUpDown } from 'lucide-react';
+import { ChevronDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ListViewProps = {
@@ -242,7 +242,7 @@ export function ListView({
           >
             Название
             {sortField === 'title' && (
-              sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
+              sortDirection === 'asc' ? <ArrowUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
             )}
           </button>
           <button
@@ -256,7 +256,7 @@ export function ListView({
           >
             Статус
             {sortField === 'status' && (
-              sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
+              sortDirection === 'asc' ? <ArrowUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
             )}
           </button>
           <button
@@ -270,7 +270,7 @@ export function ListView({
           >
             Срок
             {sortField === 'dueDate' && (
-              sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
+              sortDirection === 'asc' ? <ArrowUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
             )}
           </button>
           <button
@@ -284,7 +284,7 @@ export function ListView({
           >
             Приоритет
             {sortField === 'priority' && (
-              sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
+              sortDirection === 'asc' ? <ArrowUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />
             )}
           </button>
         </div>
