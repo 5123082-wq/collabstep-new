@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { AuditLogEntry } from '@collabverse/api';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Activity, Userss, FileText, CheckCircle2 } from 'lucide-react';
+import { Activity, Users, FileText, CheckCircle2 } from 'lucide-react';
 
 type ActivityWidgetProps = {
   activities: AuditLogEntry[];

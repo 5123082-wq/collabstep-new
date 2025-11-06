@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { Userss } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 type AssigneeAvatarProps = {
   assigneeId?: string;
