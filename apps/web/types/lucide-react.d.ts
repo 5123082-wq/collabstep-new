@@ -49,4 +49,7 @@ declare module 'lucide-react' {
   export const UserSearch: LucideIcon;
   export const Activity: LucideIcon;
   export const Clock: LucideIcon;
+  export const Circle: LucideIcon;
+  export const Link2: LucideIcon;
+  export const DollarSign: LucideIcon;
 }
