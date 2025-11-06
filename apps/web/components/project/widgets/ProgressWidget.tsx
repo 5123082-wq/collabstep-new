@@ -14,7 +14,7 @@ export function ProgressWidget({ tasks, isLoading }: ProgressWidgetProps) {
     const total = tasks.length;
     const completed = tasks.filter((task) => task.status === 'done').length;
     const inProgress = tasks.filter((task) => task.status === 'in_progress').length;
-    const notStarted = tasks.filter((task) => task.status === 'new' || task.status === 'backlog').length;
+    const notStarted = tasks.filter((task) => task.status === 'new').length;
     const overdue = tasks.filter(
       (task) => task.dueAt && new Date(task.dueAt) < new Date() && task.status !== 'done'
     ).length;
