@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { AlertCircle, Clock, User, Flag } from 'lucide-react';
+import { AlertTriangle, Clock, User, Flag } from 'lucide-react';
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   new: 'Новая',
@@ -134,7 +134,7 @@ export function TaskCard({ task, projectKey, onClick, className, footer }: TaskC
         )}
         {isOverdue && (
           <div className="flex items-center gap-1 text-rose-400">
-            <AlertCircle className="h-3 w-3" />
+            <AlertTriangle className="h-3 w-3" />
             <span>Просрочено</span>
           </div>
         )}
