@@ -14,9 +14,7 @@ import {
   MessageSquare, 
   Clock, 
   Link, 
-  Upload, 
   UserPlus,
-  AlertTriangle,
   CheckCircle2,
   X
 } from 'lucide-react';
@@ -196,7 +194,7 @@ export function TaskDrawer({
     { id: 'dependencies' as const, label: 'Зависимости', icon: Link },
     { id: 'comments' as const, label: 'Комментарии', icon: MessageSquare },
     { id: 'history' as const, label: 'История', icon: Clock },
-    { id: 'files' as const, label: 'Файлы', icon: Upload }
+    { id: 'files' as const, label: 'Файлы', icon: File }
   ];
 
   if (!task) {
@@ -679,7 +677,7 @@ function DependenciesTab({
                 className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3"
               >
                 <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-400" />
+                  <span className="text-amber-400">⚠</span>
                   <span className="text-sm text-white">
                     {projectKey && dep.blockerTaskId.match(/^\d+$/) ? (
                       <span className="font-mono uppercase text-indigo-400">
@@ -893,7 +891,7 @@ function FilesTab({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border-2 border-dashed border-neutral-800 p-6 text-center">
-        <Upload className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
+        <File className="mx-auto h-8 w-8 text-neutral-600 mb-2" />
         <label className="cursor-pointer">
           <input type="file" className="hidden" onChange={handleFileUpload} />
           <span className="text-sm font-semibold text-indigo-400 hover:text-indigo-300">
