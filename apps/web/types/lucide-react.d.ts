@@ -34,6 +34,7 @@ declare module 'lucide-react' {
   export const Filter: LucideIcon;
   export const Power: LucideIcon;
   export const ChevronDown: LucideIcon;
+  export const ChevronLeft: LucideIcon;
   export const ChevronRight: LucideIcon;
   export const UserX: LucideIcon;
   export const UserCheck: LucideIcon;
