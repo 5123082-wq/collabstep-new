@@ -19,6 +19,7 @@ type ListViewProps = {
 
 type SortField = 'title' | 'status' | 'priority' | 'dueDate' | 'assignee';
 type GroupField = 'status' | 'assignee' | 'priority';
+type FlatTaskNode = TaskTreeNode & { depth: number };
 
 export function ListView({
   tree,
@@ -35,8 +36,8 @@ export function ListView({
   const [groupField, setGroupField] = useState<GroupField | null>(groupBy || null);
 
   // Flatten tree for sorting
-  const flattenTree = (nodes: TaskTreeNode[]): TaskTreeNode[] => {
-    const result: TaskTreeNode[] = [];
+  const flattenTree = (nodes: TaskTreeNode[]): FlatTaskNode[] => {
+    const result: FlatTaskNode[] = [];
     const traverse = (nodes: TaskTreeNode[], depth: number) => {
       for (const node of nodes) {
         result.push({ ...node, depth });
