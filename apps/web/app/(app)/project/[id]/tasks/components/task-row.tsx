@@ -7,7 +7,7 @@ import { TASK_STATUS_LABELS, TASK_STATUS_STYLES } from './task-card';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Clock, User, Flag, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, Userss, Flag, ChevronRight, ChevronDown } from 'lucide-react';
 
 type TaskRowProps = {
   task: TaskTreeNode;
@@ -114,7 +114,7 @@ export function TaskRow({ task, projectKey, depth = 0, onSelect, children, isExp
           <div className="flex items-center gap-1 text-xs text-neutral-400">
             {task.assigneeId ? (
               <>
-                <User className="h-3 w-3" />
+                <Users className="h-3 w-3" />
                 <span className="truncate">Исполнитель</span>
               </>
             ) : (
@@ -246,7 +246,7 @@ export function TaskRow({ task, projectKey, depth = 0, onSelect, children, isExp
               )}
               {task.assigneeId && (
                 <div className="flex items-center gap-1">
-                  <User className="h-3 w-3" />
+                  <Users className="h-3 w-3" />
                   <span>Исполнитель</span>
                 </div>
               )}
