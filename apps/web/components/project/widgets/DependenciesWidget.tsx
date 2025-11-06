@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { TaskDependency } from '@/domain/projects/task-dependency';
 import type { Task } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { Link2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Link2, CheckCircle2 } from 'lucide-react';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 
 type DependenciesWidgetProps = {
@@ -103,7 +103,7 @@ export function DependenciesWidget({
               )}
             >
               <div className="flex items-start gap-2">
-                {dep.isBlocked && <AlertTriangle className="h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0" />}
+                {dep.isBlocked && <span className="text-amber-400 mt-0.5 flex-shrink-0">⚠</span>}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     {projectKey && dep.dependentTask?.number && (

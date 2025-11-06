@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import type { Project } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { DollarSign, AlertCircle } from 'lucide-react';
+import { DollarSign } from 'lucide-react';
 
 type BudgetWidgetProps = {
   project: Project;
@@ -119,9 +119,9 @@ export function BudgetWidget({ project, isLoading }: BudgetWidgetProps) {
               : 'border-amber-500/40 bg-amber-500/10'
           )}
         >
-          <AlertCircle
-            className={cn('h-4 w-4', budgetData.riskLevel === 'high' ? 'text-rose-400' : 'text-amber-400')}
-          />
+          <span className={cn('text-xl', budgetData.riskLevel === 'high' ? 'text-rose-400' : 'text-amber-400')}>
+            ⚠
+          </span>
           <p className="text-xs text-neutral-300">
             {budgetData.isOverBudget
               ? 'Превышен бюджет'

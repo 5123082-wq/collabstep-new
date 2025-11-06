@@ -6,7 +6,7 @@ import { format, differenceInDays, isPast, isToday, isTomorrow } from 'date-fns'
 import { ru } from 'date-fns/locale';
 import type { Task } from '@/domain/projects/types';
 import { cn } from '@/lib/utils';
-import { Calendar, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Calendar, CheckCircle2 } from 'lucide-react';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 
 type DeadlinesWidgetProps = {
@@ -125,7 +125,7 @@ export function DeadlinesWidget({ tasks, projectId, projectKey, isLoading }: Dea
                           : `Через ${task.daysUntil} дн.`}
                   </span>
                   {task.riskLevel === 'high' && (
-                    <AlertTriangle className="h-3 w-3 text-rose-400" />
+                    <span className="text-rose-400">⚠</span>
                   )}
                 </div>
               </div>

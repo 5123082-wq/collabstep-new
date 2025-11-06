@@ -7,7 +7,7 @@ import { TASK_STATUS_LABELS, TASK_STATUS_STYLES } from './task-card';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Clock, Userss, Flag, ChevronRight, ChevronDown } from 'lucide-react';
+import { Clock, Users, Flag, ChevronRight, ChevronDown } from 'lucide-react';
 
 type TaskRowProps = {
   task: TaskTreeNode;

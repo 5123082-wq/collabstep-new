@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { User } from 'lucide-react';
+import { Userss } from 'lucide-react';
 
 type AssigneeAvatarProps = {
   assigneeId?: string;
@@ -58,7 +58,7 @@ export function AssigneeAvatar({
             sizeClasses[size]
           )}
         >
-          <User className={cn('h-3 w-3 text-neutral-500')} />
+          <Users className={cn('h-3 w-3 text-neutral-500')} />
         </div>
       )}
       {isOnline && (

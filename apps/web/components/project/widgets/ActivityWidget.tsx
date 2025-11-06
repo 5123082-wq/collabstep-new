@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { AuditLogEntry } from '@collabverse/api';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Activity, User, FileText, CheckCircle2 } from 'lucide-react';
+import { Activity, Userss, FileText, CheckCircle2 } from 'lucide-react';
 
 type ActivityWidgetProps = {
   activities: AuditLogEntry[];
@@ -76,7 +76,7 @@ export function ActivityWidget({ activities, isLoading }: ActivityWidgetProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-white">{getActivityLabel(entry)}</p>
                 <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
-                  <User className="h-3 w-3" />
+                  <Users className="h-3 w-3" />
                   <span>{entry.userId || entry.userEmail || 'Система'}</span>
                   <span>·</span>
                   <span>{format(new Date(entry.createdAt), 'd MMM, HH:mm', { locale: ru })}</span>

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Task } from '@/domain/projects/types';
-import { CheckCircle2, Circle, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Circle, Clock } from 'lucide-react';
 
 type ProgressWidgetProps = {
   tasks: Task[];
@@ -87,7 +87,7 @@ export function ProgressWidget({ tasks, isLoading }: ProgressWidgetProps) {
         </div>
         {metrics.overdue > 0 && (
           <div className="flex items-center gap-2 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3">
-            <AlertCircle className="h-5 w-5 text-rose-400" />
+            <span className="text-rose-400 text-xl">⚠</span>
             <div>
               <p className="text-xs text-neutral-500">Просрочено</p>
               <p className="text-lg font-semibold text-rose-400">{metrics.overdue}</p>
