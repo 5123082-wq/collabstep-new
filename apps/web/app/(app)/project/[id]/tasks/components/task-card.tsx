@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatTaskDisplayKey } from '@/lib/project/calendar-utils';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { Clock, User, Flag } from 'lucide-react';
+import { Clock, Users, Flag } from 'lucide-react';
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   new: 'Новая',
@@ -116,7 +116,7 @@ export function TaskCard({ task, projectKey, onClick, className, footer }: TaskC
         )}
         {task.assigneeId && (
           <div className="flex items-center gap-1">
-            <User className="h-3 w-3" />
+            <Users className="h-3 w-3" />
             <span>Исполнитель</span>
           </div>
         )}
