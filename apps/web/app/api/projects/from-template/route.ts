@@ -119,12 +119,34 @@ export async function POST(req: NextRequest) {
   const workflowId = workflow?.id ?? `wf-${projectId}`;
   const budgetPlanned = parseBudgetValue(finance?.budget ?? null);
 
+  // Generate project key
+  let baseKey = 'PROJ';
+  const titleWords = projectTitle.split(/\s+/).filter((w) => w.length > 0);
+  if (titleWords.length > 0) {
+    baseKey = titleWords
+      .slice(0, 4)
+      .map((w) => w[0]?.toUpperCase() || '')
+      .join('')
+      .slice(0, 10);
+    if (baseKey.length < 2) {
+      baseKey = 'PROJ';
+    }
+  }
+  let projectKey = baseKey;
+  let counter = 1;
+  while (memory.PROJECTS.some((p) => p.workspaceId === workspaceId && p.key === projectKey)) {
+    projectKey = `${baseKey}${counter}`;
+    counter++;
+  }
+
   const project: Project = {
     id: projectId,
+    key: projectKey,
     workspaceId,
     title: projectTitle,
     description: template.summary,
     ownerId: owner,
+    status: 'draft',
     stage,
     type,
     visibility,
