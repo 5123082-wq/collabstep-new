@@ -15,7 +15,7 @@ import {
   Clock, 
   Link, 
   UserPlus,
-  CheckCircle2,
+  CheckCircle,
   X
 } from 'lucide-react';
 
@@ -833,7 +833,7 @@ function HistoryTab({
             history.map((entry) => (
               <div key={entry.id} className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-4 w-4 text-indigo-400 mt-0.5" />
+                  <CheckCircle className="h-4 w-4 text-indigo-400 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-semibold text-white">{getActionLabel(entry.action)}</p>
                     <p className="text-xs text-neutral-500 mt-1">
